@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Wedding guest sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Josefin+Sans:wght@400;600&family=Lora:wght@400;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  body { font-size: 14px; }
+  .login { max-width: 380px; margin: 60px auto; text-align: center; padding: 0 16px; }
+  .app { display: flex; flex-direction: column; height: 100vh; }
+  .head { padding: 10px 16px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+  .head .script { font-size: 28px; margin-right: 8px; }
+  .tabs { display: flex; gap: 4px; }
+  .tabs button { min-height: 34px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--ink); background: transparent; cursor: pointer; font-family: var(--caps); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+  .tabs button[aria-pressed=true] { background: var(--ink); color: var(--paper); }
+  .tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-left: auto; }
+  .tools input[type=search], .tools select { min-height: 34px; width: auto; padding: 4px 10px; font-size: 14px; border-radius: 8px; }
+  .tools input[type=search] { width: 200px; }
+  .stats { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 8px 16px; background: var(--paper-2); border-bottom: 1px solid var(--line); font-size: 13px; color: var(--ink-soft); }
+  .stats b { color: var(--ink); font-size: 15px; }
+  .grid { flex: 1; overflow: auto; }
+  table { border-collapse: separate; border-spacing: 0; font-size: 14px; }
+  th, td { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 0; background: #fff; height: 32px; white-space: nowrap; }
+  th { position: sticky; top: 0; z-index: 3; background: var(--paper-2); font-family: var(--caps); font-weight: 600; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; text-align: left; padding: 0 8px; cursor: pointer; user-select: none; }
+  th.sorted::after { content: ' ▾'; } th.sorted.up::after { content: ' ▴'; }
+  .sl { position: sticky; z-index: 2; } th.sl { z-index: 4; }
+  td input[type=text], td input[type=number], td select {
+    width: 100%; height: 31px; min-height: 0; border: 0; border-radius: 0; background: transparent; padding: 0 8px; font-size: 14px; font-family: var(--body);
+  }
+  td select { padding: 0 4px; cursor: pointer; }
+  td input:focus, td select:focus { outline: 2px solid var(--ink); outline-offset: -2px; background: #FFFDF5; }
+  td input:disabled { color: #B9B3A8; }
+  td.ro { padding: 0 8px; color: var(--ink-soft); }
+  td.c { text-align: center; }
+  td input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; vertical-align: middle; }
+  tr:hover td { background: #FBF8F1; }
+  tr.x td { background: #F4F1EA; } tr.x td input, tr.x td select { color: #8E887D; }
+  tr.reserve td.first { box-shadow: inset 4px 0 0 #8A5BA8; }
+  tr.group td { border-top: 2px solid #C9C1B0; }
+  td.ok { animation: ok 1s; } td.err { background: #F3D9D9 !important; }
+  @keyframes ok { from { background: #DCEBDD; } to { background: #fff; } }
+  .pill { font-family: var(--caps); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; background: var(--paper-2); }
+  .pill.replied { background: #DCEBDD; color: var(--good); } .pill.opened { background: #F5E8C8; color: #6B4F12; }
+  .pill.sent { background: #E3E7F2; color: #2D3D6B; } .pill.reserve { background: #EADCF2; color: #5B2D73; } .pill.x { background: #E6E1D6; color: #6E685D; }
+  .ib { border: 0; background: transparent; cursor: pointer; padding: 0 8px; height: 31px; font-size: 13px; color: var(--ink-soft); }
+  .ib:hover { color: var(--ink); text-decoration: underline; }
+  .ib.del:hover { color: var(--bad); }
+  .help { padding: 6px 16px; font-size: 12px; color: var(--ink-soft); border-top: 1px solid var(--line); }
+  .y { color: var(--good); } .n { color: var(--bad); }
+</style>
+</head>
+<body>
+
+<section id="login" class="login hidden">
+  <p class="script" style="font-size:44px;margin:0">Paula &amp; Doug</p>
+  <p class="caps muted">Guest sheet</p>
+  <form id="login-form">
+    <label class="field"><span>Email</span><input type="email" id="email" autocomplete="username" required></label>
+    <label class="field"><span>Password</span><input type="password" id="password" autocomplete="current-password" required></label>
+    <p id="login-error" class="hidden" style="color:var(--bad)"></p>
+    <button class="btn" type="submit" style="width:100%">Sign in</button>
+  </form>
+</section>
+
+<div id="app" class="app hidden">
+  <div class="head">
+    <span class="script">Guest sheet</span>
+    <div class="tabs">
+      <button id="t-h" aria-pressed="true">Households</button>
+      <button id="t-p" aria-pressed="false">People</button>
+    </div>
+    <div class="tools">
+      <input type="search" id="q" placeholder="Search…">
+      <select id="f">
+        <option value="">Everyone</option>
+        <option value="invite">On the invite list</option>
+        <option value="reserve">Reserves</option>
+        <option value="x">Not inviting (x)</option>
+        <option value="notsent">Not sent</option>
+        <option value="sent">Sent, not opened</option>
+        <option value="opened">Opened, no reply</option>
+        <option value="replied">Replied</option>
+        <option value="check">Names to check</option>
+        <option value="ceremony">Ceremony</option>
+        <option value="garden">Garden party</option>
+      </select>
+      <button class="btn small" id="add">+ Household</button>
+      <button class="btn ghost small" id="export">Export CSV</button>
+      <button class="btn ghost small" id="reload">Refresh</button>
+      <a class="btn ghost small" href="admin.html">Card view</a>
+      <button class="btn ghost small" id="logout">Sign out</button>
+    </div>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="grid"><table id="table"></table></div>
+  <div class="help">Changes save as soon as you leave a cell. Enter / ↑ ↓ move between rows · Esc undoes the cell you're in · Change <b>#</b> to move a household in the list · Clear a guest's name to remove them · Click a heading to sort.</div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  const C = window.WEDDING_CONFIG;
+  const $ = (id) => document.getElementById(id);
+  const STORE = 'wedding-admin-session';
+  const MAX = C.maxGuests || 180;
+  let session = null, data = { invites: [], settings: {} }, tab = 'h', sort = null, place = {};
+
+  // ---------- auth + api (shared sign-in with the card view) ----------
+  const load = () => { try { return JSON.parse(localStorage.getItem(STORE)); } catch (e) { return null; } };
+  const save = (s) => { session = s; try { s ? localStorage.setItem(STORE, JSON.stringify(s)) : localStorage.removeItem(STORE); } catch (e) {} };
+  async function auth(grant, body) {
+    const r = await fetch(C.supabaseUrl + '/auth/v1/token?grant_type=' + grant, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', apikey: C.supabaseKey }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error_description || j.msg || 'Sign in failed');
+    return { access_token: j.access_token, refresh_token: j.refresh_token };
+  }
+  async function rpc(fn, body, retried) {
+    const r = await fetch(C.supabaseUrl + '/rest/v1/rpc/' + fn, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', apikey: C.supabaseKey, Authorization: 'Bearer ' + session.access_token },
+      body: JSON.stringify(body || {}) });
+    if (r.status === 401 && !retried && session.refresh_token) {
+      try { save(await auth('refresh_token', { refresh_token: session.refresh_token })); return rpc(fn, body, true); }
+      catch (e) { signedOut(); throw e; }
+    }
+    const text = await r.text();
+    if (!r.ok) { if (/Not authorised/.test(text)) signedOut('This account is not set up as an admin.'); throw new Error(text); }
+    return text ? JSON.parse(text) : null;
+  }
+  function signedOut(msg) {
+    save(null); $('app').classList.add('hidden'); $('login').classList.remove('hidden');
+    if (msg) { $('login-error').textContent = msg; $('login-error').classList.remove('hidden'); }
+  }
+  $('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault(); $('login-error').classList.add('hidden');
+    try { save(await auth('password', { email: $('email').value.trim(), password: $('password').value })); $('password').value = ''; start(); }
+    catch (err) { $('login-error').textContent = /invalid/i.test(err.message) ? 'Email or password not recognised.' : 'Sign in failed: ' + err.message; $('login-error').classList.remove('hidden'); }
+  });
+  $('logout').addEventListener('click', () => signedOut());
+
+  // ---------- helpers ----------
+  function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1800); }
+  function el(tag, attrs, ...kids) {
+    const e = document.createElement(tag);
+    for (const k in (attrs || {})) { const v = attrs[k]; if (v === undefined || v === null || v === false) continue;
+      if (k === 'class') e.className = v; else if (k === 'style') e.style.cssText = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v === true ? '' : v); }
+    kids.forEach((k) => k != null && e.append(k));
+    return e;
+  }
+  const link = (i) => C.siteUrl + '?g=' + i.code;
+  const live = (i) => i.priority !== 'x';
+  const prioNum = (p) => (/^[0-9.]+$/.test(p || '') ? parseFloat(p) : (p === 'x' ? 1000 : 999));
+  const byList = (a, b) => prioNum(a.priority) - prioNum(b.priority) || (a.list_order ?? 1e9) - (b.list_order ?? 1e9) || a.household_name.localeCompare(b.household_name);
+  const people = (i) => i.guests.filter((g) => !g.is_plus_one);
+  const plusOne = (i) => i.guests.find((g) => g.is_plus_one);
+  const seats = (i) => i.responded_at ? i.guests.filter((g) => g.attending).length : people(i).length + (i.plus_one_allowed ? 1 : 0);
+  const PLACEHOLDER = /\?|^(hubby|missus|wife|fella|partner|child|kid|bird|plus one)$/i;
+  const needsCheck = (i) => i.guests.some((g) => PLACEHOLDER.test(g.name.trim()) || (g.age_group !== 'adult' && g.age == null));
+  function allocate() {
+    place = {}; let used = 0, over = false, pos = 0;
+    data.invites.filter(live).sort(byList).forEach((i) => {
+      const n = seats(i);
+      if (!over && used + n <= MAX) { used += n; place[i.id] = { reserve: false }; } else { over = true; place[i.id] = { reserve: true, pos: ++pos }; }
+    });
+    return used;
+  }
+  function status(i) {
+    if (!live(i)) return ['x', 'Not inviting'];
+    if (place[i.id] && place[i.id].reserve) return ['reserve', 'Reserve ' + place[i.id].pos];
+    if (i.responded_at) return ['replied', 'Replied'];
+    if (i.first_opened_at) return ['opened', 'Opened'];
+    if (i.sent_at) return ['sent', 'Sent'];
+    return ['', 'Not sent'];
+  }
+  const ordered = () => data.invites.slice().sort(byList);
+  const posOf = (i) => ordered().findIndex((x) => x.id === i.id) + 1;
+
+  // ---------- load ----------
+  async function start() {
+    $('login').classList.add('hidden'); $('app').classList.remove('hidden');
+    try { data = await rpc('admin_data'); } catch (e) { if (session) toast('Could not load the guest list'); return; }
+    render();
+  }
+  $('reload').addEventListener('click', start);
+
+  // ---------- saving ----------
+  function payload(i) {
+    return { id: i.id, household_name: i.household_name, priority: i.priority || '', invite_type: i.invite_type, category: i.category || '',
+      plus_one_allowed: !!i.plus_one_allowed, notes: i.notes || '',
+      guests: i.guests.filter((g) => (g.name || '').trim()).map((g) => ({ id: g.id || '', is_plus_one: !!g.is_plus_one, name: g.name.trim(),
+        age_group: g.age_group || 'adult', age: g.age ?? '', attending: g.attending ?? null, dietary: g.dietary || '' })) };
+  }
+  async function saveInvite(i, td) {
+    try {
+      const saved = await rpc('admin_save_invite', { p: payload(i) });
+      const keep = { list_order: i.list_order };
+      Object.assign(i, saved, keep);
+      flash(td, true);
+    } catch (e) { flash(td, false); toast('Could not save: ' + (e.message || '').slice(0, 80)); }
+    refreshAfterSave(i);
+  }
+  async function saveOrder(i, td) {
+    const full = ordered();
+    full.forEach((x, n) => { x.list_order = n + 1; });
+    try { await rpc('admin_reorder', { p_ids: full.map((x) => x.id), p_id: i.id, p_priority: i.priority || '' }); flash(td, true); }
+    catch (e) { flash(td, false); toast('Could not save the new order'); }
+    render(i.id);
+  }
+  function flash(td, ok) { if (!td) return; td.classList.remove('ok', 'err'); void td.offsetWidth; td.classList.add(ok ? 'ok' : 'err'); }
+
+  // Re-draw the edited row(s) and the stats, keeping the cursor where it was.
+  function refreshAfterSave(i) {
+    const f = document.activeElement, fr = f && f.closest('tr'), fc = f && f.closest('td');
+    const key = fr && fr.dataset.key, col = fc ? [...fr.children].indexOf(fc) : -1;
+    render();
+    if (key) { const r = document.querySelector('tr[data-key="' + key + '"]'); const c = r && r.children[col]; const inp = c && c.querySelector('input,select,button'); if (inp) inp.focus({ preventScroll: true }); }
+  }
+
+  // ---------- cell builders ----------
+  function textCell(value, onSave, opts) {
+    opts = opts || {};
+    const inp = el('input', { type: opts.num ? 'number' : 'text', value: value ?? '', list: opts.list, disabled: opts.disabled, placeholder: opts.ph, min: opts.min, max: opts.max });
+    const td = el('td', { class: opts.cls, style: opts.w ? 'min-width:' + opts.w + 'px;max-width:' + opts.w + 'px' : '' }, inp);
+    inp.addEventListener('focus', () => { inp.dataset.orig = inp.value; });
+    inp.addEventListener('change', () => { if (inp.value !== inp.dataset.orig) onSave(inp.value.trim(), td); });
+    return td;
+  }
+  function selectCell(value, options, onSave, opts) {
+    opts = opts || {};
+    const s = el('select', { disabled: opts.disabled }, ...options.map(([v, l]) => el('option', { value: v }, l)));
+    s.value = value ?? '';
+    const td = el('td', { style: 'min-width:' + (opts.w || 110) + 'px' }, s);
+    s.addEventListener('change', () => onSave(s.value, td));
+    return td;
+  }
+  function checkCell(value, onSave) {
+    const c = el('input', { type: 'checkbox' }); c.checked = !!value;
+    const td = el('td', { class: 'c', style: 'min-width:46px' }, c);
+    c.addEventListener('change', () => onSave(c.checked, td));
+    return td;
+  }
+  const roCell = (content, opts) => el('td', { class: 'ro ' + ((opts && opts.cls) || ''), style: opts && opts.w ? 'min-width:' + opts.w + 'px' : '' }, content);
+  const yesNo = (v) => v === true ? 'true' : v === false ? 'false' : '';
+  const fromYesNo = (v) => v === 'true' ? true : v === 'false' ? false : null;
+
+  // ---------- filtering / sorting ----------
+  function matches(i) {
+    const q = $('q').value.trim().toLowerCase(), f = $('f').value, [st] = status(i);
+    if (q && !(i.household_name + ' ' + i.guests.map((g) => g.name).join(' ') + ' ' + (i.category || '') + ' ' + (i.notes || '')).toLowerCase().includes(q)) return false;
+    if (f === 'invite') return live(i) && !place[i.id].reserve;
+    if (f === 'reserve') return st === 'reserve';
+    if (f === 'x') return !live(i);
+    if (f === 'notsent') return st === '';
+    if (f === 'sent') return st === 'sent';
+    if (f === 'opened') return st === 'opened';
+    if (f === 'replied') return st === 'replied';
+    if (f === 'check') return needsCheck(i);
+    if (f === 'ceremony' || f === 'garden') return i.invite_type === f;
+    return true;
+  }
+  ['q', 'f'].forEach((id) => $(id).addEventListener('input', () => render()));
+  $('t-h').addEventListener('click', () => { tab = 'h'; sort = null; render(); });
+  $('t-p').addEventListener('click', () => { tab = 'p'; sort = null; render(); });
+
+  function header(cols) {
+    const tr = el('tr');
+    let left = 0;
+    cols.forEach((c) => {
+      const th = el('th', { class: (c.sticky ? 'sl ' : '') + (sort && sort.key === c.key ? 'sorted' + (sort.dir < 0 ? ' up' : '') : ''), style: (c.sticky ? 'left:' + left + 'px;' : '') + 'min-width:' + c.w + 'px', title: c.title || '' }, c.label);
+      if (c.sticky) left += c.w;
+      if (c.sort) th.addEventListener('click', () => { sort = sort && sort.key === c.key ? (sort.dir > 0 ? { key: c.key, dir: -1, fn: c.sort } : null) : { key: c.key, dir: 1, fn: c.sort }; render(); });
+      tr.append(th);
+    });
+    return el('thead', {}, tr);
+  }
+  function stick(tr, cols) {
+    let left = 0;
+    cols.forEach((c, n) => { if (!c.sticky) return; const td = tr.children[n]; td.classList.add('sl'); td.style.left = left + 'px'; left += c.w; });
+  }
+  function applySort(rows, get) {
+    if (!sort) return rows;
+    return rows.slice().sort((a, b) => { const x = sort.fn(get(a)), y = sort.fn(get(b)); return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x ?? '').localeCompare(String(y ?? ''))) * sort.dir; });
+  }
+
+  // ---------- households tab ----------
+  function renderHouseholds() {
+    const cats = [...new Set(data.invites.map((i) => i.category).filter(Boolean))].sort();
+    const dl = el('datalist', { id: 'cats' }, ...cats.map((c) => el('option', { value: c })));
+    const G = Math.max(5, ...data.invites.map((i) => people(i).length));
+    const order = ordered(); const pos = new Map(order.map((x, n) => [x.id, n + 1]));
+    const cols = [
+      { key: 'pos', label: '#', w: 56, sticky: true, title: 'Position in the list. Type a new number to move this household.', sort: (i) => pos.get(i.id) },
+      { key: 'pri', label: 'Round', w: 64, sticky: true, sort: (i) => prioNum(i.priority) },
+      { key: 'name', label: 'Household', w: 200, sticky: true, sort: (i) => i.household_name },
+      { key: 'type', label: 'Invite', w: 120, sort: (i) => i.invite_type },
+      { key: 'cat', label: 'Category', w: 170, sort: (i) => i.category || '' },
+      ...Array.from({ length: G }, (_, k) => ({ key: 'g' + k, label: 'Guest ' + (k + 1), w: 160, sort: (i) => (people(i)[k] || {}).name || '' })),
+      { key: 'poa', label: '+1?', w: 46, title: 'Allowed a plus one', sort: (i) => i.plus_one_allowed ? 0 : 1 },
+      { key: 'po', label: 'Plus one name', w: 160, sort: (i) => (plusOne(i) || {}).name || '' },
+      { key: 'seats', label: 'Places', w: 60, title: 'Places this household takes up (their reply, or everyone invited if no reply yet)', sort: seats },
+      { key: 'st', label: 'Status', w: 120, sort: (i) => status(i)[1] },
+      { key: 'sent', label: 'Sent', w: 46, sort: (i) => i.sent_at || '' },
+      { key: 'msg', label: 'Their message', w: 220, sort: (i) => i.message || '' },
+      { key: 'notes', label: 'Notes', w: 220, sort: (i) => i.notes || '' },
+      { key: 'link', label: 'Link', w: 120 },
+      { key: 'del', label: '', w: 60 }
+    ];
+    let rows = applySort(order, (i) => i).filter(matches);
+    const body = el('tbody');
+    let prevRound = null;
+    rows.forEach((i) => {
+      const [stc, stl] = status(i);
+      const tr = el('tr', { 'data-key': 'h-' + i.id, class: (!live(i) ? 'x ' : '') + (stc === 'reserve' ? 'reserve ' : '') + (!sort && prevRound !== null && prevRound !== (i.priority || '') ? 'group' : '') });
+      prevRound = i.priority || '';
+      const posTd = textCell(pos.get(i.id), (v, td) => {
+        const n = Math.max(1, Math.min(order.length, parseInt(v, 10) || 1));
+        const full = order.filter((x) => x.id !== i.id); full.splice(n - 1, 0, i);
+        const above = full[n - 2], below = full[n];
+        i.priority = (above || below || i).priority;
+        full.forEach((x, k) => { x.list_order = k + 1; });
+        saveOrder(i, td);
+      }, { num: true, min: 1, cls: 'first' });
+      tr.append(
+        posTd,
+        textCell(i.priority, (v, td) => { i.priority = v; i.list_order = 1e9; saveOrder(i, td); }),
+        textCell(i.household_name, (v, td) => { if (!v) { toast('Household needs a name'); render(); return; } i.household_name = v; saveInvite(i, td); }, { w: 200 }),
+        selectCell(i.invite_type, [['ceremony', 'Ceremony'], ['garden', 'Garden party']], (v, td) => { i.invite_type = v; saveInvite(i, td); }, { w: 120 }),
+        textCell(i.category, (v, td) => { i.category = v; saveInvite(i, td); }, { list: 'cats', w: 170 })
+      );
+      const ppl = people(i);
+      for (let k = 0; k < G; k++) {
+        const g = ppl[k];
+        const ph = k === ppl.length ? '+ add' : '';
+        tr.append(textCell(g ? g.name : '', (v, td) => {
+          if (g && !v) i.guests = i.guests.filter((x) => x !== g);
+          else if (g) g.name = v;
+          else if (v) i.guests.push({ name: v, is_plus_one: false, age_group: /\[c\]|child|kid/i.test(v) ? 'child' : 'adult', attending: null });
+          saveInvite(i, td);
+        }, { w: 160, ph, disabled: k > ppl.length }));
+      }
+      const po = plusOne(i);
+      tr.append(
+        checkCell(i.plus_one_allowed, (v, td) => { i.plus_one_allowed = v; if (!v) i.guests = i.guests.filter((x) => !x.is_plus_one); saveInvite(i, td); }),
+        textCell(po ? po.name : '', (v, td) => {
+          if (po && !v) i.guests = i.guests.filter((x) => x !== po);
+          else if (po) po.name = v;
+          else if (v) i.guests.push({ name: v, is_plus_one: true, age_group: 'adult', attending: true });
+          saveInvite(i, td);
+        }, { w: 160, disabled: !i.plus_one_allowed, ph: i.plus_one_allowed ? 'guest fills in' : '' }),
+        roCell(String(seats(i)), { cls: 'c' }),
+        roCell(el('span', { class: 'pill ' + stc }, stl)),
+        checkCell(!!i.sent_at, async (v, td) => { try { Object.assign(i, await rpc('admin_mark_sent', { p_id: i.id, p_sent: v })); flash(td, true); } catch (e) { flash(td, false); } refreshAfterSave(i); }),
+        roCell(i.message || '', { w: 220 }),
+        textCell(i.notes, (v, td) => { i.notes = v; saveInvite(i, td); }, { w: 220 }),
+        el('td', { style: 'min-width:120px' },
+          el('button', { class: 'ib', title: link(i), onclick: () => navigator.clipboard.writeText(link(i)).then(() => toast('Link copied')) }, 'Copy'),
+          el('a', { class: 'ib', href: link(i), target: '_blank', rel: 'noopener' }, 'Open')),
+        el('td', {}, el('button', { class: 'ib del', title: 'Delete household', onclick: async () => {
+          if (!confirm('Delete ' + i.household_name + ' and everyone in it?')) return;
+          try { await rpc('admin_delete_invite', { p_id: i.id }); data.invites = data.invites.filter((x) => x !== i); render(); toast('Deleted'); } catch (e) { toast('Could not delete'); }
+        } }, 'Delete'))
+      );
+      stick(tr, cols);
+      body.append(tr);
+    });
+    const t = $('table'); t.innerHTML = ''; t.append(header(cols), body); const old = $('cats'); if (old) old.remove(); document.body.append(dl);
+    return rows.length + ' households';
+  }
+
+  // ---------- people tab ----------
+  function renderPeople() {
+    const order = ordered(); const pos = new Map(order.map((x, n) => [x.id, n + 1]));
+    const cols = [
+      { key: 'pos', label: '#', w: 50, sticky: true, sort: (r) => pos.get(r.i.id) },
+      { key: 'hh', label: 'Household', w: 190, sticky: true, sort: (r) => r.i.household_name },
+      { key: 'name', label: 'Name', w: 190, sticky: true, sort: (r) => r.g.name },
+      { key: 'po', label: '+1', w: 40, sort: (r) => r.g.is_plus_one ? 0 : 1 },
+      { key: 'ag', label: 'Age group', w: 110, sort: (r) => ({ adult: 0, teen: 1, child: 2 })[r.g.age_group] },
+      { key: 'age', label: 'Age', w: 70, sort: (r) => r.g.age ?? -1 },
+      { key: 'rep', label: 'Reply', w: 140, sort: (r) => r.g.attending === true ? 0 : r.g.attending === false ? 2 : 1 },
+      { key: 'diet', label: 'Dietary needs', w: 260, sort: (r) => r.g.dietary || '' },
+      { key: 'type', label: 'Invite', w: 110, sort: (r) => r.i.invite_type },
+      { key: 'st', label: 'Status', w: 120, sort: (r) => status(r.i)[1] },
+      { key: 'msg', label: 'Their message', w: 260, sort: (r) => r.i.message || '' }
+    ];
+    let rows = order.filter(matches).flatMap((i) => i.guests.map((g) => ({ i, g })));
+    rows = applySort(rows, (r) => r);
+    const body = el('tbody');
+    rows.forEach(({ i, g }) => {
+      const [stc, stl] = status(i);
+      const tr = el('tr', { 'data-key': 'p-' + (g.id || i.id + g.name), class: (!live(i) ? 'x ' : '') + (stc === 'reserve' ? 'reserve' : '') });
+      tr.append(
+        roCell(String(pos.get(i.id)), { cls: 'first' }),
+        roCell(i.household_name),
+        textCell(g.name, (v, td) => { if (!v) { toast('Use Households to remove someone'); render(); return; } g.name = v; saveInvite(i, td); }),
+        roCell(g.is_plus_one ? '✓' : '', { cls: 'c' }),
+        selectCell(g.age_group, [['adult', 'Adult'], ['teen', 'Teen'], ['child', 'Child']], (v, td) => { g.age_group = v; if (v === 'adult') g.age = null; saveInvite(i, td); }),
+        textCell(g.age, (v, td) => { g.age = v === '' ? null : Math.max(0, Math.min(17, parseInt(v, 10) || 0)); saveInvite(i, td); }, { num: true, min: 0, max: 17, disabled: g.age_group === 'adult' }),
+        selectCell(yesNo(g.attending), [['', 'No reply'], ['true', 'Coming'], ['false', "Can't make it"]], (v, td) => { g.attending = fromYesNo(v); saveInvite(i, td); }, { w: 140 }),
+        textCell(g.dietary, (v, td) => { g.dietary = v; saveInvite(i, td); }, { w: 260 }),
+        roCell(i.invite_type === 'ceremony' ? 'Ceremony' : 'Garden'),
+        roCell(el('span', { class: 'pill ' + stc }, stl)),
+        roCell(i.message || '', { w: 260 })
+      );
+      stick(tr, cols);
+      body.append(tr);
+    });
+    const t = $('table'); t.innerHTML = ''; t.append(header(cols), body);
+    return rows.length + ' people';
+  }
+
+  // ---------- stats + render ----------
+  function render(focusId) {
+    const used = allocate();
+    const inv = data.invites.filter((i) => live(i) && !place[i.id].reserve);
+    const res = data.invites.filter((i) => live(i) && place[i.id].reserve).sort(byList);
+    const all = inv.flatMap((i) => i.guests), coming = all.filter((g) => g.attending === true);
+    const cer = inv.filter((i) => i.invite_type === 'ceremony').reduce((n, i) => n + seats(i), 0);
+    $('t-h').setAttribute('aria-pressed', String(tab === 'h')); $('t-p').setAttribute('aria-pressed', String(tab === 'p'));
+    const count = tab === 'h' ? renderHouseholds() : renderPeople();
+    const s = $('stats'); s.innerHTML = '';
+    [['Places', used + ' / ' + MAX], ['Ceremony', cer], ['Reserves', res.length + ' households (' + res.reduce((n, i) => n + seats(i), 0) + ')' + (res[0] ? ' · next ' + res[0].household_name : '')],
+     ['Replied', inv.filter((i) => i.responded_at).length + ' / ' + inv.length], ['Coming', coming.length + ' (' + coming.filter((g) => g.age_group === 'adult').length + ' adults · ' + coming.filter((g) => g.age_group === 'teen').length + ' teens · ' + coming.filter((g) => g.age_group === 'child').length + ' children)'],
+     ["Can't make it", all.filter((g) => g.attending === false).length], ['Dietary', coming.filter((g) => g.dietary).length], ['Showing', count]]
+      .forEach(([k, v]) => s.append(el('span', {}, k + ' ', el('b', {}, String(v)))));
+    if (focusId) { const r = document.querySelector('tr[data-key="h-' + focusId + '"]'); if (r) r.scrollIntoView({ block: 'center' }); }
+  }
+
+  // ---------- keyboard ----------
+  $('table').addEventListener('keydown', (e) => {
+    const t = e.target; if (!t.matches('input,select')) return;
+    if (e.key === 'Escape' && t.dataset.orig !== undefined) { t.value = t.dataset.orig; t.blur(); return; }
+    const vertical = (e.key === 'Enter') || ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && t.tagName === 'INPUT' && t.type === 'text');
+    if (!vertical) return;
+    e.preventDefault();
+    const td = t.closest('td'), tr = td.parentNode, col = [...tr.children].indexOf(td);
+    const next = (e.key === 'ArrowUp' || (e.key === 'Enter' && e.shiftKey)) ? tr.previousElementSibling : tr.nextElementSibling;
+    t.dispatchEvent(new Event('change'));
+    const target = next && next.children[col] && next.children[col].querySelector('input:not(:disabled),select');
+    if (target) setTimeout(() => { const r = document.querySelector('tr[data-key="' + next.dataset.key + '"]'); const c = r && r.children[col] && r.children[col].querySelector('input:not(:disabled),select'); (c || target).focus(); if (c && c.select) c.select(); }, 0);
+  });
+
+  // ---------- add / export ----------
+  $('add').addEventListener('click', async () => {
+    try {
+      const saved = await rpc('admin_save_invite', { p: { id: '', household_name: 'New household', priority: '', invite_type: 'garden', category: '', plus_one_allowed: false, notes: '', guests: [] } });
+      data.invites.push(saved); $('q').value = ''; $('f').value = ''; tab = 'h'; sort = null; render(saved.id);
+      const r = document.querySelector('tr[data-key="h-' + saved.id + '"]'); if (r) { const inp = r.children[2].querySelector('input'); inp.focus(); inp.select(); }
+    } catch (e) { toast('Could not add'); }
+  });
+  $('export').addEventListener('click', () => {
+    const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const lines = [['Position', 'Round', 'Household', 'Invite', 'Category', 'Status', 'Name', 'Plus one', 'Age group', 'Age', 'Reply', 'Dietary', 'Message', 'Notes', 'Link'].map(esc).join(',')];
+    allocate();
+    ordered().forEach((i, n) => i.guests.forEach((g) => lines.push([n + 1, i.priority, i.household_name, i.invite_type, i.category, status(i)[1], g.name, g.is_plus_one ? 'yes' : '', g.age_group, g.age,
+      g.attending == null ? 'No reply' : g.attending ? 'Coming' : "Can't make it", g.dietary, i.message, i.notes, link(i)].map(esc).join(','))));
+    const a = el('a', { href: URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv' })), download: 'wedding-guests.csv' });
+    document.body.append(a); a.click(); a.remove();
+  });
+
+  session = load();
+  if (session) start(); else $('login').classList.remove('hidden');
+})();
+</script>
+</body>
+</html>
