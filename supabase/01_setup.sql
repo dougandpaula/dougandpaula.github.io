@@ -17,6 +17,7 @@ alter table public.invites add column if not exists category text;
 alter table public.invites add column if not exists priority text;
 alter table public.invites add column if not exists notes text;
 alter table public.invites add column if not exists sent_at timestamptz;
+alter table public.invites add column if not exists list_order int;
 
 create table if not exists public.guests (
   id uuid primary key default gen_random_uuid(),
@@ -202,9 +203,10 @@ declare iid uuid := nullif(p->>'id', '')::uuid; g jsonb; keep uuid[] := '{}'; gi
 begin
   perform public.admin_check();
   if iid is null then
-    insert into public.invites (household_name, priority, invite_type, category, plus_one_allowed, notes)
+    insert into public.invites (household_name, priority, invite_type, category, plus_one_allowed, notes, list_order)
     values (p->>'household_name', nullif(p->>'priority', ''), coalesce(p->>'invite_type', 'garden'),
-            nullif(p->>'category', ''), coalesce((p->>'plus_one_allowed')::boolean, false), nullif(p->>'notes', ''))
+            nullif(p->>'category', ''), coalesce((p->>'plus_one_allowed')::boolean, false), nullif(p->>'notes', ''),
+            (select coalesce(max(list_order), 0) + 1 from public.invites))
     returning id into iid;
   else
     update public.invites set household_name = p->>'household_name', priority = nullif(p->>'priority', ''),
@@ -257,6 +259,17 @@ begin
     on conflict (key) do update set value = excluded.value;
   end loop;
 end $$;
+
+create or replace function public.admin_reorder(p_ids uuid[], p_id uuid, p_priority text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform public.admin_check();
+  update public.invites i set list_order = x.ord from unnest(p_ids) with ordinality as x(id, ord) where i.id = x.id;
+  update public.invites set priority = nullif(p_priority, '') where id = p_id;
+end $$;
+
+revoke all on function public.admin_reorder(uuid[], uuid, text) from public, anon, authenticated;
+grant execute on function public.admin_reorder(uuid[], uuid, text) to authenticated;
 
 revoke all on function public.admin_check(), public.admin_invite_json(uuid), public.admin_data(),
   public.admin_save_invite(jsonb), public.admin_delete_invite(uuid), public.admin_mark_sent(uuid, boolean),

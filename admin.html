@@ -260,7 +260,7 @@
     $('count').textContent = rows.length + ' households';
 
     const list = $('list'); list.innerHTML = '';
-    rows.forEach((i) => {
+    rows.forEach((i, k) => {
       const [cls, label] = status(i);
       const ppl = el('ul', { class: 'ppl' });
       i.guests.forEach((g) => {
@@ -280,7 +280,9 @@
           el('button', { class: 'btn small', onclick: () => openEdit(i) }, 'Edit'),
           el('button', { class: 'btn ghost small', onclick: () => share(i, 'copy') }, 'Copy link'),
           el('button', { class: 'btn ghost small', onclick: () => share(i, 'whatsapp') }, 'WhatsApp'),
-          el('button', { class: 'btn ghost small', onclick: () => markSent(i, !i.sent_at) }, i.sent_at ? 'Mark not sent' : 'Mark sent')));
+          el('button', { class: 'btn ghost small', onclick: () => markSent(i, !i.sent_at) }, i.sent_at ? 'Mark not sent' : 'Mark sent'),
+          so === 'priority' && k > 0 ? el('button', { class: 'btn ghost small', 'aria-label': 'Move up', onclick: () => move(i, rows[k - 1], 'before') }, '↑') : null,
+          so === 'priority' && k < rows.length - 1 ? el('button', { class: 'btn ghost small', 'aria-label': 'Move down', onclick: () => move(i, rows[k + 1], 'after') }, '↓') : null));
       list.append(card);
     });
   }
@@ -288,6 +290,17 @@
   $('reload').addEventListener('click', start);
 
   function replaceInvite(saved) { const k = data.invites.findIndex((x) => x.id === saved.id); if (k >= 0) data.invites[k] = saved; else data.invites.push(saved); render(); }
+  // Move a household next to its neighbour in the list (taking the neighbour's round), then save the whole order.
+  async function move(i, target, where) {
+    const full = data.invites.slice().sort(byList).filter((x) => x.id !== i.id);
+    const at = full.findIndex((x) => x.id === target.id) + (where === 'after' ? 1 : 0);
+    full.splice(at, 0, i);
+    const before = { priority: i.priority, orders: data.invites.map((x) => [x, x.list_order]) };
+    i.priority = target.priority; full.forEach((x, n) => { x.list_order = n + 1; });
+    render();
+    try { await rpc('admin_reorder', { p_ids: full.map((x) => x.id), p_id: i.id, p_priority: i.priority || '' }); }
+    catch (e) { i.priority = before.priority; before.orders.forEach(([x, o]) => { x.list_order = o; }); render(); toast('Could not save the new order'); }
+  }
   async function markSent(i, sent) { replaceInvite(await rpc('admin_mark_sent', { p_id: i.id, p_sent: sent })); }
   function share(i, how) {
     const msg = 'Hi ' + firstNames(i) + '! We’re getting married 🥂 Here’s your invitation, with all the details and where to RSVP:\n' + link(i) + '\n\nPaula & Doug x';
