@@ -37,7 +37,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .btn:disabled { opacity: .5; cursor: default; }
 .field { display: block; margin: 12px 0; }
 .field > span { display: block; font-size: 14px; color: var(--ink-soft); margin-bottom: 4px; }
-input[type=text], input[type=email], input[type=password], input[type=number], input[type=search], select, textarea {
+input[type=text], input[type=tel], input[type=email], input[type=password], input[type=number], input[type=search], select, textarea {
   width: 100%; min-height: 46px; padding: 10px 12px; border: 1.5px solid var(--line);
   border-radius: 10px; background: #fff; font-size: 16px;
 }

@@ -85,7 +85,7 @@
       <input type="search" id="f-search" placeholder="Search names…">
       <select id="f-priority"></select>
       <select id="f-type"><option value="">All invites</option><option value="ceremony">Ceremony</option><option value="garden">Garden party</option></select>
-      <select id="f-status"><option value="">Any status</option><option value="notsent">Not sent</option><option value="sent">Sent, not opened</option><option value="opened">Opened, no reply</option><option value="replied">Replied</option><option value="check">Names to check</option><option value="invite">On the invite list</option><option value="reserve">Reserves</option></select>
+      <select id="f-status"><option value="">Any status</option><option value="notsent">Not sent</option><option value="sent">Sent, not opened</option><option value="opened">Opened, no reply</option><option value="replied">Replied</option><option value="check">Names to check</option><option value="invite">On the invite list</option><option value="Doug">Doug sends</option><option value="Paula">Paula sends</option><option value="nonumber">No phone numbers</option><option value="reserve">Reserves</option></select>
       <select id="f-sort"><option value="priority">Sort: priority</option><option value="name">Sort: name</option><option value="recent">Sort: latest reply</option></select>
     </div>
     <div class="bar">
@@ -106,7 +106,10 @@
       <label class="field"><span>Priority / round</span><input type="text" id="m-priority"></label>
       <label class="field"><span>Invite</span><select id="m-type"><option value="ceremony">Ceremony (3pm)</option><option value="garden">Garden party (3.30pm)</option></select></label>
     </div>
-    <label class="field"><span>Category</span><input type="text" id="m-category" list="cats"></label>
+    <div class="grid2">
+      <label class="field"><span>Category</span><input type="text" id="m-category" list="cats"></label>
+      <label class="field"><span>Who sends it</span><select id="m-sentby"><option value="">–</option><option>Doug</option><option>Paula</option></select></label>
+    </div>
     <datalist id="cats"></datalist>
     <label class="check-row"><input type="checkbox" id="m-plusone"> Allowed a plus one</label>
     <label class="field"><span>Notes (only you see this)</span><textarea id="m-notes"></textarea></label>
@@ -179,6 +182,10 @@
     return e;
   }
   const link = (i) => C.siteUrl + '?g=' + i.code;
+  const waNum = (p) => { let d = String(p || '').replace(/[^\d+]/g, ''); if (d.startsWith('+')) d = d.slice(1); else if (d.startsWith('00')) d = d.slice(2); else if (d.startsWith('0')) d = '44' + d.slice(1); return d.length >= 10 ? d : ''; };
+  const firstOf = (n) => String(n || '').replace(/\s*\?\s*$/, '').split(' ')[0];
+  const inviteMsg = (first, i) => 'Hi ' + first + '! We\u2019re getting married \ud83e\udd42 Here\u2019s your invitation, with all the details and where to RSVP:\n' + C.siteUrl + '?g=' + i.code + '\n\nPaula & Doug x';
+  const contacts = (i) => i.guests.filter((g) => !g.is_plus_one && waNum(g.phone));
   const live = (i) => i.priority !== 'x';
   const PLACEHOLDER = /\?|^(hubby|missus|wife|fella|partner|child|kid|bird|plus one)$/i;
   const needsCheck = (i) => i.guests.some((g) => PLACEHOLDER.test(g.name.trim()) || (g.age_group !== 'adult' && g.age == null));
@@ -250,6 +257,8 @@
       if (fs === 'opened' && st !== 'opened') return false;
       if (fs === 'replied' && st !== 'replied') return false;
       if (fs === 'check' && !needsCheck(i)) return false;
+      if ((fs === 'Doug' || fs === 'Paula') && i.sent_by !== fs) return false;
+      if (fs === 'nonumber' && contacts(i).length) return false;
       if (fs === 'invite' && (!live(i) || place[i.id].reserve)) return false;
       if (fs === 'reserve' && !(live(i) && place[i.id].reserve)) return false;
       if (q && !(i.household_name + ' ' + i.guests.map((g) => g.name).join(' ') + ' ' + (i.category || '')).toLowerCase().includes(q)) return false;
@@ -273,14 +282,16 @@
       if (i.plus_one_allowed && !i.guests.some((g) => g.is_plus_one)) ppl.append(el('li', { class: 'muted' }, '+ plus one allowed'));
       const card = el('div', { class: 'hh' },
         el('h3', {}, el('span', {}, i.household_name), el('span', { style: 'display:flex;gap:4px' }, live(i) && place[i.id].reserve ? el('span', { class: 'badge reserve' }, 'Reserve ' + place[i.id].pos) : null, needsCheck(i) ? el('span', { class: 'badge check' }, 'Check') : null, el('span', { class: 'badge ' + cls }, label))),
-        el('div', { class: 'meta' }, 'Round ' + (i.priority || '–') + ' · ' + (i.invite_type === 'ceremony' ? 'Ceremony' : 'Garden party') + (i.category ? ' · ' + i.category : '')),
+        el('div', { class: 'meta' }, 'Round ' + (i.priority || '–') + ' · ' + (i.invite_type === 'ceremony' ? 'Ceremony' : 'Garden party') + (i.category ? ' · ' + i.category : '') + (i.sent_by ? ' · ' + i.sent_by + ' sends' : '')),
         ppl,
         i.message ? el('p', { style: 'margin:0 0 10px;font-style:italic' }, '“' + i.message + '”') : null,
         i.notes ? el('p', { class: 'muted', style: 'margin:0 0 10px;font-size:14px' }, 'Note: ' + i.notes) : null,
         el('div', { class: 'acts' },
           el('button', { class: 'btn small', onclick: () => openEdit(i) }, 'Edit'),
           el('button', { class: 'btn ghost small', onclick: () => share(i, 'copy') }, 'Copy link'),
-          el('button', { class: 'btn ghost small', onclick: () => share(i, 'whatsapp') }, 'WhatsApp'),
+          ...(contacts(i).length
+            ? contacts(i).map((g) => el('button', { class: 'btn small', onclick: () => sendTo(i, g) }, 'WhatsApp ' + firstOf(g.name)))
+            : [el('button', { class: 'btn ghost small', onclick: () => share(i, 'whatsapp') }, 'WhatsApp')]),
           el('button', { class: 'btn ghost small', onclick: () => markSent(i, !i.sent_at) }, i.sent_at ? 'Mark not sent' : 'Mark sent'),
           so === 'priority' && k > 0 ? el('button', { class: 'btn ghost small', 'aria-label': 'Move up', onclick: () => move(i, rows[k - 1], 'before') }, '↑') : null,
           so === 'priority' && k < rows.length - 1 ? el('button', { class: 'btn ghost small', 'aria-label': 'Move down', onclick: () => move(i, rows[k + 1], 'after') }, '↓') : null));
@@ -303,6 +314,10 @@
     catch (e) { i.priority = before.priority; before.orders.forEach(([x, o]) => { x.list_order = o; }); render(); toast('Could not save the new order'); }
   }
   async function markSent(i, sent) { replaceInvite(await rpc('admin_mark_sent', { p_id: i.id, p_sent: sent })); }
+  function sendTo(i, g) {
+    window.open('https://wa.me/' + waNum(g.phone) + '?text=' + encodeURIComponent(inviteMsg(firstOf(g.name), i)), '_blank', 'noopener');
+    if (!i.sent_at) markSent(i, true).catch(() => {});
+  }
   function share(i, how) {
     const msg = 'Hi ' + firstNames(i) + '! We’re getting married 🥂 Here’s your invitation, with all the details and where to RSVP:\n' + link(i) + '\n\nPaula & Doug x';
     if (how === 'copy') { navigator.clipboard.writeText(msg).then(() => toast('Message and link copied')); }
@@ -325,7 +340,8 @@
         el('label', { class: 'field' }, el('span', {}, 'Age group'), grp),
         el('label', { class: 'field' }, el('span', {}, 'Age (under 18s)'), age),
         el('label', { class: 'field' }, el('span', {}, 'Reply'), att),
-        el('label', { class: 'field' }, el('span', {}, 'Dietary'), diet)),
+        el('label', { class: 'field' }, el('span', {}, 'Dietary'), diet),
+        g.is_plus_one ? null : el('label', { class: 'field', style: 'grid-column:1 / -1' }, el('span', {}, 'Mobile (for WhatsApp)'), el('input', { type: 'tel', value: g.phone || '', 'data-k': 'phone' }))),
       el('button', { type: 'button', class: 'btn ghost small', onclick: () => row.remove() }, 'Remove'));
     return row;
   }
@@ -333,7 +349,7 @@
     editing = i || { id: '', household_name: '', priority: '', invite_type: 'garden', category: '', plus_one_allowed: false, notes: '', guests: [] };
     $('m-title').textContent = i ? 'Edit household' : 'Add household';
     $('m-name').value = editing.household_name; $('m-priority').value = editing.priority || ''; $('m-type').value = editing.invite_type;
-    $('m-category').value = editing.category || ''; $('m-plusone').checked = !!editing.plus_one_allowed; $('m-notes').value = editing.notes || '';
+    $('m-category').value = editing.category || ''; $('m-plusone').checked = !!editing.plus_one_allowed; $('m-notes').value = editing.notes || ''; $('m-sentby').value = editing.sent_by || '';
     $('m-guests').innerHTML = ''; (editing.guests.length ? editing.guests : [{}]).forEach((g) => $('m-guests').append(guestRow(g)));
     $('m-link').textContent = i ? 'Link: ' + link(i) : '';
     $('m-delete').classList.toggle('hidden', !i);
@@ -344,9 +360,9 @@
   $('m-cancel').addEventListener('click', () => $('modal').classList.add('hidden'));
   $('m-save').addEventListener('click', async () => {
     const guests = [...$('m-guests').children].map((r) => {
-      const v = (k) => r.querySelector('[data-k=' + k + ']').value.trim();
+      const v = (k) => { const e = r.querySelector('[data-k=' + k + ']'); return e ? e.value.trim() : ''; };
       return { id: r.dataset.id, is_plus_one: !!r.dataset.po, name: v('name'), age_group: v('age_group'), age: v('age'),
-               attending: v('attending') === '' ? null : v('attending') === 'true', dietary: v('dietary') };
+               attending: v('attending') === '' ? null : v('attending') === 'true', dietary: v('dietary'), phone: v('phone') };
     }).filter((g) => g.name);
     const name = $('m-name').value.trim() || (guests[0] && guests[0].name);
     if (!name) { toast('Add at least one name'); return; }
@@ -354,7 +370,7 @@
     try {
       replaceInvite(await rpc('admin_save_invite', { p: { id: editing.id, household_name: name, priority: $('m-priority').value.trim(),
         invite_type: $('m-type').value, category: $('m-category').value.trim(), plus_one_allowed: $('m-plusone').checked,
-        notes: $('m-notes').value.trim(), guests } }));
+        notes: $('m-notes').value.trim(), sent_by: $('m-sentby').value, guests } }));
       $('modal').classList.add('hidden'); toast('Saved');
     } catch (e) { toast('Could not save'); } finally { btn.disabled = false; }
   });
@@ -374,8 +390,8 @@
   // ---------- export ----------
   $('export').addEventListener('click', () => {
     const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-    const lines = [['Round', 'Household', 'Invite', 'Category', 'Name', 'Plus one', 'Age group', 'Age', 'Reply', 'Dietary', 'Message', 'Replied at', 'Link'].map(esc).join(',')];
-    data.invites.forEach((i) => i.guests.forEach((g) => lines.push([i.priority, i.household_name, i.invite_type, i.category, g.name, g.is_plus_one ? 'yes' : '', g.age_group, g.age,
+    const lines = [['Round', 'Household', 'Invite', 'Category', 'Sends', 'Name', 'Mobile', 'Plus one', 'Age group', 'Age', 'Reply', 'Dietary', 'Message', 'Replied at', 'Link'].map(esc).join(',')];
+    data.invites.forEach((i) => i.guests.forEach((g) => lines.push([i.priority, i.household_name, i.invite_type, i.category, i.sent_by, g.name, g.phone, g.is_plus_one ? 'yes' : '', g.age_group, g.age,
       g.attending == null ? 'No reply' : g.attending ? 'Coming' : "Can't make it", g.dietary, i.message, i.responded_at, link(i)].map(esc).join(','))));
     const a = el('a', { href: URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv' })), download: 'wedding-guests.csv' });
     document.body.append(a); a.click(); a.remove();

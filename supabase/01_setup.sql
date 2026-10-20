@@ -18,6 +18,7 @@ alter table public.invites add column if not exists priority text;
 alter table public.invites add column if not exists notes text;
 alter table public.invites add column if not exists sent_at timestamptz;
 alter table public.invites add column if not exists list_order int;
+alter table public.invites add column if not exists sent_by text;
 
 create table if not exists public.guests (
   id uuid primary key default gen_random_uuid(),
@@ -31,6 +32,7 @@ create table if not exists public.guests (
 );
 alter table public.guests add column if not exists age_group text not null default 'adult';
 alter table public.guests add column if not exists age int;
+alter table public.guests add column if not exists phone text;
 alter table public.guests drop constraint if exists guests_age_group_check;
 alter table public.guests add constraint guests_age_group_check check (age_group in ('adult','teen','child'));
 
@@ -203,29 +205,33 @@ declare iid uuid := nullif(p->>'id', '')::uuid; g jsonb; keep uuid[] := '{}'; gi
 begin
   perform public.admin_check();
   if iid is null then
-    insert into public.invites (household_name, priority, invite_type, category, plus_one_allowed, notes, list_order)
+    insert into public.invites (household_name, priority, invite_type, category, plus_one_allowed, notes, sent_by, list_order)
     values (p->>'household_name', nullif(p->>'priority', ''), coalesce(p->>'invite_type', 'garden'),
             nullif(p->>'category', ''), coalesce((p->>'plus_one_allowed')::boolean, false), nullif(p->>'notes', ''),
+            nullif(p->>'sent_by', ''),
             (select coalesce(max(list_order), 0) + 1 from public.invites))
     returning id into iid;
   else
     update public.invites set household_name = p->>'household_name', priority = nullif(p->>'priority', ''),
            invite_type = p->>'invite_type', category = nullif(p->>'category', ''),
-           plus_one_allowed = (p->>'plus_one_allowed')::boolean, notes = nullif(p->>'notes', '')
+           plus_one_allowed = (p->>'plus_one_allowed')::boolean, notes = nullif(p->>'notes', ''),
+           sent_by = nullif(p->>'sent_by', '')
      where id = iid;
   end if;
   for g in select * from jsonb_array_elements(coalesce(p->'guests', '[]'::jsonb)) loop
     n := n + 1;
     gid := nullif(g->>'id', '')::uuid;
     if gid is null then
-      insert into public.guests (invite_id, name, is_plus_one, age_group, age, attending, dietary, sort_order)
+      insert into public.guests (invite_id, name, is_plus_one, age_group, age, attending, dietary, phone, sort_order)
       values (iid, g->>'name', coalesce((g->>'is_plus_one')::boolean, false), coalesce(g->>'age_group', 'adult'),
-              nullif(g->>'age', '')::int, (g->>'attending')::boolean, nullif(g->>'dietary', ''), case when (g->>'is_plus_one')::boolean then 99 else n end)
+              nullif(g->>'age', '')::int, (g->>'attending')::boolean, nullif(g->>'dietary', ''), nullif(g->>'phone', ''),
+              case when (g->>'is_plus_one')::boolean then 99 else n end)
       returning id into gid;
     else
       update public.guests set name = g->>'name', age_group = coalesce(g->>'age_group', 'adult'),
              age = nullif(g->>'age', '')::int, attending = (g->>'attending')::boolean,
-             dietary = nullif(g->>'dietary', ''), sort_order = case when is_plus_one then 99 else n end
+             dietary = nullif(g->>'dietary', ''), phone = nullif(g->>'phone', ''),
+             sort_order = case when is_plus_one then 99 else n end
        where id = gid and invite_id = iid;
     end if;
     keep := keep || gid;

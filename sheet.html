@@ -88,6 +88,10 @@
         <option value="check">Names to check</option>
         <option value="ceremony">Ceremony</option>
         <option value="garden">Garden party</option>
+        <option value="Doug">Doug sends</option>
+        <option value="Paula">Paula sends</option>
+        <option value="nosender">No sender chosen</option>
+        <option value="nonumber">No phone numbers</option>
       </select>
       <button class="btn small" id="add">+ Household</button>
       <button class="btn ghost small" id="export">Export CSV</button>
@@ -154,6 +158,10 @@
     return e;
   }
   const link = (i) => C.siteUrl + '?g=' + i.code;
+  const waNum = (p) => { let d = String(p || '').replace(/[^\d+]/g, ''); if (d.startsWith('+')) d = d.slice(1); else if (d.startsWith('00')) d = d.slice(2); else if (d.startsWith('0')) d = '44' + d.slice(1); return d.length >= 10 ? d : ''; };
+  const firstOf = (n) => String(n || '').replace(/\s*\?\s*$/, '').split(' ')[0];
+  const inviteMsg = (first, i) => 'Hi ' + first + '! We\u2019re getting married \ud83e\udd42 Here\u2019s your invitation, with all the details and where to RSVP:\n' + C.siteUrl + '?g=' + i.code + '\n\nPaula & Doug x';
+  const contacts = (i) => i.guests.filter((g) => !g.is_plus_one && waNum(g.phone));
   const live = (i) => i.priority !== 'x';
   const prioNum = (p) => (/^[0-9.]+$/.test(p || '') ? parseFloat(p) : (p === 'x' ? 1000 : 999));
   const byList = (a, b) => prioNum(a.priority) - prioNum(b.priority) || (a.list_order ?? 1e9) - (b.list_order ?? 1e9) || a.household_name.localeCompare(b.household_name);
@@ -192,9 +200,9 @@
   // ---------- saving ----------
   function payload(i) {
     return { id: i.id, household_name: i.household_name, priority: i.priority || '', invite_type: i.invite_type, category: i.category || '',
-      plus_one_allowed: !!i.plus_one_allowed, notes: i.notes || '',
+      plus_one_allowed: !!i.plus_one_allowed, notes: i.notes || '', sent_by: i.sent_by || '',
       guests: i.guests.filter((g) => (g.name || '').trim()).map((g) => ({ id: g.id || '', is_plus_one: !!g.is_plus_one, name: g.name.trim(),
-        age_group: g.age_group || 'adult', age: g.age ?? '', attending: g.attending ?? null, dietary: g.dietary || '' })) };
+        age_group: g.age_group || 'adult', age: g.age ?? '', attending: g.attending ?? null, dietary: g.dietary || '', phone: g.phone || '' })) };
   }
   async function saveInvite(i, td) {
     try {
@@ -220,6 +228,14 @@
     const key = fr && fr.dataset.key, col = fc ? [...fr.children].indexOf(fc) : -1;
     render();
     if (key) { const r = document.querySelector('tr[data-key="' + key + '"]'); const c = r && r.children[col]; const inp = c && c.querySelector('input,select,button'); if (inp) inp.focus({ preventScroll: true }); }
+  }
+
+  // ---------- WhatsApp ----------
+  function waButtons(i, list) {
+    return list.map((g) => el('button', { class: 'ib', title: g.phone, onclick: async (e) => {
+      window.open('https://wa.me/' + waNum(g.phone) + '?text=' + encodeURIComponent(inviteMsg(firstOf(g.name), i)), '_blank', 'noopener');
+      if (!i.sent_at) { try { Object.assign(i, await rpc('admin_mark_sent', { p_id: i.id, p_sent: true })); refreshAfterSave(i); } catch (err) {} }
+    } }, '\u{1F4AC} ' + firstOf(g.name)));
   }
 
   // ---------- cell builders ----------
@@ -262,6 +278,9 @@
     if (f === 'replied') return st === 'replied';
     if (f === 'check') return needsCheck(i);
     if (f === 'ceremony' || f === 'garden') return i.invite_type === f;
+    if (f === 'Doug' || f === 'Paula') return i.sent_by === f;
+    if (f === 'nosender') return !i.sent_by;
+    if (f === 'nonumber') return !contacts(i).length;
     return true;
   }
   ['q', 'f'].forEach((id) => $(id).addEventListener('input', () => render()));
@@ -300,12 +319,14 @@
       { key: 'name', label: 'Household', w: 200, sticky: true, sort: (i) => i.household_name },
       { key: 'type', label: 'Invite', w: 120, sort: (i) => i.invite_type },
       { key: 'cat', label: 'Category', w: 170, sort: (i) => i.category || '' },
+      { key: 'by', label: 'Sends', w: 96, title: 'Who sends this invitation', sort: (i) => i.sent_by || '~' },
       ...Array.from({ length: G }, (_, k) => ({ key: 'g' + k, label: 'Guest ' + (k + 1), w: 160, sort: (i) => (people(i)[k] || {}).name || '' })),
       { key: 'poa', label: '+1?', w: 46, title: 'Allowed a plus one', sort: (i) => i.plus_one_allowed ? 0 : 1 },
       { key: 'po', label: 'Plus one name', w: 160, sort: (i) => (plusOne(i) || {}).name || '' },
       { key: 'seats', label: 'Places', w: 60, title: 'Places this household takes up (their reply, or everyone invited if no reply yet)', sort: seats },
       { key: 'st', label: 'Status', w: 120, sort: (i) => status(i)[1] },
       { key: 'sent', label: 'Sent', w: 46, sort: (i) => i.sent_at || '' },
+      { key: 'wa', label: 'WhatsApp', w: 200, title: 'Opens WhatsApp to that person with the invitation ready to send', sort: (i) => contacts(i).length },
       { key: 'msg', label: 'Their message', w: 220, sort: (i) => i.message || '' },
       { key: 'notes', label: 'Notes', w: 220, sort: (i) => i.notes || '' },
       { key: 'link', label: 'Link', w: 120 },
@@ -331,7 +352,8 @@
         textCell(i.priority, (v, td) => { i.priority = v; i.list_order = 1e9; saveOrder(i, td); }),
         textCell(i.household_name, (v, td) => { if (!v) { toast('Household needs a name'); render(); return; } i.household_name = v; saveInvite(i, td); }, { w: 200 }),
         selectCell(i.invite_type, [['ceremony', 'Ceremony'], ['garden', 'Garden party']], (v, td) => { i.invite_type = v; saveInvite(i, td); }, { w: 120 }),
-        textCell(i.category, (v, td) => { i.category = v; saveInvite(i, td); }, { list: 'cats', w: 170 })
+        textCell(i.category, (v, td) => { i.category = v; saveInvite(i, td); }, { list: 'cats', w: 170 }),
+        selectCell(i.sent_by || '', [['', '–'], ['Doug', 'Doug'], ['Paula', 'Paula']], (v, td) => { i.sent_by = v; saveInvite(i, td); }, { w: 96 })
       );
       const ppl = people(i);
       for (let k = 0; k < G; k++) {
@@ -356,6 +378,7 @@
         roCell(String(seats(i)), { cls: 'c' }),
         roCell(el('span', { class: 'pill ' + stc }, stl)),
         checkCell(!!i.sent_at, async (v, td) => { try { Object.assign(i, await rpc('admin_mark_sent', { p_id: i.id, p_sent: v })); flash(td, true); } catch (e) { flash(td, false); } refreshAfterSave(i); }),
+        contacts(i).length ? el('td', { style: 'min-width:200px' }, ...waButtons(i, contacts(i))) : roCell('no numbers', { w: 200 }),
         roCell(i.message || '', { w: 220 }),
         textCell(i.notes, (v, td) => { i.notes = v; saveInvite(i, td); }, { w: 220 }),
         el('td', { style: 'min-width:120px' },
@@ -380,12 +403,15 @@
       { key: 'pos', label: '#', w: 50, sticky: true, sort: (r) => pos.get(r.i.id) },
       { key: 'hh', label: 'Household', w: 190, sticky: true, sort: (r) => r.i.household_name },
       { key: 'name', label: 'Name', w: 190, sticky: true, sort: (r) => r.g.name },
+      { key: 'phone', label: 'Mobile', w: 150, sort: (r) => r.g.phone || '~' },
+      { key: 'wa', label: '', w: 110 },
       { key: 'po', label: '+1', w: 40, sort: (r) => r.g.is_plus_one ? 0 : 1 },
       { key: 'ag', label: 'Age group', w: 110, sort: (r) => ({ adult: 0, teen: 1, child: 2 })[r.g.age_group] },
       { key: 'age', label: 'Age', w: 70, sort: (r) => r.g.age ?? -1 },
       { key: 'rep', label: 'Reply', w: 140, sort: (r) => r.g.attending === true ? 0 : r.g.attending === false ? 2 : 1 },
       { key: 'diet', label: 'Dietary needs', w: 260, sort: (r) => r.g.dietary || '' },
       { key: 'type', label: 'Invite', w: 110, sort: (r) => r.i.invite_type },
+      { key: 'by', label: 'Sends', w: 70, sort: (r) => r.i.sent_by || '~' },
       { key: 'st', label: 'Status', w: 120, sort: (r) => status(r.i)[1] },
       { key: 'msg', label: 'Their message', w: 260, sort: (r) => r.i.message || '' }
     ];
@@ -399,12 +425,15 @@
         roCell(String(pos.get(i.id)), { cls: 'first' }),
         roCell(i.household_name),
         textCell(g.name, (v, td) => { if (!v) { toast('Use Households to remove someone'); render(); return; } g.name = v; saveInvite(i, td); }),
+        textCell(g.phone, (v, td) => { g.phone = v; saveInvite(i, td); }, { w: 150, disabled: g.is_plus_one, ph: g.is_plus_one ? '' : '07…' }),
+        waNum(g.phone) && !g.is_plus_one ? el('td', { style: 'min-width:110px' }, ...waButtons(i, [g])) : roCell('', { w: 110 }),
         roCell(g.is_plus_one ? '✓' : '', { cls: 'c' }),
         selectCell(g.age_group, [['adult', 'Adult'], ['teen', 'Teen'], ['child', 'Child']], (v, td) => { g.age_group = v; if (v === 'adult') g.age = null; saveInvite(i, td); }),
         textCell(g.age, (v, td) => { g.age = v === '' ? null : Math.max(0, Math.min(17, parseInt(v, 10) || 0)); saveInvite(i, td); }, { num: true, min: 0, max: 17, disabled: g.age_group === 'adult' }),
         selectCell(yesNo(g.attending), [['', 'No reply'], ['true', 'Coming'], ['false', "Can't make it"]], (v, td) => { g.attending = fromYesNo(v); saveInvite(i, td); }, { w: 140 }),
         textCell(g.dietary, (v, td) => { g.dietary = v; saveInvite(i, td); }, { w: 260 }),
         roCell(i.invite_type === 'ceremony' ? 'Ceremony' : 'Garden'),
+        roCell(i.sent_by || ''),
         roCell(el('span', { class: 'pill ' + stc }, stl)),
         roCell(i.message || '', { w: 260 })
       );
@@ -456,9 +485,9 @@
   });
   $('export').addEventListener('click', () => {
     const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-    const lines = [['Position', 'Round', 'Household', 'Invite', 'Category', 'Status', 'Name', 'Plus one', 'Age group', 'Age', 'Reply', 'Dietary', 'Message', 'Notes', 'Link'].map(esc).join(',')];
+    const lines = [['Position', 'Round', 'Household', 'Invite', 'Category', 'Status', 'Sends', 'Name', 'Mobile', 'Plus one', 'Age group', 'Age', 'Reply', 'Dietary', 'Message', 'Notes', 'Link'].map(esc).join(',')];
     allocate();
-    ordered().forEach((i, n) => i.guests.forEach((g) => lines.push([n + 1, i.priority, i.household_name, i.invite_type, i.category, status(i)[1], g.name, g.is_plus_one ? 'yes' : '', g.age_group, g.age,
+    ordered().forEach((i, n) => i.guests.forEach((g) => lines.push([n + 1, i.priority, i.household_name, i.invite_type, i.category, status(i)[1], i.sent_by, g.name, g.phone, g.is_plus_one ? 'yes' : '', g.age_group, g.age,
       g.attending == null ? 'No reply' : g.attending ? 'Coming' : "Can't make it", g.dietary, i.message, i.notes, link(i)].map(esc).join(','))));
     const a = el('a', { href: URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv' })), download: 'wedding-guests.csv' });
     document.body.append(a); a.click(); a.remove();
