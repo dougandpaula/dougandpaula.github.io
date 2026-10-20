@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Paula &amp; Doug · 7th August 2027</title>
+<meta property="og:title" content="You're invited · Paula & Doug">
+<meta property="og:description" content="Saturday 7th August 2027 · Friern Manor, Essex">
+<meta property="og:image" content="https://dougandpaula.github.io/img/preview.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Great+Vibes&family=Josefin+Sans:wght@400;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  header { text-align: center; padding: 36px 0 8px; }
+  header .script { font-size: 44px; line-height: 1.1; margin: 6px 0 0; }
+  .names { font-family: var(--display); font-size: 40px; letter-spacing: .02em; margin: 4px 0; }
+  .card { margin: 20px 0; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 18px rgba(0,0,0,.12); background: #fff; cursor: zoom-in; }
+  .hint { text-align: center; font-size: 14px; }
+  .facts { display: grid; gap: 14px; margin: 28px 0; }
+  .fact { background: var(--paper-2); border-radius: 14px; padding: 16px 18px; }
+  .fact .caps { color: var(--ink-soft); }
+  .fact p { margin: 4px 0 0; font-size: 18px; }
+  .fact .actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+  h2 { font-family: var(--script); font-weight: 400; font-size: 44px; text-align: center; margin: 8px 0 4px; }
+  .sub { text-align: center; margin: 0 0 18px; }
+  .person { border: 1.5px solid var(--line); border-radius: 14px; padding: 14px 16px; margin: 12px 0; background: #fff; }
+  .person .who { font-weight: 600; font-size: 18px; }
+  .choice { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .choice button { min-height: 48px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--paper); cursor: pointer; font-size: 16px; }
+  .choice button[aria-pressed=true].yes { background: var(--good); border-color: var(--good); color: #fff; }
+  .choice button[aria-pressed=true].no { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .gift { background: var(--ink); color: var(--paper); border-radius: 18px; padding: 24px 20px; text-align: center; margin: 32px 0; }
+  .gift h2 { color: var(--paper); }
+  .gift .neon { font-family: var(--script); font-size: 40px; text-shadow: 0 0 12px rgba(255,255,255,.35); margin: 0; }
+  .bank { display: grid; gap: 10px; margin-top: 16px; text-align: left; }
+  .bank div { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: rgba(255,255,255,.08); border-radius: 10px; padding: 10px 12px; }
+  .bank b { font-family: var(--caps); font-weight: 400; letter-spacing: .1em; font-size: 12px; text-transform: uppercase; opacity: .75; display: block; }
+  .bank .btn { border-color: var(--paper); background: transparent; color: var(--paper); }
+  .done { text-align: center; background: var(--paper-2); border-radius: 18px; padding: 24px 18px; }
+  .done ul { list-style: none; padding: 0; margin: 12px 0 18px; }
+  .center { text-align: center; }
+  .notice { text-align: center; padding: 80px 0; }
+  footer { text-align: center; padding: 32px 0 48px; font-size: 15px; }
+  .zoom { position: fixed; inset: 0; background: rgba(20,20,20,.95); z-index: 40; overflow: auto; display: flex; align-items: flex-start; justify-content: center; }
+  .zoom img { width: 100%; max-width: 900px; }
+  .zoom button { position: fixed; top: 12px; right: 12px; min-height: 44px; min-width: 44px; border-radius: 999px; border: 0; background: #fff; font-size: 22px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="loading" class="notice muted">Opening your invitation…</div>
+
+  <div id="nolink" class="notice hidden">
+    <p class="script" style="font-size:44px;margin:0">Paula &amp; Doug</p>
+    <p>Please open this page using the personal link we sent you.</p>
+    <p class="muted" id="nolink-contact"></p>
+  </div>
+
+  <main id="invite" class="hidden">
+    <header>
+      <div class="caps">You're invited</div>
+      <p class="script" id="greeting"></p>
+    </header>
+
+    <img class="card" id="front" alt="Wedding invitation: together with their parents you are warmly invited to the wedding of Paula and Doug, Saturday 7th August 2027 at Friern Manor, Essex.">
+    <img class="card" id="back" src="img/back.jpg" alt="The details: a note about the day, venue and RSVP, the plan for the day, food and drinks, games and fun.">
+    <p class="hint muted">Tap a card to zoom in</p>
+
+    <section class="facts">
+      <div class="fact">
+        <div class="caps">When</div>
+        <p>Saturday 7th August 2027<br><span id="when-time"></span></p>
+        <div class="actions"><button class="btn ghost small" id="cal">Add to calendar</button></div>
+      </div>
+      <div class="fact">
+        <div class="caps">Where</div>
+        <p>Friern Manor Country House<br>Lower Dunton Road, Brentwood, Essex CM13 3SL</p>
+        <div class="actions"><a class="btn ghost small" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=Friern+Manor+Lower+Dunton+Road+Brentwood+CM13+3SL">Open in Maps</a></div>
+      </div>
+    </section>
+
+    <hr class="rule">
+
+    <section id="rsvp">
+      <h2>RSVP</h2>
+      <p class="sub muted">Please reply by <span id="rsvp-by"></span></p>
+      <form id="form" novalidate>
+        <div id="people"></div>
+
+        <div id="plusone" class="person hidden">
+          <div class="who">Bringing a plus one?</div>
+          <p class="muted" style="margin:4px 0 0;font-size:15px">Leave blank if you're coming on your own.</p>
+          <label class="field"><span>Their name</span><input type="text" id="po-name" maxlength="80" autocomplete="off"></label>
+          <label class="field"><span>Any dietary needs?</span><input type="text" id="po-diet" maxlength="300"></label>
+        </div>
+
+        <label class="field"><span>A message for us (optional)</span><textarea id="message" maxlength="1000"></textarea></label>
+        <p id="form-error" class="center hidden" style="color:var(--bad)"></p>
+        <div class="center"><button class="btn" type="submit" id="send">Send our reply</button></div>
+      </form>
+
+      <div id="thanks" class="done hidden">
+        <p class="script" style="font-size:40px;margin:0" id="thanks-title"></p>
+        <ul id="summary"></ul>
+        <button class="btn ghost small" id="change">Change our reply</button>
+      </div>
+    </section>
+
+    <section class="gift" id="gift">
+      <p class="caps" style="opacity:.75">No gifts needed, but…</p>
+      <p class="neon">Cocktails &amp; Dreams</p>
+      <p id="gift-text">If you fancy buying us a cocktail, we'll enjoy it on our Thailand honeymoon. There'll be a jar on the day, or you can send something here:</p>
+      <div class="bank" id="bank"></div>
+    </section>
+
+    <footer class="muted">
+      Questions? Call or WhatsApp <a id="ph"></a><br>or email <a id="em"></a>
+      <p class="script" style="font-size:32px;color:var(--ink);margin:16px 0 0">Paula &amp; Doug x</p>
+    </footer>
+  </main>
+</div>
+
+<div class="zoom hidden" id="zoom" role="dialog" aria-label="Invitation card"><button aria-label="Close">×</button><img alt=""></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  const C = window.WEDDING_CONFIG;
+  const $ = (id) => document.getElementById(id);
+  const code = new URLSearchParams(location.search).get('g');
+  let invite = null;
+
+  function rpc(fn, body) {
+    return fetch(C.supabaseUrl + '/rest/v1/rpc/' + fn, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: C.supabaseKey },
+      body: JSON.stringify(body)
+    }).then(async (r) => { if (!r.ok) throw new Error(await r.text()); return r.json(); });
+  }
+  function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1800); }
+  function el(tag, attrs, ...kids) {
+    const e = document.createElement(tag);
+    for (const k in (attrs || {})) { if (k === 'class') e.className = attrs[k]; else if (k.startsWith('on')) e.addEventListener(k.slice(2), attrs[k]); else e.setAttribute(k, attrs[k]); }
+    kids.forEach((k) => e.append(k));
+    return e;
+  }
+  function firstName(n) { return String(n).replace(/\s*\?$/, '').split(' ')[0]; }
+  function joinNames(a) { return a.length < 2 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' & ' + a[a.length - 1]; }
+
+  $('ph').textContent = C.contact.phone; $('ph').href = 'tel:' + C.contact.phone.replace(/\s/g, '');
+  $('em').textContent = C.contact.email; $('em').href = 'mailto:' + C.contact.email;
+  $('rsvp-by').textContent = C.rsvpBy;
+
+  if (!code) { $('loading').classList.add('hidden'); $('nolink').classList.remove('hidden'); return; }
+
+  rpc('get_invite', { p_code: code }).then((data) => {
+    $('loading').classList.add('hidden');
+    if (!data) {
+      $('nolink').classList.remove('hidden');
+      $('nolink-contact').textContent = "We couldn't find that invitation. Please check the link, or get in touch on " + C.contact.phone + '.';
+      return;
+    }
+    invite = data;
+    render();
+    $('invite').classList.remove('hidden');
+  }).catch(() => {
+    $('loading').textContent = 'Sorry, something went wrong opening your invitation. Please try again in a moment.';
+  });
+
+  function render() {
+    const named = invite.guests.filter((g) => !g.is_plus_one && g.age_group === 'adult');
+    $('greeting').textContent = 'Dear ' + joinNames(named.map((g) => firstName(g.name)));
+    document.querySelector('header .script').style.fontSize = named.length > 2 ? '36px' : '44px';
+    const ceremony = invite.type === 'ceremony';
+    $('front').src = ceremony ? 'img/front-ceremony.jpg' : 'img/front-garden.jpg';
+    $('when-time').textContent = ceremony ? 'Ceremony at 3pm, then the garden party until late' : 'Garden party from 3.30pm until late';
+    renderGift();
+    if (invite.responded_at) showThanks(); else renderForm();
+  }
+
+  function renderForm() {
+    const box = $('people'); box.innerHTML = '';
+    invite.guests.filter((g) => !g.is_plus_one).forEach((g) => {
+      const state = { attending: g.attending };
+      const yes = el('button', { type: 'button', class: 'yes', 'aria-pressed': String(g.attending === true) }, 'Coming');
+      const no = el('button', { type: 'button', class: 'no', 'aria-pressed': String(g.attending === false) }, "Can't make it");
+      const diet = el('input', { type: 'text', maxlength: '300', 'data-diet': g.id });
+      diet.value = g.dietary || '';
+      const dietField = el('label', { class: 'field' }, el('span', {}, 'Any dietary needs?'), diet);
+      const kid = g.age_group !== 'adult';
+      const age = el('input', { type: 'number', inputmode: 'numeric', min: '0', max: '17', 'data-age': g.id });
+      if (g.age != null) age.value = g.age;
+      const ageField = el('label', { class: 'field' }, el('span', {}, 'Age on the day'), age);
+      const card = el('div', { class: 'person', 'data-id': g.id },
+        el('div', { class: 'who' }, g.name + (kid ? (g.age_group === 'teen' ? ' (teen)' : ' (child)') : '')),
+        el('div', { class: 'choice' }, yes, no), dietField);
+      if (kid) card.append(ageField);
+      const sync = () => {
+        yes.setAttribute('aria-pressed', String(state.attending === true));
+        no.setAttribute('aria-pressed', String(state.attending === false));
+        dietField.classList.toggle('hidden', state.attending !== true);
+        ageField.classList.toggle('hidden', state.attending !== true);
+        card.dataset.attending = state.attending == null ? '' : String(state.attending);
+      };
+      yes.addEventListener('click', () => { state.attending = true; sync(); });
+      no.addEventListener('click', () => { state.attending = false; sync(); });
+      sync();
+      box.append(card);
+    });
+    const po = invite.guests.find((g) => g.is_plus_one);
+    $('plusone').classList.toggle('hidden', !invite.plus_one_allowed);
+    $('po-name').value = po ? po.name : '';
+    $('po-diet').value = po ? (po.dietary || '') : '';
+    $('message').value = invite.message || '';
+    $('form').classList.remove('hidden'); $('thanks').classList.add('hidden');
+  }
+
+  $('form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const cards = [...document.querySelectorAll('#people .person')];
+    const missing = cards.filter((c) => c.dataset.attending === '');
+    const err = $('form-error');
+    if (missing.length) {
+      err.textContent = 'Please choose Coming or Can’t make it for ' + joinNames(missing.map((c) => c.querySelector('.who').textContent.replace(/ \((child|teen)\)$/, ''))) + '.';
+      err.classList.remove('hidden'); missing[0].scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
+    }
+    err.classList.add('hidden');
+    const guests = cards.map((c) => ({
+      id: c.dataset.id, attending: c.dataset.attending === 'true',
+      dietary: (c.querySelector('[data-diet]') || {}).value || '',
+      age: (c.querySelector('[data-age]') || {}).value || ''
+    }));
+    const btn = $('send'); btn.disabled = true; btn.textContent = 'Sending…';
+    rpc('submit_rsvp', {
+      p_code: code, p_guests: guests,
+      p_plus_one: { name: $('po-name').value, dietary: $('po-diet').value },
+      p_message: $('message').value
+    }).then((data) => { invite = data; showThanks(); $('rsvp').scrollIntoView({ behavior: 'smooth' }); })
+      .catch(() => { err.textContent = 'Sorry, that didn’t send. Please check your signal and try again.'; err.classList.remove('hidden'); })
+      .finally(() => { btn.disabled = false; btn.textContent = 'Send our reply'; });
+  });
+
+  function showThanks() {
+    const coming = invite.guests.filter((g) => g.attending);
+    $('thanks-title').textContent = coming.length ? 'Thank you! See you there' : 'Thank you for letting us know';
+    const ul = $('summary'); ul.innerHTML = '';
+    invite.guests.forEach((g) => ul.append(el('li', {}, g.name + (g.is_plus_one ? ' (plus one)' : '') + ': ' + (g.attending ? 'coming' : "can't make it") + (g.attending && g.dietary ? ' · ' + g.dietary : ''))));
+    $('form').classList.add('hidden'); $('thanks').classList.remove('hidden');
+  }
+  $('change').addEventListener('click', renderForm);
+
+  function renderGift() {
+    const g = invite.gift || {};
+    const rows = [['Account name', g.gift_account_name], ['Sort code', g.gift_sort_code], ['Account number', g.gift_account_number],
+      ['Reference', 'Cocktail ' + firstName((invite.guests[0] || {}).name || '')]];
+    const bank = $('bank'); bank.innerHTML = '';
+    if (!g.gift_account_number || /^\[/.test(g.gift_account_number)) { $('gift-text').textContent = "If you fancy buying us a cocktail, we'll enjoy it on our Thailand honeymoon. Look out for the Cocktails & Dreams jar on the day."; return; }
+    rows.forEach(([label, val]) => {
+      const b = el('button', { type: 'button', class: 'btn small' }, 'Copy');
+      b.addEventListener('click', () => { navigator.clipboard.writeText(val).then(() => toast(label + ' copied')); });
+      bank.append(el('div', {}, el('span', {}, el('b', {}, label), val), b));
+    });
+  }
+
+  $('cal').addEventListener('click', () => {
+    const start = invite.type === 'ceremony' ? '20270807T140000Z' : '20270807T143000Z';
+    const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Paula and Doug//Wedding//EN', 'BEGIN:VEVENT',
+      'UID:paula-doug-wedding-2027@dougandpaula.github.io', 'DTSTAMP:20261020T000000Z', 'DTSTART:' + start, 'DTEND:20270807T225900Z',
+      'SUMMARY:Paula & Doug\'s wedding', 'LOCATION:Friern Manor\\, Lower Dunton Road\\, Brentwood CM13 3SL',
+      'DESCRIPTION:' + C.siteUrl + '?g=' + code, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    const a = el('a', { href: URL.createObjectURL(new Blob([ics], { type: 'text/calendar' })), download: 'paula-and-doug-wedding.ics' });
+    document.body.append(a); a.click(); a.remove();
+  });
+
+  const zoom = $('zoom');
+  ['front', 'back'].forEach((id) => $(id).addEventListener('click', () => { zoom.querySelector('img').src = $(id).src; zoom.classList.remove('hidden'); }));
+  zoom.addEventListener('click', () => zoom.classList.add('hidden'));
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+:root {
+  --paper: #FBF8F1;
+  --paper-2: #F3EEE3;
+  --ink: #1B1A18;
+  --ink-soft: #55524C;
+  --line: #D9D2C3;
+  --accent: #1B1A18;
+  --good: #2F6B3A;
+  --bad: #8A2F2F;
+  --script: 'Great Vibes', 'Brush Script MT', cursive;
+  --display: 'Abril Fatface', Georgia, serif;
+  --body: 'Lora', Georgia, serif;
+  --caps: 'Josefin Sans', 'Gill Sans', sans-serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--body); font-size: 17px; line-height: 1.55;
+}
+img { max-width: 100%; display: block; }
+a { color: var(--ink); }
+button, input, select, textarea { font: inherit; color: inherit; }
+.wrap { max-width: 640px; margin: 0 auto; padding: 0 16px; }
+.caps { font-family: var(--caps); text-transform: uppercase; letter-spacing: .14em; font-size: 13px; }
+.script { font-family: var(--script); font-weight: 400; }
+.muted { color: var(--ink-soft); }
+.rule { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 0 20px; border-radius: 999px; border: 1.5px solid var(--ink);
+  background: var(--ink); color: var(--paper); cursor: pointer; text-decoration: none;
+  font-family: var(--caps); text-transform: uppercase; letter-spacing: .12em; font-size: 14px;
+}
+.btn.ghost { background: transparent; color: var(--ink); }
+.btn.small { min-height: 38px; padding: 0 14px; font-size: 12px; }
+.btn:disabled { opacity: .5; cursor: default; }
+.field { display: block; margin: 12px 0; }
+.field > span { display: block; font-size: 14px; color: var(--ink-soft); margin-bottom: 4px; }
+input[type=text], input[type=email], input[type=password], input[type=number], input[type=search], select, textarea {
+  width: 100%; min-height: 46px; padding: 10px 12px; border: 1.5px solid var(--line);
+  border-radius: 10px; background: #fff; font-size: 16px;
+}
+textarea { min-height: 90px; resize: vertical; }
+input:focus, select:focus, textarea:focus, .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  background: var(--ink); color: var(--paper); padding: 10px 18px; border-radius: 999px;
+  font-size: 15px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 50;
+}
+.toast.show { opacity: 1; }
+.hidden { display: none !important; }
