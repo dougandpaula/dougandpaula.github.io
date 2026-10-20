@@ -115,6 +115,7 @@
       <label class="field"><span>Category</span><input type="text" id="m-category" list="cats"></label>
       <label class="field"><span>Who sends it</span><select id="m-sentby"><option value="">–</option><option>Doug</option><option>Paula</option></select></label>
     </div>
+    <label class="field"><span>WhatsApp goes to</span><select id="m-main"></select></label>
     <datalist id="cats"></datalist>
     <label class="check-row"><input type="checkbox" id="m-plusone"> Allowed a plus one</label>
     <label class="field"><span>Notes (only you see this)</span><textarea id="m-notes"></textarea></label>
@@ -204,6 +205,9 @@
   const firstOf = (n) => String(n || '').replace(/\s*\?\s*$/, '').split(' ')[0];
   const inviteMsg = (first, i) => 'Hi ' + first + '! We\u2019re getting married \ud83e\udd42 Here\u2019s your invitation, with all the details and where to RSVP:\n' + C.siteUrl + '?g=' + i.code + '\n\nPaula & Doug x';
   const contacts = (i) => i.guests.filter((g) => !g.is_plus_one && waNum(g.phone));
+  // One message per household: the chosen main contact, else the first person with a mobile.
+  const mainContact = (i) => { const c = contacts(i); return c.find((g) => g.id === i.main_contact) || c[0] || null; };
+  const householdHello = (i) => { const a = i.guests.filter((g) => !g.is_plus_one && g.age_group === 'adult').map((g) => firstOf(g.name)).filter((n) => n && !/^(hubby|missus|wife|fella|bird|partner)$/i.test(n)); return a.length < 2 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' & ' + a[a.length - 1]; };
   const live = (i) => i.priority !== 'x';
   const PLACEHOLDER = /\?|^(hubby|missus|wife|fella|partner|child|kid|bird|plus one)$/i;
   const needsCheck = (i) => i.guests.some((g) => PLACEHOLDER.test(g.name.trim()) || (g.age_group !== 'adult' && g.age == null));
@@ -315,9 +319,9 @@
         el('div', { class: 'acts' },
           el('button', { class: 'btn small', onclick: () => openEdit(i) }, 'Edit'),
           el('button', { class: 'btn ghost small', onclick: () => share(i, 'copy') }, 'Copy link'),
-          ...(contacts(i).length
-            ? contacts(i).map((g) => el('button', { class: 'btn small', onclick: () => sendTo(i, g) }, 'WhatsApp ' + firstOf(g.name)))
-            : [el('button', { class: 'btn ghost small', onclick: () => share(i, 'whatsapp') }, 'WhatsApp')]),
+          mainContact(i)
+            ? el('button', { class: 'btn small', onclick: () => sendTo(i, mainContact(i)) }, 'WhatsApp ' + firstOf(mainContact(i).name))
+            : el('button', { class: 'btn ghost small', onclick: () => share(i, 'whatsapp') }, 'WhatsApp'),
           el('button', { class: 'btn ghost small', onclick: () => markSent(i, !i.sent_at) }, i.sent_at ? 'Mark not sent' : 'Mark sent'),
           so === 'priority' && k > 0 ? el('button', { class: 'btn ghost small', 'aria-label': 'Move up', onclick: () => move(i, rows[k - 1], 'before') }, '↑') : null,
           so === 'priority' && k < rows.length - 1 ? el('button', { class: 'btn ghost small', 'aria-label': 'Move down', onclick: () => move(i, rows[k + 1], 'after') }, '↓') : null));
@@ -400,7 +404,7 @@
   ['b-q', 'b-f'].forEach((id) => $(id).addEventListener('input', renderBook));
   async function markSent(i, sent) { replaceInvite(await rpc('admin_mark_sent', { p_id: i.id, p_sent: sent })); }
   function sendTo(i, g) {
-    window.open('https://wa.me/' + waNum(g.phone) + '?text=' + encodeURIComponent(inviteMsg(firstOf(g.name), i)), '_blank', 'noopener');
+    window.open('https://wa.me/' + waNum(g.phone) + '?text=' + encodeURIComponent(inviteMsg(householdHello(i) || firstOf(g.name), i)), '_blank', 'noopener');
     if (!i.sent_at) markSent(i, true).catch(() => {});
   }
   function share(i, how) {
@@ -436,6 +440,10 @@
     $('m-title').textContent = i ? 'Edit household' : 'Add household';
     $('m-name').value = editing.household_name; $('m-priority').value = editing.priority || ''; $('m-type').value = editing.invite_type;
     $('m-category').value = editing.category || ''; $('m-plusone').checked = !!editing.plus_one_allowed; $('m-notes').value = editing.notes || ''; $('m-sentby').value = editing.sent_by || '';
+    const mm = $('m-main'); mm.innerHTML = ''; const cs = contacts(editing);
+    if (!cs.length) mm.append(el('option', { value: '' }, 'Nobody has a mobile yet'));
+    cs.forEach((g) => mm.append(el('option', { value: g.id }, g.name + ' · ' + g.phone)));
+    const mc = mainContact(editing); mm.value = mc ? mc.id : '';
     $('m-guests').innerHTML = ''; (editing.guests.length ? editing.guests : [{}]).forEach((g) => $('m-guests').append(guestRow(g)));
     $('m-link').textContent = i ? 'Link: ' + link(i) : '';
     $('m-delete').classList.toggle('hidden', !i);
@@ -456,7 +464,7 @@
     try {
       replaceInvite(await rpc('admin_save_invite', { p: { id: editing.id, household_name: name, priority: $('m-priority').value.trim(),
         invite_type: $('m-type').value, category: $('m-category').value.trim(), plus_one_allowed: $('m-plusone').checked,
-        notes: $('m-notes').value.trim(), sent_by: $('m-sentby').value, guests } }));
+        notes: $('m-notes').value.trim(), sent_by: $('m-sentby').value, main_contact: $('m-main').value, guests } }));
       $('modal').classList.add('hidden'); toast('Saved');
     } catch (e) { toast('Could not save'); } finally { btn.disabled = false; }
   });

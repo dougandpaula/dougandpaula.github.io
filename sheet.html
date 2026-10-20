@@ -162,6 +162,9 @@
   const firstOf = (n) => String(n || '').replace(/\s*\?\s*$/, '').split(' ')[0];
   const inviteMsg = (first, i) => 'Hi ' + first + '! We\u2019re getting married \ud83e\udd42 Here\u2019s your invitation, with all the details and where to RSVP:\n' + C.siteUrl + '?g=' + i.code + '\n\nPaula & Doug x';
   const contacts = (i) => i.guests.filter((g) => !g.is_plus_one && waNum(g.phone));
+  // One message per household: the chosen main contact, else the first person with a mobile.
+  const mainContact = (i) => { const c = contacts(i); return c.find((g) => g.id === i.main_contact) || c[0] || null; };
+  const householdHello = (i) => { const a = i.guests.filter((g) => !g.is_plus_one && g.age_group === 'adult').map((g) => firstOf(g.name)).filter((n) => n && !/^(hubby|missus|wife|fella|bird|partner)$/i.test(n)); return a.length < 2 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' & ' + a[a.length - 1]; };
   const live = (i) => i.priority !== 'x';
   const prioNum = (p) => (/^[0-9.]+$/.test(p || '') ? parseFloat(p) : (p === 'x' ? 1000 : 999));
   const byList = (a, b) => prioNum(a.priority) - prioNum(b.priority) || (a.list_order ?? 1e9) - (b.list_order ?? 1e9) || a.household_name.localeCompare(b.household_name);
@@ -200,7 +203,7 @@
   // ---------- saving ----------
   function payload(i) {
     return { id: i.id, household_name: i.household_name, priority: i.priority || '', invite_type: i.invite_type, category: i.category || '',
-      plus_one_allowed: !!i.plus_one_allowed, notes: i.notes || '', sent_by: i.sent_by || '',
+      plus_one_allowed: !!i.plus_one_allowed, notes: i.notes || '', sent_by: i.sent_by || '', main_contact: i.main_contact || '',
       guests: i.guests.filter((g) => (g.name || '').trim()).map((g) => ({ id: g.id || '', is_plus_one: !!g.is_plus_one, name: g.name.trim(),
         age_group: g.age_group || 'adult', age: g.age ?? '', attending: g.attending ?? null, dietary: g.dietary || '', phone: g.phone || '' })) };
   }
@@ -233,7 +236,7 @@
   // ---------- WhatsApp ----------
   function waButtons(i, list) {
     return list.map((g) => el('button', { class: 'ib', title: g.phone, onclick: async (e) => {
-      window.open('https://wa.me/' + waNum(g.phone) + '?text=' + encodeURIComponent(inviteMsg(firstOf(g.name), i)), '_blank', 'noopener');
+      window.open('https://wa.me/' + waNum(g.phone) + '?text=' + encodeURIComponent(inviteMsg(householdHello(i) || firstOf(g.name), i)), '_blank', 'noopener');
       if (!i.sent_at) { try { Object.assign(i, await rpc('admin_mark_sent', { p_id: i.id, p_sent: true })); refreshAfterSave(i); } catch (err) {} }
     } }, '\u{1F4AC} ' + firstOf(g.name)));
   }
@@ -326,7 +329,8 @@
       { key: 'seats', label: 'Places', w: 60, title: 'Places this household takes up (their reply, or everyone invited if no reply yet)', sort: seats },
       { key: 'st', label: 'Status', w: 120, sort: (i) => status(i)[1] },
       { key: 'sent', label: 'Sent', w: 46, sort: (i) => i.sent_at || '' },
-      { key: 'wa', label: 'WhatsApp', w: 200, title: 'Opens WhatsApp to that person with the invitation ready to send', sort: (i) => contacts(i).length },
+      { key: 'to', label: 'Send to', w: 190, title: 'Who gets the WhatsApp for this household', sort: (i) => (mainContact(i) || {}).name || '~' },
+      { key: 'wa', label: 'WhatsApp', w: 110, title: 'Opens WhatsApp with the invitation ready to send', sort: (i) => contacts(i).length },
       { key: 'msg', label: 'Their message', w: 220, sort: (i) => i.message || '' },
       { key: 'notes', label: 'Notes', w: 220, sort: (i) => i.notes || '' },
       { key: 'link', label: 'Link', w: 120 },
@@ -378,7 +382,8 @@
         roCell(String(seats(i)), { cls: 'c' }),
         roCell(el('span', { class: 'pill ' + stc }, stl)),
         checkCell(!!i.sent_at, async (v, td) => { try { Object.assign(i, await rpc('admin_mark_sent', { p_id: i.id, p_sent: v })); flash(td, true); } catch (e) { flash(td, false); } refreshAfterSave(i); }),
-        contacts(i).length ? el('td', { style: 'min-width:200px' }, ...waButtons(i, contacts(i))) : roCell('no numbers', { w: 200 }),
+        contacts(i).length ? selectCell((mainContact(i) || {}).id, contacts(i).map((g) => [g.id, g.name]), (v, td) => { i.main_contact = v; saveInvite(i, td); }, { w: 190 }) : roCell('no numbers', { w: 190 }),
+        mainContact(i) ? el('td', { style: 'min-width:110px' }, ...waButtons(i, [mainContact(i)])) : roCell('', { w: 110 }),
         roCell(i.message || '', { w: 220 }),
         textCell(i.notes, (v, td) => { i.notes = v; saveInvite(i, td); }, { w: 220 }),
         el('td', { style: 'min-width:120px' },

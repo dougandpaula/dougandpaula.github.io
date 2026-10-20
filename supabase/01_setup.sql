@@ -19,6 +19,7 @@ alter table public.invites add column if not exists notes text;
 alter table public.invites add column if not exists sent_at timestamptz;
 alter table public.invites add column if not exists list_order int;
 alter table public.invites add column if not exists sent_by text;
+alter table public.invites add column if not exists main_contact uuid;
 
 create table if not exists public.guests (
   id uuid primary key default gen_random_uuid(),
@@ -215,7 +216,8 @@ begin
     update public.invites set household_name = p->>'household_name', priority = nullif(p->>'priority', ''),
            invite_type = p->>'invite_type', category = nullif(p->>'category', ''),
            plus_one_allowed = (p->>'plus_one_allowed')::boolean, notes = nullif(p->>'notes', ''),
-           sent_by = nullif(p->>'sent_by', '')
+           sent_by = nullif(p->>'sent_by', ''),
+           main_contact = case when p ? 'main_contact' then nullif(p->>'main_contact', '')::uuid else main_contact end
      where id = iid;
   end if;
   for g in select * from jsonb_array_elements(coalesce(p->'guests', '[]'::jsonb)) loop
