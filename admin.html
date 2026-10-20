@@ -30,6 +30,10 @@
   .badge.opened { background: #F5E8C8; color: #6B4F12; }
   .badge.sent { background: #E3E7F2; color: #2D3D6B; }
   .badge.reserve { background: #EADCF2; color: #5B2D73; }
+  .suggest { background: #FFF7DC; border: 1px solid #EAD9A0; border-radius: 10px; padding: 8px 10px; margin: 0 0 10px; font-size: 15px; }
+  .hits { list-style: none; margin: 4px 0 0; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: #fff; overflow: hidden; }
+  .hits li button { width: 100%; text-align: left; min-height: 44px; padding: 6px 10px; border: 0; border-bottom: 1px solid var(--line); background: #fff; cursor: pointer; font-size: 15px; }
+  .hits li:last-child button { border-bottom: 0; }
   .badge.check { background: #F3D9D9; color: var(--bad); }
   .ppl { list-style: none; padding: 0; margin: 0 0 10px; font-size: 15px; }
   .ppl li { padding: 2px 0; }
@@ -85,7 +89,7 @@
       <input type="search" id="f-search" placeholder="Search names…">
       <select id="f-priority"></select>
       <select id="f-type"><option value="">All invites</option><option value="ceremony">Ceremony</option><option value="garden">Garden party</option></select>
-      <select id="f-status"><option value="">Any status</option><option value="notsent">Not sent</option><option value="sent">Sent, not opened</option><option value="opened">Opened, no reply</option><option value="replied">Replied</option><option value="check">Names to check</option><option value="invite">On the invite list</option><option value="Doug">Doug sends</option><option value="Paula">Paula sends</option><option value="nonumber">No phone numbers</option><option value="reserve">Reserves</option></select>
+      <select id="f-status"><option value="">Any status</option><option value="notsent">Not sent</option><option value="sent">Sent, not opened</option><option value="opened">Opened, no reply</option><option value="replied">Replied</option><option value="check">Names to check</option><option value="invite">On the invite list</option><option value="Doug">Doug sends</option><option value="Paula">Paula sends</option><option value="nonumber">No phone numbers</option><option value="suggest">Mobiles to check</option><option value="reserve">Reserves</option></select>
       <select id="f-sort"><option value="priority">Sort: priority</option><option value="name">Sort: name</option><option value="recent">Sort: latest reply</option></select>
     </div>
     <div class="bar">
@@ -259,6 +263,7 @@
       if (fs === 'check' && !needsCheck(i)) return false;
       if ((fs === 'Doug' || fs === 'Paula') && i.sent_by !== fs) return false;
       if (fs === 'nonumber' && contacts(i).length) return false;
+      if (fs === 'suggest' && !i.guests.some((g) => g.phone_suggest)) return false;
       if (fs === 'invite' && (!live(i) || place[i.id].reserve)) return false;
       if (fs === 'reserve' && !(live(i) && place[i.id].reserve)) return false;
       if (q && !(i.household_name + ' ' + i.guests.map((g) => g.name).join(' ') + ' ' + (i.category || '')).toLowerCase().includes(q)) return false;
@@ -284,6 +289,13 @@
         el('h3', {}, el('span', {}, i.household_name), el('span', { style: 'display:flex;gap:4px' }, live(i) && place[i.id].reserve ? el('span', { class: 'badge reserve' }, 'Reserve ' + place[i.id].pos) : null, needsCheck(i) ? el('span', { class: 'badge check' }, 'Check') : null, el('span', { class: 'badge ' + cls }, label))),
         el('div', { class: 'meta' }, 'Round ' + (i.priority || '–') + ' · ' + (i.invite_type === 'ceremony' ? 'Ceremony' : 'Garden party') + (i.category ? ' · ' + i.category : '') + (i.sent_by ? ' · ' + i.sent_by + ' sends' : '')),
         ppl,
+        ...i.guests.filter((g) => g.phone_suggest).map((g) => el('div', { class: 'suggest' },
+          el('div', {}, el('b', {}, 'Mobile for ' + firstOf(g.name) + '? '), g.phone_suggest),
+          el('div', { class: 'muted', style: 'font-size:13px' }, g.suggest_note || ''),
+          el('div', { class: 'acts', style: 'margin-top:6px' },
+            el('button', { class: 'btn small', onclick: () => resolvePhone(g, true) }, '✓ Yes'),
+            el('button', { class: 'btn ghost small', onclick: () => resolvePhone(g, false) }, '✗ No'),
+            el('button', { class: 'btn ghost small', onclick: () => openEdit(i) }, 'Search contacts')))),
         i.message ? el('p', { style: 'margin:0 0 10px;font-style:italic' }, '“' + i.message + '”') : null,
         i.notes ? el('p', { class: 'muted', style: 'margin:0 0 10px;font-size:14px' }, 'Note: ' + i.notes) : null,
         el('div', { class: 'acts' },
@@ -313,6 +325,40 @@
     try { await rpc('admin_reorder', { p_ids: full.map((x) => x.id), p_id: i.id, p_priority: i.priority || '' }); }
     catch (e) { i.priority = before.priority; before.orders.forEach(([x, o]) => { x.list_order = o; }); render(); toast('Could not save the new order'); }
   }
+  async function resolvePhone(g, accept) {
+    const inv = data.invites.find((x) => x.guests.includes(g));
+    try { replaceInvite(await rpc('admin_resolve_phone', { p_guest: g.id, p_accept: accept })); toast(accept ? 'Mobile saved' : 'Suggestion removed'); }
+    catch (e) { toast('Could not save'); }
+  }
+  // Phone contacts (both phones), loaded once for searching in the edit screen.
+  let phoneBook = null;
+  async function loadPhoneBook() {
+    if (phoneBook) return phoneBook;
+    try {
+      const r = await fetch(C.supabaseUrl + '/rest/v1/contacts?select=name,phone,owner&order=name', { headers: { apikey: C.supabaseKey, Authorization: 'Bearer ' + session.access_token } });
+      phoneBook = r.ok ? await r.json() : [];
+    } catch (e) { phoneBook = []; }
+    return phoneBook;
+  }
+  const simplify = (t) => String(t || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  function contactSearch(phoneInput, guestName) {
+    const box = el('input', { type: 'search', placeholder: 'Search your phone contacts…', autocomplete: 'off' });
+    const hits = el('ul', { class: 'hits hidden' });
+    const show = async () => {
+      const q = simplify(box.value); const book = await loadPhoneBook();
+      hits.innerHTML = '';
+      if (q.length < 2) { hits.classList.add('hidden'); return; }
+      const words = q.split(' ');
+      const found = book.filter((c) => { const n = simplify(c.name); return words.every((w) => n.includes(w)); }).slice(0, 8);
+      if (!found.length) hits.append(el('li', {}, el('button', { type: 'button', disabled: true }, 'No contacts match')));
+      found.forEach((c) => hits.append(el('li', {}, el('button', { type: 'button', onclick: () => { phoneInput.value = c.phone; hits.classList.add('hidden'); box.value = ''; toast('Mobile filled in: tap Save'); } },
+        c.name + ' · ' + c.phone + (c.owner ? ' (' + c.owner + '\u2019s phone)' : '')))));
+      hits.classList.remove('hidden');
+    };
+    box.addEventListener('input', show);
+    box.value = ''; if (guestName) box.placeholder = 'Search contacts, e.g. ' + firstOf(guestName);
+    return el('div', { style: 'grid-column:1 / -1;margin-top:-4px' }, box, hits);
+  }
   async function markSent(i, sent) { replaceInvite(await rpc('admin_mark_sent', { p_id: i.id, p_sent: sent })); }
   function sendTo(i, g) {
     window.open('https://wa.me/' + waNum(g.phone) + '?text=' + encodeURIComponent(inviteMsg(firstOf(g.name), i)), '_blank', 'noopener');
@@ -341,7 +387,8 @@
         el('label', { class: 'field' }, el('span', {}, 'Age (under 18s)'), age),
         el('label', { class: 'field' }, el('span', {}, 'Reply'), att),
         el('label', { class: 'field' }, el('span', {}, 'Dietary'), diet),
-        g.is_plus_one ? null : el('label', { class: 'field', style: 'grid-column:1 / -1' }, el('span', {}, 'Mobile (for WhatsApp)'), el('input', { type: 'tel', value: g.phone || '', 'data-k': 'phone' }))),
+        ...(g.is_plus_one ? [] : (() => { const ph = el('input', { type: 'tel', value: g.phone || '', 'data-k': 'phone', placeholder: g.phone_suggest ? 'Suggested: ' + g.phone_suggest : '' });
+          return [el('label', { class: 'field', style: 'grid-column:1 / -1' }, el('span', {}, 'Mobile (for WhatsApp)'), ph), contactSearch(ph, g.name)]; })())),
       el('button', { type: 'button', class: 'btn ghost small', onclick: () => row.remove() }, 'Remove'));
     return row;
   }
