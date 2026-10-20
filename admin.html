@@ -161,7 +161,7 @@
   $('login-form').addEventListener('submit', async (e) => {
     e.preventDefault(); $('login-error').classList.add('hidden');
     try { save(await auth('password', { email: $('email').value.trim(), password: $('password').value })); $('password').value = ''; start(); }
-    catch (err) { $('login-error').textContent = 'Email or password not recognised.'; $('login-error').classList.remove('hidden'); }
+    catch (err) { const m = String(err.message || ''); $('login-error').textContent = /invalid login/i.test(m) ? 'Email or password not recognised.' : /not confirmed/i.test(m) ? 'This login hasn\u2019t been confirmed yet (tick Auto Confirm in Supabase).' : 'Sign in failed: ' + m; $('login-error').classList.remove('hidden'); }
   });
   $('logout').addEventListener('click', () => {
     fetch(C.supabaseUrl + '/auth/v1/logout', { method: 'POST', headers: { apikey: C.supabaseKey, Authorization: 'Bearer ' + session.access_token } }).catch(() => {});
