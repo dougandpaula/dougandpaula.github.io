@@ -95,6 +95,7 @@
     <div class="bar">
       <button class="btn small" id="add">+ Add household</button>
       <button class="btn ghost small" id="export">Export CSV</button>
+      <button class="btn ghost small" id="show-book">Contacts</button>
       <button class="btn ghost small" id="reload">Refresh</button>
       <span class="count" id="count"></span>
     </div>
@@ -128,6 +129,19 @@
         <button class="btn small" id="m-save" type="button">Save</button>
       </span>
     </div>
+  </div>
+</div>
+<div class="modal hidden" id="book" role="dialog" aria-modal="true" aria-labelledby="b-title">
+  <div class="sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h3 id="b-title" style="margin:0">Phone contacts</h3>
+      <button class="btn ghost small" id="b-close" type="button">Close</button>
+    </div>
+    <p class="muted" style="font-size:14px;margin:6px 0">Everyone from both phones. A green name shows which guest that number is saved against.</p>
+    <input type="search" id="b-q" placeholder="Search name or number…" autocomplete="off">
+    <select id="b-f" style="margin-top:8px"><option value="">All contacts</option><option value="used">Used for a guest</option><option value="unused">Not used yet</option><option value="Doug">Doug's phone</option><option value="Paula">Paula's phone</option></select>
+    <p class="count" id="b-count" style="margin:8px 0 0"></p>
+    <ul id="b-list" style="list-style:none;padding:0;margin:8px 0 0"></ul>
   </div>
 </div>
 <div class="toast" id="toast" role="status"></div>
@@ -359,6 +373,31 @@
     box.value = ''; if (guestName) box.placeholder = 'Search contacts, e.g. ' + firstOf(guestName);
     return el('div', { style: 'grid-column:1 / -1;margin-top:-4px' }, box, hits);
   }
+  const digits = (p) => waNum(p);
+  function renderBook() {
+    const used = new Map();
+    data.invites.forEach((i) => i.guests.forEach((g) => { const d = digits(g.phone); if (d) used.set(d, (used.get(d) ? used.get(d) + ', ' : '') + g.name); }));
+    const q = simplify($('b-q').value), qd = $('b-q').value.replace(/\D/g, ''), f = $('b-f').value;
+    const list = (phoneBook || []).filter((c) => {
+      const u = used.get(digits(c.phone));
+      if (f === 'used' && !u) return false; if (f === 'unused' && u) return false;
+      if ((f === 'Doug' || f === 'Paula') && c.owner !== f && c.owner !== 'Both') return false;
+      if (q && !simplify(c.name).includes(q) && !(qd.length >= 3 && c.phone.replace(/\D/g, '').includes(qd))) return false;
+      return true;
+    });
+    $('b-count').textContent = list.length + ' contacts';
+    const ul = $('b-list'); ul.innerHTML = '';
+    list.forEach((c) => {
+      const u = used.get(digits(c.phone));
+      ul.append(el('li', { style: 'padding:8px 0;border-bottom:1px solid var(--line)' },
+        el('div', { style: 'display:flex;justify-content:space-between;gap:8px' }, el('b', {}, c.name), el('a', { href: 'tel:' + c.phone }, c.phone)),
+        el('div', { style: 'font-size:13px' }, el('span', { class: 'muted' }, (c.owner === 'Both' ? 'Both phones' : c.owner + '\u2019s phone')),
+          u ? el('span', { style: 'color:var(--good)' }, ' · ✓ ' + u) : null)));
+    });
+  }
+  $('show-book').addEventListener('click', async () => { $('book').classList.remove('hidden'); $('b-list').innerHTML = '<li class="muted">Loading…</li>'; await loadPhoneBook(); renderBook(); });
+  $('b-close').addEventListener('click', () => $('book').classList.add('hidden'));
+  ['b-q', 'b-f'].forEach((id) => $(id).addEventListener('input', renderBook));
   async function markSent(i, sent) { replaceInvite(await rpc('admin_mark_sent', { p_id: i.id, p_sent: sent })); }
   function sendTo(i, g) {
     window.open('https://wa.me/' + waNum(g.phone) + '?text=' + encodeURIComponent(inviteMsg(firstOf(g.name), i)), '_blank', 'noopener');
