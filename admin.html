@@ -207,7 +207,13 @@
   const contacts = (i) => i.guests.filter((g) => !g.is_plus_one && waNum(g.phone));
   // One message per household: the chosen main contact, else the first person with a mobile.
   const mainContact = (i) => { const c = contacts(i); return c.find((g) => g.id === i.main_contact) || c[0] || null; };
-  const householdHello = (i) => { const a = i.guests.filter((g) => !g.is_plus_one && g.age_group === 'adult').map((g) => firstOf(g.name)).filter((n) => n && !/^(hubby|missus|wife|fella|bird|partner)$/i.test(n)); return a.length < 2 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' & ' + a[a.length - 1]; };
+  // "Joan & Bob", or "Jennifer, Dan & family" when there are more than two people in the household.
+  const householdHello = (i) => {
+    const ppl = i.guests.filter((g) => !g.is_plus_one);
+    const a = ppl.filter((g) => g.age_group === 'adult').map((g) => firstOf(g.name)).filter((n) => n && !/^(hubby|missus|wife|fella|bird|partner|child)$/i.test(n)).slice(0, 2);
+    if (ppl.length > 2) return a.length ? a.join(', ') + ' & family' : 'all';
+    return a.length < 2 ? (a[0] || '') : a[0] + ' & ' + a[1];
+  };
   const live = (i) => i.priority !== 'x';
   const PLACEHOLDER = /\?|^(hubby|missus|wife|fella|partner|child|kid|bird|plus one)$/i;
   const needsCheck = (i) => i.guests.some((g) => PLACEHOLDER.test(g.name.trim()) || (g.age_group !== 'adult' && g.age == null));

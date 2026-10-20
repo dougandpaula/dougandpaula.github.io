@@ -172,9 +172,10 @@
   });
 
   function render() {
-    const named = invite.guests.filter((g) => !g.is_plus_one && g.age_group === 'adult');
-    $('greeting').textContent = 'Dear ' + joinNames(named.map((g) => firstName(g.name)));
-    document.querySelector('header .script').style.fontSize = named.length > 2 ? '36px' : '44px';
+    const ppl = invite.guests.filter((g) => !g.is_plus_one);
+    const named = ppl.filter((g) => g.age_group === 'adult').map((g) => firstName(g.name)).filter((n) => n && !/^(hubby|missus|wife|fella|bird|partner|child)$/i.test(n)).slice(0, 2);
+    $('greeting').textContent = 'Dear ' + (ppl.length > 2 ? (named.length ? named.join(', ') + ' & family' : 'all') : joinNames(named));
+    document.querySelector('header .script').style.fontSize = ppl.length > 2 ? '38px' : '44px';
     const ceremony = invite.type === 'ceremony';
     $('front').src = ceremony ? 'img/front-ceremony.jpg' : 'img/front-garden.jpg';
     $('when-time').textContent = ceremony ? 'Ceremony at 3pm, then the garden party until late' : 'Garden party from 3.30pm until late';
