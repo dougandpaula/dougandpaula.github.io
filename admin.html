@@ -438,7 +438,10 @@
         el('label', { class: 'field' }, el('span', {}, 'Dietary'), diet),
         ...(g.is_plus_one ? [] : (() => { const ph = el('input', { type: 'tel', value: g.phone || '', 'data-k': 'phone', placeholder: g.phone_suggest ? 'Suggested: ' + g.phone_suggest : '' });
           return [el('label', { class: 'field', style: 'grid-column:1 / -1' }, el('span', {}, 'Mobile (for WhatsApp)'), ph), contactSearch(ph, g.name)]; })())),
-      el('button', { type: 'button', class: 'btn ghost small', onclick: () => row.remove() }, 'Remove'));
+      el('div', { class: 'acts' },
+        g.is_plus_one ? null : el('button', { type: 'button', class: 'btn ghost small', 'aria-label': 'Move up', onclick: () => { const p = row.previousElementSibling; if (p) row.parentNode.insertBefore(row, p); } }, '↑ Move up'),
+        g.is_plus_one ? null : el('button', { type: 'button', class: 'btn ghost small', 'aria-label': 'Move down', onclick: () => { const n = row.nextElementSibling; if (n && !n.dataset.po) row.parentNode.insertBefore(n, row); } }, '↓ Move down'),
+        el('button', { type: 'button', class: 'btn ghost small', onclick: () => row.remove() }, 'Remove')));
     return row;
   }
   function openEdit(i) {
