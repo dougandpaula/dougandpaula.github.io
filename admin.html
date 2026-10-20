@@ -29,6 +29,7 @@
   .badge.replied { background: #DCEBDD; color: var(--good); }
   .badge.opened { background: #F5E8C8; color: #6B4F12; }
   .badge.sent { background: #E3E7F2; color: #2D3D6B; }
+  .badge.reserve { background: #EADCF2; color: #5B2D73; }
   .badge.check { background: #F3D9D9; color: var(--bad); }
   .ppl { list-style: none; padding: 0; margin: 0 0 10px; font-size: 15px; }
   .ppl li { padding: 2px 0; }
@@ -83,7 +84,7 @@
       <input type="search" id="f-search" placeholder="Search names…">
       <select id="f-priority"></select>
       <select id="f-type"><option value="">All invites</option><option value="ceremony">Ceremony</option><option value="garden">Garden party</option></select>
-      <select id="f-status"><option value="">Any status</option><option value="notsent">Not sent</option><option value="sent">Sent, not opened</option><option value="opened">Opened, no reply</option><option value="replied">Replied</option><option value="check">Names to check</option></select>
+      <select id="f-status"><option value="">Any status</option><option value="notsent">Not sent</option><option value="sent">Sent, not opened</option><option value="opened">Opened, no reply</option><option value="replied">Replied</option><option value="check">Names to check</option><option value="invite">On the invite list</option><option value="reserve">Reserves</option></select>
       <select id="f-sort"><option value="priority">Sort: priority</option><option value="name">Sort: name</option><option value="recent">Sort: latest reply</option></select>
     </div>
     <div class="bar">
@@ -188,6 +189,21 @@
   }
   const firstNames = (i) => { const a = i.guests.filter((g) => !g.is_plus_one && g.age_group === 'adult').map((g) => g.name.split(' ')[0].replace('?', '')); return a.length < 2 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' & ' + a[a.length - 1]; };
   const prioNum = (p) => (/^[0-9.]+$/.test(p || '') ? parseFloat(p) : 999);
+  const MAX = C.maxGuests || 180;
+  const byList = (a, b) => prioNum(a.priority) - prioNum(b.priority) || (a.list_order ?? 9999) - (b.list_order ?? 9999) || a.household_name.localeCompare(b.household_name);
+  // Places a household takes: what they've said if they've replied, otherwise everyone invited (plus one included).
+  const seats = (i) => i.responded_at ? i.guests.filter((g) => g.attending).length
+    : i.guests.filter((g) => !g.is_plus_one).length + (i.plus_one_allowed ? 1 : 0);
+  let place = {};
+  function allocate() {
+    place = {}; let used = 0, over = false, pos = 0;
+    data.invites.filter(live).sort(byList).forEach((i) => {
+      const n = seats(i);
+      if (!over && used + n <= MAX) { used += n; place[i.id] = { reserve: false }; }
+      else { over = true; place[i.id] = { reserve: true, pos: ++pos }; }
+    });
+    return used;
+  }
 
   // ---------- data ----------
   async function start() {
@@ -204,12 +220,16 @@
   }
 
   function render() {
-    const inv = data.invites.filter(live);
+    const used = allocate();
+    const inv = data.invites.filter((i) => live(i) && !place[i.id].reserve);
+    const reserves = data.invites.filter((i) => live(i) && place[i.id].reserve).sort(byList);
     const people = inv.flatMap((i) => i.guests);
     const slots = inv.reduce((n, i) => n + i.guests.filter((g) => !g.is_plus_one).length + (i.plus_one_allowed ? 1 : 0), 0);
     const coming = people.filter((g) => g.attending === true);
     const cerSlots = inv.filter((i) => i.invite_type === 'ceremony').reduce((n, i) => n + i.guests.filter((g) => !g.is_plus_one).length + (i.plus_one_allowed ? 1 : 0), 0);
     const stats = [
+      [used + ' / ' + MAX, 'places taken (replies + still invited)'],
+      [reserves.length ? reserves.length + ' (' + reserves.reduce((n, i) => n + seats(i), 0) + ' people)' : '0', 'reserve households' + (reserves[0] ? ' · next: ' + reserves[0].household_name : '')],
       [slots, 'invited (incl. plus ones)'], [cerSlots, 'at the ceremony'],
       [inv.filter((i) => i.responded_at).length + ' / ' + inv.length, 'households replied'],
       [coming.length, 'coming'],
@@ -229,12 +249,14 @@
       if (fs === 'opened' && st !== 'opened') return false;
       if (fs === 'replied' && st !== 'replied') return false;
       if (fs === 'check' && !needsCheck(i)) return false;
+      if (fs === 'invite' && (!live(i) || place[i.id].reserve)) return false;
+      if (fs === 'reserve' && !(live(i) && place[i.id].reserve)) return false;
       if (q && !(i.household_name + ' ' + i.guests.map((g) => g.name).join(' ') + ' ' + (i.category || '')).toLowerCase().includes(q)) return false;
       return true;
     });
     if (so === 'name') rows.sort((a, b) => a.household_name.localeCompare(b.household_name));
     else if (so === 'recent') rows.sort((a, b) => String(b.responded_at || '').localeCompare(String(a.responded_at || '')));
-    else rows.sort((a, b) => prioNum(a.priority) - prioNum(b.priority));
+    else rows.sort(byList);
     $('count').textContent = rows.length + ' households';
 
     const list = $('list'); list.innerHTML = '';
@@ -249,7 +271,7 @@
       });
       if (i.plus_one_allowed && !i.guests.some((g) => g.is_plus_one)) ppl.append(el('li', { class: 'muted' }, '+ plus one allowed'));
       const card = el('div', { class: 'hh' },
-        el('h3', {}, el('span', {}, i.household_name), el('span', { style: 'display:flex;gap:4px' }, needsCheck(i) ? el('span', { class: 'badge check' }, 'Check') : null, el('span', { class: 'badge ' + cls }, label))),
+        el('h3', {}, el('span', {}, i.household_name), el('span', { style: 'display:flex;gap:4px' }, live(i) && place[i.id].reserve ? el('span', { class: 'badge reserve' }, 'Reserve ' + place[i.id].pos) : null, needsCheck(i) ? el('span', { class: 'badge check' }, 'Check') : null, el('span', { class: 'badge ' + cls }, label))),
         el('div', { class: 'meta' }, 'Round ' + (i.priority || '–') + ' · ' + (i.invite_type === 'ceremony' ? 'Ceremony' : 'Garden party') + (i.category ? ' · ' + i.category : '')),
         ppl,
         i.message ? el('p', { style: 'margin:0 0 10px;font-style:italic' }, '“' + i.message + '”') : null,
