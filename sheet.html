@@ -94,6 +94,8 @@
         <option value="Paula">Paula sends</option>
         <option value="nosender">No sender chosen</option>
         <option value="nonumber">No phone numbers</option>
+        <option value="post">Sending by post</option>
+        <option value="person">Giving in person</option>
       </select>
       <button class="btn small" id="add">+ Household</button>
       <button class="btn ghost small" id="export">Export CSV</button>
@@ -168,8 +170,12 @@
   const PH_NAME = /\?|^(hubby|missus|wife|fella|partner|child|kid|bird|plus one)$/i;
   function issues(i) {
     const out = [], mc = mainContact(i);
-    if (!mc) out.push(i.guests.some((g) => !g.is_plus_one && (g.phone || '').trim()) ? 'no mobile (landline only)' : 'no mobile');
-    else if (/^44[^7]/.test(waNum(mc.phone))) out.push('landline, not a mobile');
+    const how = i.send_method || 'whatsapp';
+    if (how === 'post') { if (!(i.address || '').trim()) out.push('no postal address'); }
+    else if (how === 'whatsapp') {
+      if (!mc) out.push(i.guests.some((g) => !g.is_plus_one && (g.phone || '').trim()) ? 'no mobile (landline only)' : 'no mobile');
+      else if (/^44[^7]/.test(waNum(mc.phone))) out.push('landline, not a mobile');
+    }
     if (!i.sent_by) out.push('no sender');
     const ph = i.guests.filter((g) => PH_NAME.test((g.name || '').trim())).map((g) => g.name);
     if (ph.length) out.push('names: ' + ph.join(', '));
@@ -178,6 +184,7 @@
     return out;
   }
   // One message per household: the chosen main contact, else the first person with a mobile.
+  const HOW = { whatsapp: 'WhatsApp', post: 'Post', person: 'In person' };
   const mainContact = (i) => { const c = contacts(i); return c.find((g) => g.id === i.main_contact) || c[0] || null; };
   // "Joan & Bob", or "Jennifer, Dan & family" when there are more than two people in the household.
   const householdHello = (i) => {
@@ -224,7 +231,7 @@
   // ---------- saving ----------
   function payload(i) {
     return { id: i.id, household_name: i.household_name, priority: i.priority || '', invite_type: i.invite_type, category: i.category || '',
-      plus_one_allowed: !!i.plus_one_allowed, notes: i.notes || '', sent_by: i.sent_by || '', main_contact: i.main_contact || '',
+      plus_one_allowed: !!i.plus_one_allowed, notes: i.notes || '', sent_by: i.sent_by || '', main_contact: i.main_contact || '', send_method: i.send_method || 'whatsapp', address: i.address || '',
       guests: i.guests.filter((g) => (g.name || '').trim()).map((g) => ({ id: g.id || '', is_plus_one: !!g.is_plus_one, name: g.name.trim(),
         age_group: g.age_group || 'adult', age: g.age ?? '', attending: g.attending ?? null, dietary: g.dietary || '', phone: g.phone || '' })) };
   }
@@ -305,6 +312,7 @@
     if (f === 'Doug' || f === 'Paula') return i.sent_by === f;
     if (f === 'nosender') return !i.sent_by;
     if (f === 'nonumber') return !contacts(i).length;
+    if (f === 'post' || f === 'person') return i.send_method === f;
     if (f === 'incomplete') return live(i) && issues(i).length > 0;
     return true;
   }
@@ -351,6 +359,8 @@
       { key: 'seats', label: 'Places', w: 60, title: 'Places this household takes up (their reply, or everyone invited if no reply yet)', sort: seats },
       { key: 'st', label: 'Status', w: 120, sort: (i) => status(i)[1] },
       { key: 'sent', label: 'Sent', w: 46, sort: (i) => i.sent_at || '' },
+      { key: 'how', label: 'How', w: 110, sort: (i) => i.send_method || 'whatsapp' },
+      { key: 'addr', label: 'Postal address', w: 240, sort: (i) => i.address || '~' },
       { key: 'to', label: 'Send to', w: 190, title: 'Who gets the WhatsApp for this household', sort: (i) => (mainContact(i) || {}).name || '~' },
       { key: 'wa', label: 'WhatsApp', w: 110, title: 'Opens WhatsApp with the invitation ready to send', sort: (i) => contacts(i).length },
       { key: 'todo', label: 'To do', w: 260, sort: (i) => live(i) ? issues(i).length : -1 },
@@ -405,6 +415,8 @@
         roCell(String(seats(i)), { cls: 'c' }),
         roCell(el('span', { class: 'pill ' + stc }, stl)),
         checkCell(!!i.sent_at, async (v, td) => { try { Object.assign(i, await rpc('admin_mark_sent', { p_id: i.id, p_sent: v })); flash(td, true); } catch (e) { flash(td, false); } refreshAfterSave(i); }),
+        selectCell(i.send_method || 'whatsapp', [['whatsapp', 'WhatsApp'], ['post', 'Post'], ['person', 'In person']], (v, td) => { i.send_method = v; saveInvite(i, td); }, { w: 110 }),
+        textCell((i.address || '').replace(/\n/g, ', '), (v, td) => { i.address = v.split(/\s*,\s*/).join('\n'); saveInvite(i, td); }, { w: 240, ph: i.send_method === 'post' ? 'street, town, postcode' : '' }),
         contacts(i).length ? selectCell((mainContact(i) || {}).id, contacts(i).map((g) => [g.id, g.name]), (v, td) => { i.main_contact = v; saveInvite(i, td); }, { w: 190 }) : roCell('no numbers', { w: 190 }),
         mainContact(i) ? el('td', { style: 'min-width:110px' }, ...waButtons(i, [mainContact(i)])) : roCell('', { w: 110 }),
         roCell(live(i) ? issues(i).join(' · ') : '', { w: 260, cls: 'todo-cell' }),
@@ -515,9 +527,9 @@
   });
   $('export').addEventListener('click', () => {
     const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-    const lines = [['Position', 'Round', 'Household', 'Invite', 'Category', 'Status', 'Sends', 'Name', 'Mobile', 'Plus one', 'Age group', 'Age', 'Reply', 'Dietary', 'Message', 'Notes', 'Link'].map(esc).join(',')];
+    const lines = [['Position', 'Round', 'Household', 'Invite', 'Category', 'Status', 'Sends', 'How', 'Address', 'Name', 'Mobile', 'Plus one', 'Age group', 'Age', 'Reply', 'Dietary', 'Message', 'Notes', 'Link'].map(esc).join(',')];
     allocate();
-    ordered().forEach((i, n) => i.guests.forEach((g) => lines.push([n + 1, i.priority, i.household_name, i.invite_type, i.category, status(i)[1], i.sent_by, g.name, g.phone, g.is_plus_one ? 'yes' : '', g.age_group, g.age,
+    ordered().forEach((i, n) => i.guests.forEach((g) => lines.push([n + 1, i.priority, i.household_name, i.invite_type, i.category, status(i)[1], i.sent_by, HOW[i.send_method || 'whatsapp'], i.address, g.name, g.phone, g.is_plus_one ? 'yes' : '', g.age_group, g.age,
       g.attending == null ? 'No reply' : g.attending ? 'Coming' : "Can't make it", g.dietary, i.message, i.notes, link(i)].map(esc).join(','))));
     const a = el('a', { href: URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv' })), download: 'wedding-guests.csv' });
     document.body.append(a); a.click(); a.remove();

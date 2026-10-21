@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>RSVP slips for posted invitations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Josefin+Sans:wght@400;600&family=Lora:wght@400;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  .bar { max-width: 900px; margin: 0 auto; padding: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .bar .script { font-size: 30px; margin-right: auto; }
+  .bar select { width: auto; min-height: 38px; }
+  .note { max-width: 900px; margin: 0 auto 12px; padding: 0 16px; font-size: 14px; color: var(--ink-soft); }
+  .sheet-a4 { width: 210mm; min-height: 297mm; margin: 0 auto 16px; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.1);
+              display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .slip { box-sizing: border-box; padding: 14mm 12mm; border: 1px dashed #CFC8BA; display: flex; flex-direction: column; align-items: center; text-align: center; color: #1B1A18; }
+  .slip .hello { font-family: var(--script); font-size: 30px; line-height: 1.15; margin: 0 0 4mm; }
+  .slip .caps { font-size: 11px; color: #55524C; }
+  .slip p { margin: 0 0 3mm; font-size: 13.5px; line-height: 1.45; }
+  .slip .qr { margin: 2mm 0 3mm; }
+  .slip .link { font-family: var(--caps); font-size: 11px; letter-spacing: .03em; word-break: break-all; margin-bottom: 4mm; }
+  .slip .or { font-size: 12.5px; color: #55524C; margin-top: auto; }
+  .slip .sig { font-family: var(--script); font-size: 24px; margin-top: 3mm; }
+  .labels { width: 210mm; margin: 0 auto 16px; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.1); padding: 10mm; box-sizing: border-box;
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 6mm; }
+  .label { border: 1px dashed #CFC8BA; padding: 6mm; white-space: pre-line; font-size: 14px; line-height: 1.5; min-height: 32mm; }
+  .label.missing { color: var(--bad); }
+  h2 { font-family: var(--caps); font-size: 13px; letter-spacing: .12em; text-transform: uppercase; max-width: 210mm; margin: 24px auto 8px; padding: 0 16px; }
+  @media print {
+    @page { size: A4; margin: 0; }
+    body { background: #fff; }
+    .bar, .note, h2.screen-only { display: none !important; }
+    .sheet-a4, .labels { box-shadow: none; margin: 0; page-break-after: always; }
+  }
+  @media (max-width: 820px) {
+    .sheet-a4, .labels { width: 100%; min-height: 0; grid-template-columns: 1fr; grid-template-rows: none; }
+  }
+</style>
+</head>
+<body>
+<div class="bar">
+  <span class="script">Post slips</span>
+  <select id="which"><option value="todo">Not posted yet</option><option value="all">All posted invitations</option></select>
+  <button class="btn small" onclick="window.print()">Print</button>
+  <a class="btn ghost small" href="admin.html">Back</a>
+</div>
+<p class="note" id="note">Loading…</p>
+<div id="out"></div>
+
+<script src="config.js"></script>
+<script src="qrcode.js"></script>
+<script>
+(function () {
+  const C = window.WEDDING_CONFIG;
+  const $ = (id) => document.getElementById(id);
+  let session = null; try { session = JSON.parse(localStorage.getItem('wedding-admin-session')); } catch (e) {}
+  if (!session) { $('note').innerHTML = 'Please <a href="admin.html">sign in on the admin page</a> first, then come back here.'; return; }
+  const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const firstOf = (n) => String(n || '').replace(/\s*\?\s*$/, '').split(' ')[0];
+  const hello = (i) => {
+    const ppl = i.guests.filter((g) => !g.is_plus_one);
+    const a = ppl.filter((g) => g.age_group === 'adult').map((g) => firstOf(g.name)).filter((n) => n && !/^(hubby|missus|wife|fella|bird|partner|child)$/i.test(n)).slice(0, 2);
+    if (ppl.length > 2) return a.length ? a.join(', ') + ' & family' : 'all';
+    return a.length < 2 ? (a[0] || '') : a[0] + ' & ' + a[1];
+  };
+
+  async function load() {
+    const r = await fetch(C.supabaseUrl + '/rest/v1/rpc/admin_data', { method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: C.supabaseKey, Authorization: 'Bearer ' + session.access_token }, body: '{}' });
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  }
+
+  function render(data) {
+    const all = data.invites.filter((i) => i.send_method === 'post' && i.priority !== 'x');
+    const list = $('which').value === 'todo' ? all.filter((i) => !i.sent_at) : all;
+    $('note').textContent = list.length
+      ? list.length + ' posted invitation' + (list.length > 1 ? 's' : '') + '. Print on A4 and cut into four. Each slip goes in the envelope with that household’s printed invitation. Address labels are on the last page(s).'
+      : 'No households are set to post' + ($('which').value === 'todo' ? ' that haven’t been posted yet.' : '.') + ' Set "How we send it" to Post on the admin page.';
+    let html = '';
+    for (let k = 0; k < list.length; k += 4) {
+      html += '<section class="sheet-a4">' + list.slice(k, k + 4).map((i) => {
+        const url = C.siteUrl + '?g=' + i.code;
+        return '<div class="slip">' +
+          '<div class="hello">Dear ' + esc(hello(i)) + '</div>' +
+          '<p>All the details of our day, and your RSVP, are on your own page online. Just scan the code with your phone camera:</p>' +
+          '<div class="qr">' + window.qrSvg(url, 150) + '</div>' +
+          '<div class="link">' + esc(url.replace(/^https?:\/\//, '')) + '</div>' +
+          '<p class="or">Not online? No problem. Just call or text us on <b>' + esc(C.contact.phone) + '</b><br>by ' + esc(C.rsvpBy) + '.</p>' +
+          '<div class="sig">Paula &amp; Doug x</div></div>';
+      }).join('') + '</section>';
+    }
+    if (list.length) {
+      html += '<h2>Envelope addresses</h2><section class="labels">' + list.map((i) =>
+        '<div class="label' + (i.address ? '' : ' missing') + '">' + (i.address ? esc(i.address) : esc(i.household_name) + '\n(no address yet)') + '</div>').join('') + '</section>';
+    }
+    $('out').innerHTML = html;
+  }
+
+  let data = null;
+  load().then((d) => { data = d; render(d); }).catch(() => { $('note').innerHTML = 'Your sign-in has expired. Please <a href="admin.html">open the admin page</a> once, then come back.'; });
+  $('which').addEventListener('change', () => data && render(data));
+})();
+</script>
+</body>
+</html>

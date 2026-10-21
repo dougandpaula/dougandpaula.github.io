@@ -20,6 +20,8 @@ alter table public.invites add column if not exists sent_at timestamptz;
 alter table public.invites add column if not exists list_order int;
 alter table public.invites add column if not exists sent_by text;
 alter table public.invites add column if not exists main_contact uuid;
+alter table public.invites add column if not exists send_method text not null default 'whatsapp';
+alter table public.invites add column if not exists address text;
 
 create table if not exists public.guests (
   id uuid primary key default gen_random_uuid(),
@@ -206,10 +208,10 @@ declare iid uuid := nullif(p->>'id', '')::uuid; g jsonb; keep uuid[] := '{}'; gi
 begin
   perform public.admin_check();
   if iid is null then
-    insert into public.invites (household_name, priority, invite_type, category, plus_one_allowed, notes, sent_by, list_order)
+    insert into public.invites (household_name, priority, invite_type, category, plus_one_allowed, notes, sent_by, send_method, address, list_order)
     values (p->>'household_name', nullif(p->>'priority', ''), coalesce(p->>'invite_type', 'garden'),
             nullif(p->>'category', ''), coalesce((p->>'plus_one_allowed')::boolean, false), nullif(p->>'notes', ''),
-            nullif(p->>'sent_by', ''),
+            nullif(p->>'sent_by', ''), coalesce(nullif(p->>'send_method', ''), 'whatsapp'), nullif(p->>'address', ''),
             (select coalesce(max(list_order), 0) + 1 from public.invites))
     returning id into iid;
   else
@@ -217,7 +219,9 @@ begin
            invite_type = p->>'invite_type', category = nullif(p->>'category', ''),
            plus_one_allowed = (p->>'plus_one_allowed')::boolean, notes = nullif(p->>'notes', ''),
            sent_by = nullif(p->>'sent_by', ''),
-           main_contact = case when p ? 'main_contact' then nullif(p->>'main_contact', '')::uuid else main_contact end
+           main_contact = case when p ? 'main_contact' then nullif(p->>'main_contact', '')::uuid else main_contact end,
+           send_method = coalesce(nullif(p->>'send_method', ''), send_method),
+           address = case when p ? 'address' then nullif(p->>'address', '') else address end
      where id = iid;
   end if;
   for g in select * from jsonb_array_elements(coalesce(p->'guests', '[]'::jsonb)) loop

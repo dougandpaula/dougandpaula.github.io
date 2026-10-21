@@ -90,13 +90,14 @@
       <input type="search" id="f-search" placeholder="Search names…">
       <select id="f-priority"></select>
       <select id="f-type"><option value="">All invites</option><option value="ceremony">Ceremony</option><option value="garden">Garden party</option></select>
-      <select id="f-status"><option value="">Any status</option><option value="incomplete">Incomplete</option><option value="notsent">Not sent</option><option value="sent">Sent, not opened</option><option value="opened">Opened, no reply</option><option value="replied">Replied</option><option value="check">Names to check</option><option value="invite">On the invite list</option><option value="Doug">Doug sends</option><option value="Paula">Paula sends</option><option value="nonumber">No phone numbers</option><option value="suggest">Mobiles to check</option><option value="reserve">Reserves</option></select>
+      <select id="f-status"><option value="">Any status</option><option value="incomplete">Incomplete</option><option value="post">Sending by post</option><option value="person">Giving in person</option><option value="notsent">Not sent</option><option value="sent">Sent, not opened</option><option value="opened">Opened, no reply</option><option value="replied">Replied</option><option value="check">Names to check</option><option value="invite">On the invite list</option><option value="Doug">Doug sends</option><option value="Paula">Paula sends</option><option value="nonumber">No phone numbers</option><option value="suggest">Mobiles to check</option><option value="reserve">Reserves</option></select>
       <select id="f-sort"><option value="priority">Sort: priority</option><option value="name">Sort: name</option><option value="recent">Sort: latest reply</option></select>
     </div>
     <div class="bar">
       <button class="btn small" id="add">+ Add household</button>
       <button class="btn ghost small" id="export">Export CSV</button>
       <button class="btn ghost small" id="show-book">Contacts</button>
+      <a class="btn ghost small" href="slips.html">Post slips</a>
       <button class="btn ghost small" id="reload">Refresh</button>
       <span class="count" id="count"></span>
     </div>
@@ -116,7 +117,11 @@
       <label class="field"><span>Category</span><input type="text" id="m-category" list="cats"></label>
       <label class="field"><span>Who sends it</span><select id="m-sentby"><option value="">–</option><option>Doug</option><option>Paula</option></select></label>
     </div>
-    <label class="field"><span>WhatsApp goes to</span><select id="m-main"></select></label>
+    <div class="grid2">
+      <label class="field"><span>How we send it</span><select id="m-how"><option value="whatsapp">WhatsApp</option><option value="post">Post</option><option value="person">In person</option></select></label>
+      <label class="field" id="m-main-wrap"><span>WhatsApp goes to</span><select id="m-main"></select></label>
+    </div>
+    <label class="field" id="m-addr-wrap"><span>Postal address</span><textarea id="m-addr" rows="4" placeholder="Name&#10;Street&#10;Town&#10;Postcode"></textarea></label>
     <datalist id="cats"></datalist>
     <label class="check-row"><input type="checkbox" id="m-plusone"> Allowed a plus one</label>
     <label class="field"><span>Notes (only you see this)</span><textarea id="m-notes"></textarea></label>
@@ -210,8 +215,12 @@
   const PH_NAME = /\?|^(hubby|missus|wife|fella|partner|child|kid|bird|plus one)$/i;
   function issues(i) {
     const out = [], mc = mainContact(i);
-    if (!mc) out.push(i.guests.some((g) => !g.is_plus_one && (g.phone || '').trim()) ? 'no mobile (landline only)' : 'no mobile');
-    else if (/^44[^7]/.test(waNum(mc.phone))) out.push('landline, not a mobile');
+    const how = i.send_method || 'whatsapp';
+    if (how === 'post') { if (!(i.address || '').trim()) out.push('no postal address'); }
+    else if (how === 'whatsapp') {
+      if (!mc) out.push(i.guests.some((g) => !g.is_plus_one && (g.phone || '').trim()) ? 'no mobile (landline only)' : 'no mobile');
+      else if (/^44[^7]/.test(waNum(mc.phone))) out.push('landline, not a mobile');
+    }
     if (!i.sent_by) out.push('no sender');
     const ph = i.guests.filter((g) => PH_NAME.test((g.name || '').trim())).map((g) => g.name);
     if (ph.length) out.push('names: ' + ph.join(', '));
@@ -220,6 +229,7 @@
     return out;
   }
   // One message per household: the chosen main contact, else the first person with a mobile.
+  const HOW = { whatsapp: 'WhatsApp', post: 'Post', person: 'In person' };
   const mainContact = (i) => { const c = contacts(i); return c.find((g) => g.id === i.main_contact) || c[0] || null; };
   // "Joan & Bob", or "Jennifer, Dan & family" when there are more than two people in the household.
   const householdHello = (i) => {
@@ -302,6 +312,7 @@
       if (fs === 'check' && !needsCheck(i)) return false;
       if ((fs === 'Doug' || fs === 'Paula') && i.sent_by !== fs) return false;
       if (fs === 'nonumber' && contacts(i).length) return false;
+      if ((fs === 'post' || fs === 'person') && i.send_method !== fs) return false;
       if (fs === 'incomplete' && (!live(i) || !issues(i).length)) return false;
       if (fs === 'suggest' && !i.guests.some((g) => g.phone_suggest)) return false;
       if (fs === 'invite' && (!live(i) || place[i.id].reserve)) return false;
@@ -327,7 +338,8 @@
       if (i.plus_one_allowed && !i.guests.some((g) => g.is_plus_one)) ppl.append(el('li', { class: 'muted' }, '+ plus one allowed'));
       const card = el('div', { class: 'hh' },
         el('h3', {}, el('span', {}, i.household_name), el('span', { style: 'display:flex;gap:4px' }, live(i) && place[i.id].reserve ? el('span', { class: 'badge reserve' }, 'Reserve ' + place[i.id].pos) : null, needsCheck(i) ? el('span', { class: 'badge check' }, 'Check') : null, el('span', { class: 'badge ' + cls }, label))),
-        el('div', { class: 'meta' }, 'Round ' + (i.priority || '–') + ' · ' + (i.invite_type === 'ceremony' ? 'Ceremony' : 'Garden party') + (i.category ? ' · ' + i.category : '') + (i.sent_by ? ' · ' + i.sent_by + ' sends' : '')),
+        el('div', { class: 'meta' }, 'Round ' + (i.priority || '–') + ' · ' + (i.invite_type === 'ceremony' ? 'Ceremony' : 'Garden party') + (i.category ? ' · ' + i.category : '') + (i.sent_by ? ' · ' + i.sent_by + ' sends' : '') + ((i.send_method || 'whatsapp') !== 'whatsapp' ? ' · ' + HOW[i.send_method] : '')),
+        i.send_method === 'post' && i.address ? el('p', { class: 'muted', style: 'margin:0 0 10px;font-size:14px;white-space:pre-line' }, '\u{1F4EE} ' + i.address) : null,
         ppl,
         ...i.guests.filter((g) => g.phone_suggest).map((g) => el('div', { class: 'suggest' },
           el('div', {}, el('b', {}, 'Mobile for ' + firstOf(g.name) + '? '), g.phone_suggest),
@@ -342,10 +354,10 @@
         el('div', { class: 'acts' },
           el('button', { class: 'btn small', onclick: () => openEdit(i) }, 'Edit'),
           el('button', { class: 'btn ghost small', onclick: () => share(i, 'copy') }, 'Copy link'),
-          mainContact(i)
+          (i.send_method || 'whatsapp') !== 'whatsapp' ? null : mainContact(i)
             ? el('button', { class: 'btn small', onclick: () => sendTo(i, mainContact(i)) }, 'WhatsApp ' + firstOf(mainContact(i).name))
             : el('button', { class: 'btn ghost small', onclick: () => share(i, 'whatsapp') }, 'WhatsApp'),
-          el('button', { class: 'btn ghost small', onclick: () => markSent(i, !i.sent_at) }, i.sent_at ? 'Mark not sent' : 'Mark sent'),
+          el('button', { class: 'btn ghost small', onclick: () => markSent(i, !i.sent_at) }, i.sent_at ? 'Mark not sent' : (i.send_method === 'post' ? 'Mark posted' : i.send_method === 'person' ? 'Mark given' : 'Mark sent')),
           so === 'priority' && k > 0 ? el('button', { class: 'btn ghost small', 'aria-label': 'Move up', onclick: () => move(i, rows[k - 1], 'before') }, '↑') : null,
           so === 'priority' && k < rows.length - 1 ? el('button', { class: 'btn ghost small', 'aria-label': 'Move down', onclick: () => move(i, rows[k + 1], 'after') }, '↓') : null));
       list.append(card);
@@ -470,11 +482,18 @@
     if (!cs.length) mm.append(el('option', { value: '' }, 'Nobody has a mobile yet'));
     cs.forEach((g) => mm.append(el('option', { value: g.id }, g.name + ' · ' + g.phone)));
     const mc = mainContact(editing); mm.value = mc ? mc.id : '';
+    $('m-how').value = editing.send_method || 'whatsapp'; $('m-addr').value = editing.address || ''; syncHow();
     $('m-guests').innerHTML = ''; (editing.guests.length ? editing.guests : [{}]).forEach((g) => $('m-guests').append(guestRow(g)));
     $('m-link').textContent = i ? 'Link: ' + link(i) : '';
     $('m-delete').classList.toggle('hidden', !i);
     $('modal').classList.remove('hidden'); $('m-name').focus();
   }
+  function syncHow() {
+    const how = $('m-how').value;
+    $('m-addr-wrap').classList.toggle('hidden', how !== 'post');
+    $('m-main-wrap').classList.toggle('hidden', how !== 'whatsapp');
+  }
+  $('m-how').addEventListener('change', syncHow);
   $('add').addEventListener('click', () => openEdit(null));
   $('m-addguest').addEventListener('click', () => $('m-guests').append(guestRow({})));
   $('m-cancel').addEventListener('click', () => $('modal').classList.add('hidden'));
@@ -490,7 +509,8 @@
     try {
       replaceInvite(await rpc('admin_save_invite', { p: { id: editing.id, household_name: name, priority: $('m-priority').value.trim(),
         invite_type: $('m-type').value, category: $('m-category').value.trim(), plus_one_allowed: $('m-plusone').checked,
-        notes: $('m-notes').value.trim(), sent_by: $('m-sentby').value, main_contact: $('m-main').value, guests } }));
+        notes: $('m-notes').value.trim(), sent_by: $('m-sentby').value, main_contact: $('m-main').value,
+        send_method: $('m-how').value, address: $('m-addr').value.trim(), guests } }));
       $('modal').classList.add('hidden'); toast('Saved');
     } catch (e) { toast('Could not save'); } finally { btn.disabled = false; }
   });
@@ -510,8 +530,8 @@
   // ---------- export ----------
   $('export').addEventListener('click', () => {
     const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-    const lines = [['Round', 'Household', 'Invite', 'Category', 'Sends', 'Name', 'Mobile', 'Plus one', 'Age group', 'Age', 'Reply', 'Dietary', 'Message', 'Replied at', 'Link'].map(esc).join(',')];
-    data.invites.forEach((i) => i.guests.forEach((g) => lines.push([i.priority, i.household_name, i.invite_type, i.category, i.sent_by, g.name, g.phone, g.is_plus_one ? 'yes' : '', g.age_group, g.age,
+    const lines = [['Round', 'Household', 'Invite', 'Category', 'Sends', 'How', 'Address', 'Name', 'Mobile', 'Plus one', 'Age group', 'Age', 'Reply', 'Dietary', 'Message', 'Replied at', 'Link'].map(esc).join(',')];
+    data.invites.forEach((i) => i.guests.forEach((g) => lines.push([i.priority, i.household_name, i.invite_type, i.category, i.sent_by, HOW[i.send_method || 'whatsapp'], i.address, g.name, g.phone, g.is_plus_one ? 'yes' : '', g.age_group, g.age,
       g.attending == null ? 'No reply' : g.attending ? 'Coming' : "Can't make it", g.dietary, i.message, i.responded_at, link(i)].map(esc).join(','))));
     const a = el('a', { href: URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv' })), download: 'wedding-guests.csv' });
     document.body.append(a); a.click(); a.remove();
