@@ -51,6 +51,7 @@
   .ib:hover { color: var(--ink); text-decoration: underline; }
   .ib.del:hover { color: var(--bad); }
   .help { padding: 6px 16px; font-size: 12px; color: var(--ink-soft); border-top: 1px solid var(--line); }
+  td.todo-cell { color: #8A2F2F; font-size: 13px; white-space: normal; }
   .y { color: var(--good); } .n { color: var(--bad); }
 </style>
 </head>
@@ -78,6 +79,7 @@
       <input type="search" id="q" placeholder="Search…">
       <select id="f">
         <option value="">Everyone</option>
+        <option value="incomplete">Incomplete</option>
         <option value="invite">On the invite list</option>
         <option value="reserve">Reserves</option>
         <option value="x">Not inviting (x)</option>
@@ -162,6 +164,19 @@
   const firstOf = (n) => String(n || '').replace(/\s*\?\s*$/, '').split(' ')[0];
   const inviteMsg = (first, i) => 'Hi ' + first + '! We\u2019re getting married \ud83e\udd42 Here\u2019s your invitation, with all the details and where to RSVP:\n' + C.siteUrl + '?g=' + i.code + '\n\nPaula & Doug x';
   const contacts = (i) => i.guests.filter((g) => !g.is_plus_one && waNum(g.phone));
+  // What still needs doing before this household's invitation can go out.
+  const PH_NAME = /\?|^(hubby|missus|wife|fella|partner|child|kid|bird|plus one)$/i;
+  function issues(i) {
+    const out = [], mc = mainContact(i);
+    if (!mc) out.push(i.guests.some((g) => !g.is_plus_one && (g.phone || '').trim()) ? 'no mobile (landline only)' : 'no mobile');
+    else if (/^44[^7]/.test(waNum(mc.phone))) out.push('landline, not a mobile');
+    if (!i.sent_by) out.push('no sender');
+    const ph = i.guests.filter((g) => PH_NAME.test((g.name || '').trim())).map((g) => g.name);
+    if (ph.length) out.push('names: ' + ph.join(', '));
+    const ages = i.guests.filter((g) => g.age_group !== 'adult' && g.age == null).map((g) => g.name);
+    if (ages.length) out.push('ages: ' + ages.join(', '));
+    return out;
+  }
   // One message per household: the chosen main contact, else the first person with a mobile.
   const mainContact = (i) => { const c = contacts(i); return c.find((g) => g.id === i.main_contact) || c[0] || null; };
   // "Joan & Bob", or "Jennifer, Dan & family" when there are more than two people in the household.
@@ -290,6 +305,7 @@
     if (f === 'Doug' || f === 'Paula') return i.sent_by === f;
     if (f === 'nosender') return !i.sent_by;
     if (f === 'nonumber') return !contacts(i).length;
+    if (f === 'incomplete') return live(i) && issues(i).length > 0;
     return true;
   }
   ['q', 'f'].forEach((id) => $(id).addEventListener('input', () => render()));
@@ -337,6 +353,7 @@
       { key: 'sent', label: 'Sent', w: 46, sort: (i) => i.sent_at || '' },
       { key: 'to', label: 'Send to', w: 190, title: 'Who gets the WhatsApp for this household', sort: (i) => (mainContact(i) || {}).name || '~' },
       { key: 'wa', label: 'WhatsApp', w: 110, title: 'Opens WhatsApp with the invitation ready to send', sort: (i) => contacts(i).length },
+      { key: 'todo', label: 'To do', w: 260, sort: (i) => live(i) ? issues(i).length : -1 },
       { key: 'msg', label: 'Their message', w: 220, sort: (i) => i.message || '' },
       { key: 'notes', label: 'Notes', w: 220, sort: (i) => i.notes || '' },
       { key: 'link', label: 'Link', w: 120 },
@@ -390,6 +407,7 @@
         checkCell(!!i.sent_at, async (v, td) => { try { Object.assign(i, await rpc('admin_mark_sent', { p_id: i.id, p_sent: v })); flash(td, true); } catch (e) { flash(td, false); } refreshAfterSave(i); }),
         contacts(i).length ? selectCell((mainContact(i) || {}).id, contacts(i).map((g) => [g.id, g.name]), (v, td) => { i.main_contact = v; saveInvite(i, td); }, { w: 190 }) : roCell('no numbers', { w: 190 }),
         mainContact(i) ? el('td', { style: 'min-width:110px' }, ...waButtons(i, [mainContact(i)])) : roCell('', { w: 110 }),
+        roCell(live(i) ? issues(i).join(' · ') : '', { w: 260, cls: 'todo-cell' }),
         roCell(i.message || '', { w: 220 }),
         textCell(i.notes, (v, td) => { i.notes = v; saveInvite(i, td); }, { w: 220 }),
         el('td', { style: 'min-width:120px' },
@@ -467,6 +485,7 @@
     const s = $('stats'); s.innerHTML = '';
     [['Places', used + ' / ' + MAX], ['Ceremony', cer], ['Reserves', res.length + ' households (' + res.reduce((n, i) => n + seats(i), 0) + ')' + (res[0] ? ' · next ' + res[0].household_name : '')],
      ['Replied', inv.filter((i) => i.responded_at).length + ' / ' + inv.length], ['Coming', coming.length + ' (' + coming.filter((g) => g.age_group === 'adult').length + ' adults · ' + coming.filter((g) => g.age_group === 'teen').length + ' teens · ' + coming.filter((g) => g.age_group === 'child').length + ' children)'],
+     ['Incomplete', data.invites.filter((i) => live(i) && issues(i).length).length],
      ["Can't make it", all.filter((g) => g.attending === false).length], ['Dietary', coming.filter((g) => g.dietary).length], ['Showing', count]]
       .forEach(([k, v]) => s.append(el('span', {}, k + ' ', el('b', {}, String(v)))));
     if (focusId) { const r = document.querySelector('tr[data-key="h-' + focusId + '"]'); if (r) r.scrollIntoView({ block: 'center' }); }
