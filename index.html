@@ -186,7 +186,7 @@
         </div>
         <label class="field hidden" id="msg-field"><span>A message for us</span><textarea id="message" maxlength="1000" rows="3"></textarea></label>
         <p id="form-error" class="center hidden" style="color:var(--bad)"></p>
-        <div class="center" style="margin-top:14px"><button class="btn" type="submit" id="send">Send our reply</button></div>
+        <div class="center" style="margin-top:14px"><button class="btn" type="submit" id="send">Send</button></div>
       </form>
 
       <div id="thanks" class="done hidden">
@@ -376,7 +376,7 @@
       p_message: $('message').value
     }).then((data) => { invite = data; showThanks(); $('rsvp').scrollIntoView({ behavior: 'smooth' }); })
       .catch(() => { err.textContent = 'Sorry, that didn’t send. Please check your signal and try again.'; err.classList.remove('hidden'); })
-      .finally(() => { btn.disabled = false; btn.textContent = 'Send our reply'; });
+      .finally(() => { btn.disabled = false; btn.textContent = 'Send'; });
   });
 
   function showThanks() {
