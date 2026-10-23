@@ -235,7 +235,7 @@
     <h3 id="drink-title">Cheers!</h3>
     <p class="center" style="margin:2px 0 12px;font-size:15px;color:#5E5A52">Tap a line to copy it into your banking app</p>
     <div class="bank" id="bank"></div>
-    <p class="center" style="margin:10px 0 0;font-size:14px;color:#5E5A52">Pop the reference in so we know who to toast 🥂</p>
+    <p class="center" style="margin:10px 0 0;font-size:14px;color:#5E5A52">Use the reference so we know who to toast 🥂</p>
     <div class="btns"><button type="button" class="btn small" id="drink-close">Done</button></div>
   </div>
 </div>
@@ -415,6 +415,12 @@
   }
   $('change').addEventListener('click', renderForm);
 
+  // Bank references are max 18 characters, letters/numbers only. Drop leading words until it fits.
+  function bankRef(h) {
+    let w = String(h || '').replace(/[^A-Za-z0-9 -]/g, ' ').trim().split(/\s+/).filter(Boolean);
+    while (w.length > 1 && w.join(' ').length > 18) w.shift();
+    return (w.join(' ') || 'Wedding').slice(0, 18);
+  }
   function renderGift() {
     const g = invite.gift || {};
     const bank = $('bank'); bank.innerHTML = '';
@@ -422,7 +428,7 @@
     $('drink-btn').classList.toggle('hidden', !ready);
     if (!ready) return;
     [['Name', g.gift_account_name], ['Sort code', g.gift_sort_code], ['Account', g.gift_account_number],
-     ['Reference', 'Cocktail ' + firstName((invite.guests[0] || {}).name || '')]].forEach(([label, val]) => {
+     ['Reference', bankRef(invite.household)]].forEach(([label, val]) => {
       const b = el('button', { type: 'button', 'aria-label': 'Copy ' + label }, el('b', {}, label), el('span', {}, val), el('i', {}, 'Copy'));
       b.addEventListener('click', () => { navigator.clipboard.writeText(val).then(() => toast(label + ' copied')); });
       bank.append(b);
