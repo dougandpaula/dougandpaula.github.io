@@ -90,7 +90,10 @@
   .mq-script { font-family: 'Yellowtail', var(--script); font-size: 60px; line-height: 1; }
   .mq-script.red { color: #FFE3DE; text-shadow: 0 0 2px #fff, 0 0 7px #FF5A4A, 0 0 15px #FF3020, 0 0 30px #FF1A0A, 0 0 50px rgba(255,30,10,.55); }
   .mq-script.teal { color: #E6FFFB; text-shadow: 0 0 2px #fff, 0 0 7px #3FF3E0, 0 0 15px #00D9C4, 0 0 30px #00BFAE, 0 0 50px rgba(0,190,175,.55); }
-  .mq-amp { font-family: 'Yellowtail', var(--script); font-size: 50px; line-height: .9; margin: 2px 0; color: #FFF4D6;
+  .mq-amp { display: flex; align-items: center; justify-content: center; gap: 14px; }
+  .mq-amp::before, .mq-amp::after { content: ""; width: 64px; height: 3px; border-radius: 3px; background: #FFF4D6;
+            box-shadow: 0 0 3px #FFE08A, 0 0 9px #FFB733, 0 0 16px rgba(255,170,30,.6); }
+  .mq-amp span { font-family: 'Yellowtail', var(--script); font-size: 50px; line-height: .9; margin: 2px 0; color: #FFF4D6;
             text-shadow: 0 0 2px #fff, 0 0 7px #FFE08A, 0 0 15px #FFB733, 0 0 28px rgba(255,170,30,.6); }
   .star { position: absolute; z-index: 1; fill: none; stroke: #FFF4D6; stroke-width: 1.6; stroke-linecap: round;
           filter: drop-shadow(0 0 2px #FFE08A) drop-shadow(0 0 6px #FFB733); animation: twinkle 3.2s ease-in-out infinite; }
@@ -198,7 +201,7 @@
         <svg class="star s2" viewBox="-2 -2 28 28" aria-hidden="true"><path d="M12 0 V24 M0 12 H24 M3.5 3.5 L20.5 20.5 M20.5 3.5 L3.5 20.5" /><circle cx="12" cy="12" r="1.6" /></svg>
         <div class="mq-in">
           <div class="mq-script red"><span class="flick">C</span>ocktails</div>
-          <div class="mq-amp">&amp;</div>
+          <div class="mq-amp"><span>&amp;</span></div>
           <div class="mq-script teal">Dreams</div>
         </div>
       </div>
