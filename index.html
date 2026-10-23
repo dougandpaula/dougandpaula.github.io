@@ -135,6 +135,9 @@
   #rsvp .seg.small button[aria-pressed=true] { background: #1B1A18; color: #FBF8F1; }
   #rsvp input[type=text], #rsvp textarea { background: #fff; border-color: #CFC6B5; color: #1B1A18; }
   #rsvp input:focus, #rsvp textarea:focus { outline-color: #1B1A18; }
+  .confirm { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; margin: 14px 0 4px; padding: 12px 14px;
+             border: 1px solid #D9D2C3; border-radius: 10px; background: #fff; font-size: 15px; line-height: 1.4; cursor: pointer; }
+  .confirm input { width: 22px; height: 22px; margin: 1px 0 0; accent-color: #1B1A18; }
   #rsvp .done { background: transparent; border: 0; padding: 4px 0 0; }
   .rule { display: none; }
 </style>
@@ -185,6 +188,7 @@
           <button type="button" class="link" id="msg-add">+ Add a message for us</button>
         </div>
         <label class="field hidden" id="msg-field"><span>A message for us</span><textarea id="message" maxlength="1000" rows="3"></textarea></label>
+        <label class="confirm hidden" id="confirm-row"><input type="checkbox" id="confirm"><span id="confirm-text"></span></label>
         <p id="form-error" class="center hidden" style="color:var(--bad)"></p>
         <div class="center" style="margin-top:14px"><button class="btn" type="submit" id="send">Send</button></div>
       </form>
@@ -333,6 +337,8 @@
       poAsk.set(po ? true : (invite.responded_at ? false : null)); extras.classList.toggle('hidden', poAsk.value !== true);
     }
     syncPlusOne();
+    $('confirm-text').textContent = invite.allergy_text || 'We have told you about any allergies or dietary needs for everyone in our party, including any plus one.';
+    $('confirm').checked = false;
     $('message').value = invite.message || '';
     $('msg-field').classList.toggle('hidden', !invite.message);
     $('msg-add').classList.toggle('hidden', !!invite.message);
@@ -342,6 +348,7 @@
   const anyoneComing = () => !!document.querySelector('#people .prow[data-attending="true"]');
   function syncPlusOne() {
     const row = document.querySelector('#people .po'); if (row) row.classList.toggle('hidden', !anyoneComing());
+    $('confirm-row').classList.toggle('hidden', !anyoneComing());
   }
   $('msg-add').addEventListener('click', () => { $('msg-add').classList.add('hidden'); $('msg-field').classList.remove('hidden'); $('message').focus(); });
 
@@ -363,6 +370,7 @@
     const poOn = poRow && !poRow.classList.contains('hidden') && poRow.poAsk.value === true;
     if (poOn && !$('po-name').value.trim()) { err.textContent = 'Please add your plus one’s name, or choose No.'; err.classList.remove('hidden'); $('po-name').focus(); return; }
     if (poOn && poRow.dietAsk.value === true && !$('po-diet').value.trim()) { err.textContent = 'Please tell us your plus one’s dietary needs, or choose No.'; err.classList.remove('hidden'); $('po-diet').focus(); return; }
+    if (anyoneComing() && !$('confirm').checked) { err.textContent = 'Please tick the box about allergies and dietary needs.'; err.classList.remove('hidden'); $('confirm-row').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
     err.classList.add('hidden');
     const guests = cards.map((c) => ({
       id: c.dataset.id, attending: c.dataset.attending === 'true',
@@ -373,7 +381,8 @@
     rpc('submit_rsvp', {
       p_code: code, p_guests: guests,
       p_plus_one: guests.some((g) => g.attending) && poOn ? { name: $('po-name').value.trim(), dietary: poRow.dietAsk.value === true ? $('po-diet').value.trim() : '' } : { name: '', dietary: '' },
-      p_message: $('message').value
+      p_message: $('message').value,
+      p_confirmed: $('confirm').checked
     }).then((data) => { invite = data; showThanks(); $('rsvp').scrollIntoView({ behavior: 'smooth' }); })
       .catch(() => { err.textContent = 'Sorry, that didn’t send. Please check your signal and try again.'; err.classList.remove('hidden'); })
       .finally(() => { btn.disabled = false; btn.textContent = 'Send'; });

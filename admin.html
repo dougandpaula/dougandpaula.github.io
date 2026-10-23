@@ -85,6 +85,12 @@
       <button class="btn small" id="s-save">Save bank details</button>
       <p class="muted" style="font-size:14px">Guests only see these on their own personal invitation.</p>
     </details>
+    <details id="allergy-box">
+      <summary>Allergy wording (RSVP checkbox)</summary>
+      <label class="field"><span>Guests must tick this when anyone is coming</span><textarea id="s-allergy" rows="4"></textarea></label>
+      <button class="btn small" id="s-allergy-save">Save wording</button>
+      <p class="muted" style="font-size:14px">Each reply saves a copy of the wording the guest agreed to, so changing it later doesn't alter past replies.</p>
+    </details>
 
     <div class="filters">
       <input type="search" id="f-search" placeholder="Search names…">
@@ -96,6 +102,7 @@
     <div class="bar">
       <button class="btn small" id="add">+ Add household</button>
       <button class="btn ghost small" id="export">Export CSV</button>
+      <button class="btn ghost small" id="export-log">Export RSVP log</button>
       <button class="btn ghost small" id="show-book">Contacts</button>
       <a class="btn ghost small" href="slips.html">Post slips</a>
       <button class="btn ghost small" id="reload">Refresh</button>
@@ -149,6 +156,15 @@
     <select id="b-f" style="margin-top:8px"><option value="">All contacts</option><option value="used">Used for a guest</option><option value="unused">Not used yet</option><option value="Doug">Doug's phone</option><option value="Paula">Paula's phone</option></select>
     <p class="count" id="b-count" style="margin:8px 0 0"></p>
     <ul id="b-list" style="list-style:none;padding:0;margin:8px 0 0"></ul>
+  </div>
+</div>
+<div class="modal hidden" id="hist" role="dialog" aria-modal="true" aria-labelledby="h-title">
+  <div class="sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h3 id="h-title" style="margin:0">Reply history</h3>
+      <button class="btn ghost small" id="h-close" type="button">Close</button>
+    </div>
+    <div id="h-list" style="margin-top:10px"></div>
   </div>
 </div>
 <div class="toast" id="toast" role="status"></div>
@@ -275,6 +291,7 @@
     pr.forEach((p) => fp.append(el('option', { value: p }, p === 'x' ? 'Round x (not inviting)' : 'Round ' + (p || '–'))));
     fp.value = keep;
     $('cats').innerHTML = ''; [...new Set(data.invites.map((i) => i.category).filter(Boolean))].sort().forEach((c) => $('cats').append(el('option', { value: c })));
+    $('s-allergy').value = data.settings.rsvp_allergy_text || '';
     $('s-name').value = data.settings.gift_account_name || ''; $('s-sort').value = data.settings.gift_sort_code || ''; $('s-acc').value = data.settings.gift_account_number || '';
     render();
   }
@@ -354,6 +371,7 @@
         el('div', { class: 'acts' },
           el('button', { class: 'btn small', onclick: () => openEdit(i) }, 'Edit'),
           el('button', { class: 'btn ghost small', onclick: () => share(i, 'copy') }, 'Copy link'),
+          i.responded_at ? el('button', { class: 'btn ghost small', onclick: () => showHistory(i) }, 'History') : null,
           (i.send_method || 'whatsapp') !== 'whatsapp' ? null : mainContact(i)
             ? el('button', { class: 'btn small', onclick: () => sendTo(i, mainContact(i)) }, 'WhatsApp ' + firstOf(mainContact(i).name))
             : el('button', { class: 'btn ghost small', onclick: () => share(i, 'whatsapp') }, 'WhatsApp'),
@@ -527,7 +545,38 @@
     toast('Bank details saved');
   });
 
+  $('s-allergy-save').addEventListener('click', async () => {
+    const t = $('s-allergy').value.trim(); if (!t) { toast('Wording can’t be empty'); return; }
+    await rpc('admin_save_settings', { p: { rsvp_allergy_text: t } }); data.settings.rsvp_allergy_text = t;
+    toast('Wording saved');
+  });
+
+  // ---------- reply history ----------
+  const when = (t) => new Date(t).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  async function showHistory(i) {
+    $('h-title').textContent = i.household_name; $('h-list').innerHTML = '<p class="muted">Loading…</p>'; $('hist').classList.remove('hidden');
+    const log = await rpc('admin_rsvp_log', { p_invite: i.id });
+    $('h-list').innerHTML = '';
+    if (!log.length) { $('h-list').append(el('p', { class: 'muted' }, 'No replies logged yet. (Replies sent before the log was switched on aren’t included.)')); return; }
+    log.forEach((e, k) => $('h-list').append(el('div', { class: 'hh', style: 'margin:0 0 10px' },
+      el('div', { style: 'display:flex;justify-content:space-between;gap:8px' }, el('b', {}, when(e.submitted_at)), k === 0 ? el('span', { class: 'badge replied' }, 'Latest') : null),
+      el('ul', { style: 'margin:6px 0;padding-left:18px' }, ...e.answers.guests.map((g) => el('li', {},
+        g.name + (g.plus_one ? ' (plus one)' : '') + ': ' + (g.attending ? 'coming' : "can't come") + (g.attending ? ' · ' + (g.dietary ? 'Dietary: ' + g.dietary : 'no dietary needs') : '')))),
+      e.answers.message ? el('p', { style: 'margin:0 0 6px;font-style:italic' }, '“' + e.answers.message + '”') : null,
+      el('p', { class: 'muted', style: 'margin:0;font-size:13px' }, e.confirm_text ? (e.confirmed ? '☑ Ticked: ' : '☐ Not ticked: ') + e.confirm_text : 'No one coming, so no allergy confirmation needed.'))));
+  }
+  $('h-close').addEventListener('click', () => $('hist').classList.add('hidden'));
+
   // ---------- export ----------
+  $('export-log').addEventListener('click', async () => {
+    const log = await rpc('admin_rsvp_log', {});
+    const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const lines = [['Submitted', 'Household', 'Name', 'Plus one', 'Reply', 'Dietary', 'Message', 'Allergy box ticked', 'Wording agreed to'].map(esc).join(',')];
+    log.slice().reverse().forEach((e) => e.answers.guests.forEach((g) => lines.push([when(e.submitted_at), e.household, g.name, g.plus_one ? 'yes' : '',
+      g.attending ? 'Coming' : "Can't come", g.dietary, e.answers.message, e.confirm_text ? (e.confirmed ? 'Yes' : 'No') : 'n/a (no one coming)', e.confirm_text].map(esc).join(','))));
+    const a = el('a', { href: URL.createObjectURL(new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv' })), download: 'rsvp-log.csv' });
+    document.body.append(a); a.click(); a.remove();
+  });
   $('export').addEventListener('click', () => {
     const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
     const lines = [['Round', 'Household', 'Invite', 'Category', 'Sends', 'How', 'Address', 'Name', 'Mobile', 'Plus one', 'Age group', 'Age', 'Reply', 'Dietary', 'Message', 'Replied at', 'Link'].map(esc).join(',')];
