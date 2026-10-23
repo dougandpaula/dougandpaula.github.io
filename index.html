@@ -195,7 +195,6 @@
     </section>
 
     <section class="gift" id="gift">
-      <p class="caps" style="opacity:.75">No gifts needed, but…</p>
       <div class="marquee" role="img" aria-label="Cocktails and Dreams neon sign">
         <div class="mq-in">
           <div class="mq-script red"><span class="flick">C</span>ocktails</div>
@@ -203,7 +202,7 @@
           <div class="mq-script teal">Dreams</div>
         </div>
       </div>
-      <p id="gift-text">If you fancy buying us a cocktail, we'll enjoy it on our Thailand honeymoon. There'll be a jar on the day, or you can send something here:</p>
+      <p id="gift-text">No gifts needed, but if you fancy buying us a cocktail, we'll enjoy it on our honeymoon. You can send something here:</p>
       <div class="bank" id="bank"></div>
     </section>
 
@@ -405,7 +404,7 @@
     const rows = [['Account name', g.gift_account_name], ['Sort code', g.gift_sort_code], ['Account number', g.gift_account_number],
       ['Reference', 'Cocktail ' + firstName((invite.guests[0] || {}).name || '')]];
     const bank = $('bank'); bank.innerHTML = '';
-    if (!g.gift_account_number || /^\[/.test(g.gift_account_number)) { $('gift-text').textContent = "If you fancy buying us a cocktail, we'll enjoy it on our Thailand honeymoon. Look out for the Cocktails & Dreams jar on the day."; return; }
+    if (!g.gift_account_number || /^\[/.test(g.gift_account_number)) { $('gift-text').textContent = "No gifts needed, but if you fancy buying us a cocktail, we'll enjoy it on our honeymoon."; return; }
     rows.forEach(([label, val]) => {
       const b = el('button', { type: 'button', class: 'btn small' }, 'Copy');
       b.addEventListener('click', () => { navigator.clipboard.writeText(val).then(() => toast(label + ' copied')); });
