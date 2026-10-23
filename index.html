@@ -87,14 +87,17 @@
   .gift { background: #0E0C0B radial-gradient(ellipse at 50% 30%, rgba(255,90,60,.12), transparent 70%); border-color: #3A322B; }
   .marquee { position: relative; max-width: 300px; margin: 18px auto 12px; padding: 12px; border-radius: 26px; }
   .bulbs { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-  .bulbs rect { fill: none; stroke-width: 6.5; stroke-linecap: round; stroke-dasharray: 0 15; }
-  .bulbs .a, .bulbs .b { stroke: #FFF3CF; filter: drop-shadow(0 0 2px #FFD36B) drop-shadow(0 0 6px #FFB020); }
-  .bulbs .b { stroke-dashoffset: 7.5; }
-  .bulbs .base { stroke: #6B4A12; stroke-width: 7.5; stroke-dasharray: 0 7.5; }
-  .bulbs .a { animation: blinkA 1.4s steps(1) infinite; }
-  .bulbs .b { animation: blinkB 1.4s steps(1) infinite; }
-  @keyframes blinkA { 0% { opacity: 1; } 50% { opacity: .25; } }
-  @keyframes blinkB { 0% { opacity: .25; } 50% { opacity: 1; } }
+  .bulbs rect { fill: none; stroke-linecap: round; }
+  .bulbs .socket { stroke: #2A1F0E; stroke-width: 12; }
+  .bulbs .off.b, .bulbs .b rect { stroke-dashoffset: 9; }
+  .bulbs .off { stroke: #6E5426; stroke-width: 7; stroke-dasharray: 0 18; }
+  .bulbs .glass { stroke: #FFC54A; stroke-width: 7; stroke-dasharray: 0 18; }
+  .bulbs .hot { stroke: #FFFBEA; stroke-width: 3.4; stroke-dasharray: 0 18; }
+  .bulbs g { filter: drop-shadow(0 0 3px #FFC54A) drop-shadow(0 0 8px rgba(255,160,20,.75)); }
+  .bulbs g.a { animation: blinkA 1.4s steps(1) infinite; }
+  .bulbs g.b { animation: blinkB 1.4s steps(1) infinite; }
+  @keyframes blinkA { 0% { opacity: 1; } 50% { opacity: 0; } }
+  @keyframes blinkB { 0% { opacity: 0; } 50% { opacity: 1; } }
   .mq-in { position: relative; border-radius: 16px; padding: 16px 10px 18px; text-align: center; background: rgba(0,0,0,.35);
            box-shadow: inset 0 0 0 2px rgba(80,240,225,.9), inset 0 0 14px rgba(0,210,195,.45), 0 0 12px rgba(0,210,195,.4); }
   .mq-script { font-family: 'Yellowtail', var(--script); font-size: 60px; line-height: 1; }
@@ -113,7 +116,7 @@
   @keyframes twinkle { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.8); } }
   .flick { animation: flicker 6s infinite; }
   @keyframes flicker { 0%, 89%, 93%, 97%, 100% { opacity: 1; } 90%, 95% { opacity: .35; } }
-  @media (prefers-reduced-motion: reduce) { .flick, .star, .bulbs rect { animation: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .flick, .star, .bulbs g { animation: none; opacity: 1; } }
   .fact p.big { font-size: 21px; font-weight: 600; margin: 6px 0 0; line-height: 1.3; }
   .fact p.addr { font-size: 17px; color: #D6CFC1; margin: 4px 0 0; line-height: 1.5; }
   .times { margin-top: 10px; border-top: 1px solid #34302B; }
@@ -206,7 +209,7 @@
 
     <section class="gift" id="gift">
       <div class="marquee" role="img" aria-label="Cocktails and Dreams neon sign">
-        <svg class="bulbs" aria-hidden="true"><rect class="base" /><rect class="a" /><rect class="b" /></svg>
+        <svg class="bulbs" aria-hidden="true"><rect class="socket" /><rect class="off" /><rect class="off b" /><g class="a"><rect class="glass" /><rect class="hot" /></g><g class="b"><rect class="glass" /><rect class="hot" /></g></svg>
         <div class="mq-in">
           <div class="mq-script red"><span class="flick">C</span>ocktails</div>
           <div class="mq-amp"><span>&amp;</span></div>
