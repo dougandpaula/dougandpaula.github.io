@@ -83,11 +83,14 @@
   .gift { color: #F3EDE1; background: #0C0B0A; border: 1px solid #4A443C; box-shadow: 0 0 40px rgba(243,237,225,.08) inset; }
   .gift .neon { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,.6), 0 0 24px rgba(255,220,170,.35); }
   .done { border: 1px solid #34302B; }
-  /* Neon sign, 1960s style: gold tube outer frame */
+  /* Neon sign, 1960s marquee with static bulbs */
   .gift { background: #0E0C0B radial-gradient(ellipse at 50% 30%, rgba(255,90,60,.12), transparent 70%); border-color: #3A322B; }
   .marquee { position: relative; max-width: 300px; margin: 18px auto 12px; padding: 12px; border-radius: 26px; }
-  .marquee { padding: 10px; border-radius: 28px; border: 3px solid #FFF1CC;
-             box-shadow: 0 0 4px #FFD36B, 0 0 12px #FFB020, 0 0 26px rgba(255,160,20,.55), inset 0 0 4px #FFD36B, inset 0 0 12px rgba(255,160,20,.45); }
+  .marquee::before { content: ""; position: absolute; inset: 0; border-radius: 26px; padding: 12px;
+    background: radial-gradient(circle, #FFF8DC 0 2.4px, #FFC23A 3.4px, rgba(255,170,30,.35) 5px, transparent 6.5px) 0 0 / 15px 15px;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+            mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    filter: drop-shadow(0 0 4px rgba(255,180,40,.9)); }
   .mq-in { position: relative; border-radius: 16px; padding: 16px 10px 18px; text-align: center; background: rgba(0,0,0,.35);
            box-shadow: inset 0 0 0 2px rgba(80,240,225,.9), inset 0 0 14px rgba(0,210,195,.45), 0 0 12px rgba(0,210,195,.4); }
   .mq-script { font-family: 'Yellowtail', var(--script); font-size: 60px; line-height: 1; }
