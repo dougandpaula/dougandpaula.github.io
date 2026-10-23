@@ -76,6 +76,14 @@
   .gift { color: #F3EDE1; background: #0C0B0A; border: 1px solid #4A443C; box-shadow: 0 0 40px rgba(243,237,225,.08) inset; }
   .gift .neon { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,.6), 0 0 24px rgba(255,220,170,.35); }
   .done { border: 1px solid #34302B; }
+  .fact p.big { font-size: 21px; font-weight: 600; margin: 6px 0 0; line-height: 1.3; }
+  .fact p.addr { font-size: 17px; color: #D6CFC1; margin: 4px 0 0; line-height: 1.5; }
+  .times { margin-top: 10px; border-top: 1px solid #34302B; }
+  .times div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 0; border-bottom: 1px solid #34302B; }
+  .times span { font-size: 17px; }
+  .times b { font-family: var(--caps); font-weight: 600; letter-spacing: .08em; font-size: 15px; text-align: right; }
+  .times b i { font-family: var(--body); font-weight: 400; letter-spacing: 0; font-size: 15px; color: var(--ink-soft); }
+  .fact .actions { margin-top: 14px; }
 
   /* RSVP on cream "paper", like the invitation card */
   #rsvp, #po-sheet .panel { --ink:#1B1A18; --ink-soft:#5E5A52; --line:#D9D2C3; --paper:#F8F9EB; --bad:#9A2F2F; color: var(--ink); }
@@ -121,12 +129,17 @@
     <section class="facts">
       <div class="fact">
         <div class="caps">When</div>
-        <p>Saturday 7th August 2027<br><span id="when-time"></span></p>
+        <p class="big">Saturday 7th August 2027</p>
+        <div class="times">
+          <div id="t-ceremony"><span>Ceremony</span><b>3PM</b></div>
+          <div><span>Garden party</span><b>3.30PM <i>until late</i></b></div>
+        </div>
         <div class="actions"><button class="btn ghost small" id="cal">Add to calendar</button></div>
       </div>
       <div class="fact">
         <div class="caps">Where</div>
-        <p>Friern Manor Country House<br>Lower Dunton Road, Brentwood, Essex CM13 3SL</p>
+        <p class="big">Friern Manor Country House</p>
+        <p class="addr">Lower Dunton Road, Brentwood<br>Essex CM13 3SL</p>
         <div class="actions"><a class="btn ghost small" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=Friern+Manor+Lower+Dunton+Road+Brentwood+CM13+3SL">Open in Maps</a></div>
       </div>
     </section>
@@ -231,7 +244,7 @@
     document.querySelector('header .script').style.fontSize = ppl.length > 2 ? '38px' : '44px';
     const ceremony = invite.type === 'ceremony';
     $('front').src = ceremony ? 'img/front-ceremony.jpg' : 'img/front-garden.jpg';
-    $('when-time').textContent = ceremony ? 'Ceremony at 3pm, then the garden party until late' : 'Garden party from 3.30pm until late';
+    $('t-ceremony').classList.toggle('hidden', !ceremony);
     renderGift();
     if (invite.responded_at) showThanks(); else renderForm();
   }
