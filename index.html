@@ -51,14 +51,17 @@
   .gift { background: var(--ink); color: var(--paper); border-radius: 18px; padding: 24px 20px; text-align: center; margin: 32px 0; }
   .gift h2 { color: var(--paper); }
   .gift .neon { font-family: var(--script); font-size: 40px; text-shadow: 0 0 12px rgba(255,255,255,.35); margin: 0; }
-  .bank { margin: 18px auto 0; max-width: 360px; text-align: left; border: 1px solid rgba(243,237,225,.22); border-radius: 12px; overflow: hidden; }
-  .bank button { display: grid; grid-template-columns: 76px 1fr auto; align-items: baseline; gap: 8px; width: 100%; padding: 11px 12px;
-                 background: rgba(255,255,255,.04); border: 0; color: #F3EDE1; text-align: left; cursor: pointer; font-size: 16px; line-height: 1.35; }
-  .bank button + button { border-top: 1px solid rgba(243,237,225,.12); }
-  .bank button:active { background: rgba(255,255,255,.12); }
-  .bank b { font-family: var(--caps); font-weight: 400; letter-spacing: .05em; font-size: 10.5px; text-transform: uppercase; color: #ABA494; }
-  .bank i { font-style: normal; font-family: var(--caps); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: #ABA494; }
-  .bank-note { font-size: 14px; color: #ABA494; margin: 10px 0 0; }
+  .toast { top: 20px; bottom: auto; background: #1B1A18; color: #F8F9EB; box-shadow: 0 4px 18px rgba(0,0,0,.5); border: 1px solid #45403A; }
+  .btn.drink { margin-top: 14px; background: #F3EDE1; color: #151413; border-color: #F3EDE1; }
+  #drink-sheet .panel { --ink:#1B1A18; color: #1B1A18; background: #F8F9EB; border-top: 0; }
+  #drink-sheet .btn { background: #1B1A18; color: #F8F9EB; border-color: #1B1A18; }
+  .bank { margin: 0 auto; text-align: left; border: 1px solid #D9D2C3; border-radius: 12px; overflow: hidden; background: #fff; }
+  .bank button { display: grid; grid-template-columns: 80px 1fr auto; align-items: baseline; gap: 8px; width: 100%; padding: 12px 14px;
+                 background: transparent; border: 0; color: #1B1A18; text-align: left; cursor: pointer; font-size: 16px; line-height: 1.35; }
+  .bank button + button { border-top: 1px solid #ECE6DA; }
+  .bank button:active { background: #F3EEE3; }
+  .bank b { font-family: var(--caps); font-weight: 400; letter-spacing: .05em; font-size: 10.5px; text-transform: uppercase; color: #6E695F; }
+  .bank i { font-style: normal; font-family: var(--caps); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: #9A9385; }
   .done { text-align: center; background: var(--paper-2); border-radius: 18px; padding: 24px 18px; }
   .done ul { list-style: none; padding: 0; margin: 12px 0 18px; }
   .center { text-align: center; }
@@ -207,8 +210,7 @@
         </div>
       </div>
       <p id="gift-text">No gifts needed, but if you fancy buying us a cocktail, we'll enjoy it on our honeymoon.</p>
-      <div class="bank" id="bank"></div>
-      <p class="bank-note hidden" id="bank-note">Tap a line to copy it. Pop the reference in so we know who to toast 🥂</p>
+      <button type="button" class="btn drink hidden" id="drink-btn">Buy us a drink 🍸</button>
     </section>
 
     <footer class="muted">
@@ -226,6 +228,15 @@
     <label class="field"><span>Any dietary needs?</span><input type="text" id="po-diet" maxlength="300"></label>
     <div class="btns"><button type="button" class="btn ghost small" id="po-cancel">Cancel</button><button type="button" class="btn small" id="po-save">Save</button></div>
     <div class="center"><button type="button" class="link hidden" id="po-remove">Not bringing anyone</button></div>
+  </div>
+</div>
+<div class="sheet hidden" id="drink-sheet" role="dialog" aria-modal="true" aria-labelledby="drink-title">
+  <div class="panel">
+    <h3 id="drink-title">Cheers!</h3>
+    <p class="center" style="margin:2px 0 12px;font-size:15px;color:#5E5A52">Tap a line to copy it into your banking app</p>
+    <div class="bank" id="bank"></div>
+    <p class="center" style="margin:10px 0 0;font-size:14px;color:#5E5A52">Pop the reference in so we know who to toast 🥂</p>
+    <div class="btns"><button type="button" class="btn small" id="drink-close">Done</button></div>
   </div>
 </div>
 <div class="toast" id="toast" role="status"></div>
@@ -406,19 +417,20 @@
 
   function renderGift() {
     const g = invite.gift || {};
-    const base = "No gifts needed, but if you fancy buying us a cocktail, we'll enjoy it on our honeymoon.";
-    const bank = $('bank'); bank.innerHTML = ''; $('bank-note').classList.add('hidden');
-    $('gift-text').textContent = base;
-    if (!g.gift_account_number || /^\[/.test(g.gift_account_number)) return;
-    $('gift-text').textContent = base + ' Or send one our way:';
+    const bank = $('bank'); bank.innerHTML = '';
+    const ready = g.gift_account_number && !/^\[/.test(g.gift_account_number);
+    $('drink-btn').classList.toggle('hidden', !ready);
+    if (!ready) return;
     [['Name', g.gift_account_name], ['Sort code', g.gift_sort_code], ['Account', g.gift_account_number],
      ['Reference', 'Cocktail ' + firstName((invite.guests[0] || {}).name || '')]].forEach(([label, val]) => {
       const b = el('button', { type: 'button', 'aria-label': 'Copy ' + label }, el('b', {}, label), el('span', {}, val), el('i', {}, 'Copy'));
       b.addEventListener('click', () => { navigator.clipboard.writeText(val).then(() => toast(label + ' copied')); });
       bank.append(b);
     });
-    $('bank-note').classList.remove('hidden');
   }
+  $('drink-btn').addEventListener('click', () => $('drink-sheet').classList.remove('hidden'));
+  $('drink-close').addEventListener('click', () => $('drink-sheet').classList.add('hidden'));
+  $('drink-sheet').addEventListener('click', (e) => { if (e.target === $('drink-sheet')) $('drink-sheet').classList.add('hidden'); });
 
   $('cal').addEventListener('click', () => {
     const start = invite.type === 'ceremony' ? '20270807T140000Z' : '20270807T143000Z';
