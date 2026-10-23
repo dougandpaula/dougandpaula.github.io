@@ -135,6 +135,12 @@
   #rsvp .seg.small button[aria-pressed=true] { background: #1B1A18; color: #FBF8F1; }
   #rsvp input[type=text], #rsvp textarea { background: #fff; border-color: #CFC6B5; color: #1B1A18; }
   #rsvp input:focus, #rsvp textarea:focus { outline-color: #1B1A18; }
+  #rsvp .bad.seg, #rsvp .bad.seg button + button { border-color: #9A2F2F; }
+  #rsvp .bad.seg { box-shadow: 0 0 0 2px #9A2F2F; }
+  #rsvp input.bad { border-color: #9A2F2F; box-shadow: 0 0 0 1px #9A2F2F; }
+  #rsvp .confirm.bad { border-color: #9A2F2F; box-shadow: 0 0 0 1px #9A2F2F; }
+  #rsvp .note { color: #9A2F2F; font-size: 14px; margin: 4px 0 2px; text-align: right; }
+  #rsvp .confirm + .note, #rsvp input + .note { text-align: left; }
   .confirm { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; margin: 14px 0 4px; padding: 12px 14px;
              border: 1px solid #D9D2C3; border-radius: 10px; background: #fff; font-size: 15px; line-height: 1.4; cursor: pointer; }
   .confirm input { width: 22px; height: 22px; margin: 1px 0 0; accent-color: #1B1A18; }
@@ -189,7 +195,7 @@
         </div>
         <label class="field hidden" id="msg-field"><span>A message for us</span><textarea id="message" maxlength="1000" rows="3"></textarea></label>
         <label class="confirm hidden" id="confirm-row"><input type="checkbox" id="confirm"><span id="confirm-text"></span></label>
-        <p id="form-error" class="center hidden" style="color:var(--bad)"></p>
+        <p id="form-error" class="center hidden" style="color:var(--bad);margin:14px 0 0"></p>
         <div class="center" style="margin-top:14px"><button class="btn" type="submit" id="send">Send</button></div>
       </form>
 
@@ -308,16 +314,18 @@
       diet.value = g.dietary || '';
       const dietAsk = yesNo('Yes', 'No', 'small', (v) => { diet.classList.toggle('hidden', !v); if (v) diet.focus(); });
       dietAsk.setAttribute('aria-label', 'Dietary needs for ' + g.name);
-      dietAsk.set(diet.value ? true : null); diet.classList.toggle('hidden', !diet.value);
-      const extras = el('div', { class: 'extras' }, el('div', { class: 'ask' }, el('span', {}, 'Any dietary needs?'), dietAsk), diet);
+      dietAsk.set(diet.value ? true : (invite.responded_at && g.attending ? false : null)); diet.classList.toggle('hidden', !diet.value);
+      const dietRow = el('div', { class: 'ask' }, el('span', {}, 'Any dietary needs?'), dietAsk);
+      const extras = el('div', { class: 'extras' }, dietRow, diet);
       const who = el('div', { class: 'who' }, g.name);
       if (g.age_group !== 'adult') who.append(' ', el('small', {}, g.age_group === 'teen' ? '(teen)' : '(child)'));
       const row = el('div', { class: 'prow', 'data-id': g.id, 'data-name': g.name });
       const sync = (v) => { extras.classList.toggle('hidden', v !== true); row.dataset.attending = v == null ? '' : String(v); syncPlusOne(); };
       const going = yesNo('Coming', "Can't come", '', sync);
       going.setAttribute('aria-label', g.name);
-      row.dietAsk = dietAsk;
-      row.append(el('div', { class: 'prow-top' }, who, going), extras);
+      const top = el('div', { class: 'prow-top' }, who, going);
+      Object.assign(row, { going, top, dietAsk, dietRow, diet });
+      row.append(top, extras);
       box.append(row);
       going.set(g.attending == null ? null : g.attending); sync(going.value);
     });
@@ -328,17 +336,20 @@
       name.value = po ? po.name : ''; diet.value = po ? (po.dietary || '') : '';
       const dietAsk = yesNo('Yes', 'No', 'small', (v) => { diet.classList.toggle('hidden', !v); if (v) diet.focus(); });
       dietAsk.set(diet.value ? true : (po ? false : null)); diet.classList.toggle('hidden', !diet.value);
-      const extras = el('div', { class: 'extras' }, name, el('div', { class: 'ask' }, el('span', {}, 'Any dietary needs?'), dietAsk), diet);
+      const dietRow = el('div', { class: 'ask' }, el('span', {}, 'Any dietary needs?'), dietAsk);
+      const extras = el('div', { class: 'extras' }, name, dietRow, diet);
       const poAsk = yesNo('Yes', 'No', 'small', (v) => { extras.classList.toggle('hidden', !v); if (v && !name.value) name.focus(); });
       poAsk.setAttribute('aria-label', 'Bringing a plus one?');
-      const row = el('div', { class: 'prow po' }, el('div', { class: 'ask', style: 'margin:0' }, el('span', { class: 'who' }, 'Bringing a plus one?'), poAsk), extras);
-      row.poAsk = poAsk; row.dietAsk = dietAsk;
+      const top = el('div', { class: 'ask', style: 'margin:0' }, el('span', { class: 'who' }, 'Bringing a plus one?'), poAsk);
+      const row = el('div', { class: 'prow po' }, top, extras);
+      Object.assign(row, { poAsk, top, dietAsk, dietRow, diet, name });
       box.append(row);
       poAsk.set(po ? true : (invite.responded_at ? false : null)); extras.classList.toggle('hidden', poAsk.value !== true);
     }
     syncPlusOne();
     $('confirm-text').textContent = invite.allergy_text || 'We have told you about any allergies or dietary needs for everyone in our party, including any plus one.';
     $('confirm').checked = false;
+    tried = false; clearMarks();
     $('message').value = invite.message || '';
     $('msg-field').classList.toggle('hidden', !invite.message);
     $('msg-add').classList.toggle('hidden', !!invite.message);
@@ -352,26 +363,61 @@
   }
   $('msg-add').addEventListener('click', () => { $('msg-add').classList.add('hidden'); $('msg-field').classList.remove('hidden'); $('message').focus(); });
 
+  // ---------- validation ----------
+  let tried = false;
+  function clearMarks() {
+    document.querySelectorAll('#form .bad').forEach((x) => x.classList.remove('bad'));
+    document.querySelectorAll('#form .note').forEach((x) => x.remove());
+    $('form-error').classList.add('hidden');
+  }
+  // Returns a list of { target, after, msg, label } for everything still to answer.
+  function problems() {
+    const list = [];
+    const add = (target, after, msg, label) => list.push({ target, after, msg, label });
+    document.querySelectorAll('#people .prow:not(.po)').forEach((r) => {
+      const n = firstName(r.dataset.name);
+      if (r.dataset.attending === '') return add(r.going, r.top, 'Please choose Coming or Can’t come', n + '’s reply');
+      if (r.dataset.attending !== 'true') return;
+      if (r.dietAsk.value == null) add(r.dietAsk, r.dietRow, 'Please choose No or Yes', n + '’s dietary needs');
+      else if (r.dietAsk.value && !r.diet.value.trim()) add(r.diet, r.diet, 'Please tell us ' + n + '’s dietary needs, or choose No', n + '’s dietary needs');
+    });
+    const po = document.querySelector('#people .po');
+    if (po && !po.classList.contains('hidden')) {
+      if (po.poAsk.value == null) add(po.poAsk, po.top, 'Please choose No or Yes', 'plus one');
+      else if (po.poAsk.value) {
+        if (!po.name.value.trim()) add(po.name, po.name, 'Please add their name, or choose No', 'plus one’s name');
+        if (po.dietAsk.value == null) add(po.dietAsk, po.dietRow, 'Please choose No or Yes', 'plus one’s dietary needs');
+        else if (po.dietAsk.value && !po.diet.value.trim()) add(po.diet, po.diet, 'Please tell us their dietary needs, or choose No', 'plus one’s dietary needs');
+      }
+    }
+    if (anyoneComing() && !$('confirm').checked) add($('confirm-row'), $('confirm-row'), 'Please tick to confirm', 'allergy box');
+    return list;
+  }
+  function showProblems(scroll) {
+    clearMarks();
+    const list = problems();
+    list.forEach((p) => { p.target.classList.add('bad'); p.after.insertAdjacentElement('afterend', el('div', { class: 'note' }, p.msg)); });
+    if (list.length) {
+      const err = $('form-error');
+      err.textContent = 'A few things to finish: ' + joinNames(list.map((p) => p.label)) + '.';
+      err.classList.remove('hidden');
+      if (scroll) list[0].target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return list.length === 0;
+  }
+  // once they've pressed Send, re-check as they answer so the red marks clear
+  ['click', 'input', 'change'].forEach((ev) => $('form').addEventListener(ev, (e) => {
+    if (tried && e.target.id !== 'send') setTimeout(() => showProblems(false), 0);
+  }));
+
   $('form').addEventListener('submit', (e) => {
     e.preventDefault();
     const cards = [...document.querySelectorAll('#people .prow:not(.po)')];
-    const missing = cards.filter((c) => c.dataset.attending === '');
     const err = $('form-error');
-    if (missing.length) {
-      err.textContent = 'Please choose Coming or Can’t come for ' + joinNames(missing.map((c) => firstName(c.dataset.name))) + '.';
-      err.classList.remove('hidden'); missing[0].scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
-    }
-    const noDiet = cards.filter((c) => c.dataset.attending === 'true' && c.dietAsk.value === true && !c.querySelector('[data-diet]').value.trim());
-    if (noDiet.length) {
-      err.textContent = 'Please tell us the dietary needs for ' + joinNames(noDiet.map((c) => firstName(c.dataset.name))) + ', or choose No.';
-      err.classList.remove('hidden'); noDiet[0].querySelector('[data-diet]').focus(); return;
-    }
+    tried = true;
+    if (!showProblems(true)) return;
     const poRow = document.querySelector('#people .po');
     const poOn = poRow && !poRow.classList.contains('hidden') && poRow.poAsk.value === true;
-    if (poOn && !$('po-name').value.trim()) { err.textContent = 'Please add your plus one’s name, or choose No.'; err.classList.remove('hidden'); $('po-name').focus(); return; }
-    if (poOn && poRow.dietAsk.value === true && !$('po-diet').value.trim()) { err.textContent = 'Please tell us your plus one’s dietary needs, or choose No.'; err.classList.remove('hidden'); $('po-diet').focus(); return; }
-    if (anyoneComing() && !$('confirm').checked) { err.textContent = 'Please tick the box about allergies and dietary needs.'; err.classList.remove('hidden'); $('confirm-row').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
-    err.classList.add('hidden');
     const guests = cards.map((c) => ({
       id: c.dataset.id, attending: c.dataset.attending === 'true',
       dietary: c.dietAsk.value === true ? c.querySelector('[data-diet]').value : '',
