@@ -77,7 +77,7 @@
   .gift .neon { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,.6), 0 0 24px rgba(255,220,170,.35); }
   .done { border: 1px solid #34302B; }
   /* Neon sign, 1960s Vegas marquee with chaser bulbs */
-  .gift { background: #0E0C0B radial-gradient(ellipse at 50% 30%, rgba(40,220,210,.10), transparent 70%); border-color: #3A322B; }
+  .gift { background: #0E0C0B radial-gradient(ellipse at 50% 30%, rgba(255,90,60,.12), transparent 70%); border-color: #3A322B; }
   .marquee { position: relative; max-width: 300px; margin: 18px auto 12px; padding: 12px; border-radius: 26px; }
   .marquee::before { content: ""; position: absolute; inset: 0; border-radius: 26px; padding: 12px;
     background: radial-gradient(circle, #FFF8DC 0 2.4px, #FFC23A 3.4px, rgba(255,170,30,.35) 5px, transparent 6.5px) 0 0 / 15px 15px;
@@ -85,16 +85,13 @@
             mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
     filter: drop-shadow(0 0 4px rgba(255,180,40,.9)); animation: chase 1.2s steps(3) infinite; }
   @keyframes chase { to { background-position: 15px 0; } }
-  .mq-in { position: relative; border-radius: 16px; padding: 14px 10px 16px; text-align: center; background: rgba(0,0,0,.35);
-           box-shadow: inset 0 0 0 2px rgba(255,100,200,.9), inset 0 0 14px rgba(255,60,190,.5), 0 0 12px rgba(255,60,190,.45); }
-  .coupe { width: 70px; height: 70px; display: block; margin: 0 auto -4px; fill: none; stroke: #FFE3F6; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
-           filter: drop-shadow(0 0 2px #FF7BE0) drop-shadow(0 0 8px #FF3CC8) drop-shadow(0 0 14px rgba(255,40,190,.6)); }
-  .coupe .b { stroke: #E6FFFB; filter: drop-shadow(0 0 4px #00D9C4); animation: twinkle 2.4s ease-in-out infinite; }
-  .coupe .b2 { animation-delay: .8s; } .coupe .b3 { animation-delay: 1.6s; }
-  .mq-script { font-family: 'Yellowtail', var(--script); font-size: 58px; line-height: 1.05; color: #E6FFFB;
-               text-shadow: 0 0 2px #fff, 0 0 7px #3FF3E0, 0 0 15px #00D9C4, 0 0 30px #00BFAE, 0 0 50px rgba(0,190,175,.55); }
-  .mq-and { font-family: 'Yellowtail', var(--script); font-size: 38px; line-height: 1; color: #FFE3F6; margin-top: 2px;
-            text-shadow: 0 0 2px #fff, 0 0 7px #FF7BE0, 0 0 15px #FF3CC8, 0 0 30px rgba(255,40,190,.7); }
+  .mq-in { position: relative; border-radius: 16px; padding: 16px 10px 18px; text-align: center; background: rgba(0,0,0,.35);
+           box-shadow: inset 0 0 0 2px rgba(80,240,225,.9), inset 0 0 14px rgba(0,210,195,.45), 0 0 12px rgba(0,210,195,.4); }
+  .mq-script { font-family: 'Yellowtail', var(--script); font-size: 60px; line-height: 1; }
+  .mq-script.red { color: #FFE3DE; text-shadow: 0 0 2px #fff, 0 0 7px #FF5A4A, 0 0 15px #FF3020, 0 0 30px #FF1A0A, 0 0 50px rgba(255,30,10,.55); }
+  .mq-script.teal { color: #E6FFFB; text-shadow: 0 0 2px #fff, 0 0 7px #3FF3E0, 0 0 15px #00D9C4, 0 0 30px #00BFAE, 0 0 50px rgba(0,190,175,.55); }
+  .mq-amp { font-family: 'Yellowtail', var(--script); font-size: 50px; line-height: .9; margin: 2px 0; color: #FFF4D6;
+            text-shadow: 0 0 2px #fff, 0 0 7px #FFE08A, 0 0 15px #FFB733, 0 0 28px rgba(255,170,30,.6); }
   .star { position: absolute; z-index: 1; fill: none; stroke: #FFF4D6; stroke-width: 1.6; stroke-linecap: round;
           filter: drop-shadow(0 0 2px #FFE08A) drop-shadow(0 0 6px #FFB733); animation: twinkle 3.2s ease-in-out infinite; }
   .star circle { fill: #FFF4D6; }
@@ -103,7 +100,7 @@
   @keyframes twinkle { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.8); } }
   .flick { animation: flicker 6s infinite; }
   @keyframes flicker { 0%, 89%, 93%, 97%, 100% { opacity: 1; } 90%, 95% { opacity: .35; } }
-  @media (prefers-reduced-motion: reduce) { .flick, .star, .coupe .b, .marquee::before { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .flick, .star, .marquee::before { animation: none; } }
   .fact p.big { font-size: 21px; font-weight: 600; margin: 6px 0 0; line-height: 1.3; }
   .fact p.addr { font-size: 17px; color: #D6CFC1; margin: 4px 0 0; line-height: 1.5; }
   .times { margin-top: 10px; border-top: 1px solid #34302B; }
@@ -200,12 +197,9 @@
         <svg class="star s1" viewBox="-2 -2 28 28" aria-hidden="true"><path d="M12 0 V24 M0 12 H24 M3.5 3.5 L20.5 20.5 M20.5 3.5 L3.5 20.5" /><circle cx="12" cy="12" r="1.6" /></svg>
         <svg class="star s2" viewBox="-2 -2 28 28" aria-hidden="true"><path d="M12 0 V24 M0 12 H24 M3.5 3.5 L20.5 20.5 M20.5 3.5 L3.5 20.5" /><circle cx="12" cy="12" r="1.6" /></svg>
         <div class="mq-in">
-          <svg class="coupe" viewBox="0 0 90 90" aria-hidden="true">
-            <path d="M8 22 Q45 62 82 22 Z" class="bowl" /><path d="M45 52 V80 M28 83 H62" />
-            <circle cx="32" cy="14" r="3" class="b b1" /><circle cx="48" cy="6" r="2.4" class="b b2" /><circle cx="60" cy="13" r="3.4" class="b b3" />
-          </svg>
-          <div class="mq-script">Cocktails</div>
-          <div class="mq-and">&amp; <span class="flick">D</span>reams</div>
+          <div class="mq-script red"><span class="flick">C</span>ocktails</div>
+          <div class="mq-amp">&amp;</div>
+          <div class="mq-script teal">Dreams</div>
         </div>
       </div>
       <p id="gift-text">If you fancy buying us a cocktail, we'll enjoy it on our Thailand honeymoon. There'll be a jar on the day, or you can send something here:</p>
