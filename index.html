@@ -45,7 +45,24 @@
   footer { text-align: center; padding: 32px 0 48px; font-size: 15px; }
   .zoom { position: fixed; inset: 0; background: rgba(20,20,20,.95); z-index: 40; overflow: auto; display: flex; align-items: flex-start; justify-content: center; }
   .zoom img { width: 100%; max-width: 900px; }
-  .zoom button { position: fixed; top: 12px; right: 12px; min-height: 44px; min-width: 44px; border-radius: 999px; border: 0; background: #fff; font-size: 22px; cursor: pointer; }
+  .zoom button { position: fixed; top: 12px; right: 12px; min-height: 44px; min-width: 44px; border-radius: 999px; border: 0; background: #fff; color: #1B1A18; font-size: 22px; cursor: pointer; }
+
+  /* Dark theme: cream cards on near-black */
+  :root { --paper:#151413; --paper-2:#211F1C; --ink:#F3EDE1; --ink-soft:#ABA494; --line:#3A3631; --bad:#E08A8A; }
+  body { background: #151413 radial-gradient(ellipse at 50% 0%, #2A2723 0%, #151413 60%) fixed; }
+  .card { box-shadow: 0 18px 40px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.4); border-radius: 4px; }
+  #front { transform: rotate(-1.2deg); }
+  #back  { transform: rotate(1deg); margin-top: 28px; }
+  .fact { background: #1E1C1A; border: 1px solid #34302B; }
+  .person { background: #1E1C1A; border-color: #3A3631; }
+  input[type=text], input[type=number], textarea, select { background: #F7F3EA; color: #1B1A18; border-color: #F7F3EA; }
+  input:focus, select:focus, textarea:focus { outline-color: #F3EDE1; }
+  .choice button { background: #2A2724; border-color: #45403A; color: #F3EDE1; }
+  .choice button[aria-pressed=true].yes { background: #3E8A4C; border-color: #3E8A4C; }
+  .choice button[aria-pressed=true].no { background: #A8423F; border-color: #A8423F; }
+  .gift { color: #F3EDE1; background: #0C0B0A; border: 1px solid #4A443C; box-shadow: 0 0 40px rgba(243,237,225,.08) inset; }
+  .gift .neon { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,.6), 0 0 24px rgba(255,220,170,.35); }
+  .done { border: 1px solid #34302B; }
 </style>
 </head>
 <body>
