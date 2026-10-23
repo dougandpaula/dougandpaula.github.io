@@ -36,12 +36,13 @@
   .seg button + button { border-left: 1px solid #45403A; }
   .seg button[aria-pressed=true].yes { background: #3E8A4C; }
   .seg button[aria-pressed=true].no { background: #A8423F; }
-  .extras { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; }
-  .extras input[type=text] { min-height: 42px; }
-  .extras .age { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--ink-soft); }
-  .extras .age input { width: 70px; min-height: 40px; }
+  .ask { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin-top: 8px; font-size: 15px; color: var(--ink-soft); }
+  .seg.small button { min-height: 34px; padding: 0 14px; font-size: 14px; }
+  .seg.small button[aria-pressed=true] { background: #F3EDE1; color: #151413; }
+  .extras input[type=text] { min-height: 42px; margin-top: 8px; }
   .link { background: none; border: 0; padding: 6px 0; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; font-size: 15px; cursor: pointer; }
   .po-edit { color: var(--ink-soft); font-size: 15px; }
+  .po .who { color: var(--ink); }
   .rsvp-more { display: flex; flex-wrap: wrap; gap: 4px 22px; justify-content: center; margin: 10px 0 6px; }
   .sheet { position: fixed; inset: 0; z-index: 45; background: rgba(0,0,0,.65); display: flex; align-items: flex-end; justify-content: center; }
   .sheet .panel { width: 100%; max-width: 640px; background: #211F1C; border-top: 1px solid #45403A; border-radius: 18px 18px 0 0; padding: 20px 18px calc(22px + env(safe-area-inset-bottom)); }
@@ -119,7 +120,6 @@
       <form id="form" novalidate>
         <div class="rsvp-box"><div id="people"></div></div>
         <div class="rsvp-more">
-          <button type="button" class="link hidden" id="po-add">+ Bringing a plus one?</button>
           <button type="button" class="link" id="msg-add">+ Add a message for us</button>
         </div>
         <label class="field hidden" id="msg-field"><span>A message for us</span><textarea id="message" maxlength="1000" rows="3"></textarea></label>
@@ -219,68 +219,80 @@
 
   let plusOne = { name: '', dietary: '' };
 
+  // Small two-way switch. value: null (unanswered), true or false.
+  function yesNo(labelYes, labelNo, cls, onChange) {
+    const no = el('button', { type: 'button', class: 'no' }, labelNo);
+    const yes = el('button', { type: 'button', class: 'yes' }, labelYes);
+    const box = el('div', { class: 'seg ' + cls, role: 'group' }, cls === 'small' ? no : yes, cls === 'small' ? yes : no);
+    box.set = (v) => { box.value = v; yes.setAttribute('aria-pressed', String(v === true)); no.setAttribute('aria-pressed', String(v === false)); };
+    yes.addEventListener('click', () => { box.set(true); onChange(true); });
+    no.addEventListener('click', () => { box.set(false); onChange(false); });
+    box.set(null);
+    return box;
+  }
+
   function renderForm() {
     const box = $('people'); box.innerHTML = '';
     invite.guests.filter((g) => !g.is_plus_one).forEach((g) => {
-      const state = { attending: g.attending };
-      const yes = el('button', { type: 'button', class: 'yes' }, 'Coming');
-      const no = el('button', { type: 'button', class: 'no' }, "Can't come");
-      const kid = g.age_group !== 'adult';
-      const diet = el('input', { type: 'text', maxlength: '300', 'data-diet': g.id, placeholder: 'Dietary needs for ' + firstName(g.name), 'aria-label': 'Dietary needs for ' + g.name });
+      const diet = el('input', { type: 'text', maxlength: '300', 'data-diet': g.id, placeholder: 'e.g. vegetarian, nut allergy', 'aria-label': 'Dietary needs for ' + g.name });
       diet.value = g.dietary || '';
-      const dietLink = el('button', { type: 'button', class: 'link' }, '+ Dietary needs');
-      dietLink.addEventListener('click', () => { dietLink.classList.add('hidden'); diet.classList.remove('hidden'); diet.focus(); });
-      if (diet.value) dietLink.classList.add('hidden'); else diet.classList.add('hidden');
-      const age = el('input', { type: 'number', inputmode: 'numeric', min: '0', max: '17', 'data-age': g.id });
-      if (g.age != null) age.value = g.age;
-      const extras = el('div', { class: 'extras' });
-      if (kid) extras.append(el('label', { class: 'age' }, 'Age on the day', age));
-      extras.append(dietLink, diet);
+      const dietAsk = yesNo('Yes', 'No', 'small', (v) => { diet.classList.toggle('hidden', !v); if (v) diet.focus(); });
+      dietAsk.setAttribute('aria-label', 'Dietary needs for ' + g.name);
+      dietAsk.set(diet.value ? true : null); diet.classList.toggle('hidden', !diet.value);
+      const extras = el('div', { class: 'extras' }, el('div', { class: 'ask' }, el('span', {}, 'Any dietary needs?'), dietAsk), diet);
       const who = el('div', { class: 'who' }, g.name);
-      if (kid) who.append(' ', el('small', {}, g.age_group === 'teen' ? '(teen)' : '(child)'));
-      const row = el('div', { class: 'prow', 'data-id': g.id, 'data-name': g.name },
-        el('div', { class: 'prow-top' }, who, el('div', { class: 'seg', role: 'group', 'aria-label': g.name }, yes, no)), extras);
-      const sync = () => {
-        yes.setAttribute('aria-pressed', String(state.attending === true));
-        no.setAttribute('aria-pressed', String(state.attending === false));
-        extras.classList.toggle('hidden', state.attending !== true);
-        row.dataset.attending = state.attending == null ? '' : String(state.attending);
-      };
-      yes.addEventListener('click', () => { state.attending = true; sync(); });
-      no.addEventListener('click', () => { state.attending = false; sync(); });
-      sync();
+      if (g.age_group !== 'adult') who.append(' ', el('small', {}, g.age_group === 'teen' ? '(teen)' : '(child)'));
+      const row = el('div', { class: 'prow', 'data-id': g.id, 'data-name': g.name });
+      const sync = (v) => { extras.classList.toggle('hidden', v !== true); row.dataset.attending = v == null ? '' : String(v); syncPlusOne(); };
+      const going = yesNo('Coming', "Can't come", '', sync);
+      going.setAttribute('aria-label', g.name);
+      row.dietAsk = dietAsk;
+      row.append(el('div', { class: 'prow-top' }, who, going), extras);
       box.append(row);
+      going.set(g.attending == null ? null : g.attending); sync(going.value);
     });
     const po = invite.guests.find((g) => g.is_plus_one);
     plusOne = { name: po ? po.name : '', dietary: po ? (po.dietary || '') : '' };
-    renderPlusOne();
+    if (invite.plus_one_allowed) {
+      const poAsk = yesNo('Yes', 'No', 'small', (v) => { if (v) openPlusOne(); else { plusOne = { name: '', dietary: '' }; syncPlusOne(); } });
+      poAsk.setAttribute('aria-label', 'Bringing a plus one?');
+      const change = el('button', { type: 'button', class: 'link' }, 'Change');
+      change.addEventListener('click', openPlusOne);
+      const info = el('div', { class: 'po-edit' });
+      box.append(el('div', { class: 'prow po' }, el('div', { class: 'ask', style: 'margin:0' }, el('span', { class: 'who' }, 'Bringing a plus one?'), poAsk), info));
+      $('po-sheet').ask = poAsk; $('po-sheet').info = info; $('po-sheet').change = change;
+      poAsk.set(plusOne.name ? true : (invite.responded_at ? false : null));
+    }
+    syncPlusOne();
     $('message').value = invite.message || '';
     $('msg-field').classList.toggle('hidden', !invite.message);
     $('msg-add').classList.toggle('hidden', !!invite.message);
     $('form').classList.remove('hidden'); $('thanks').classList.add('hidden');
   }
 
-  function renderPlusOne() {
-    const old = document.querySelector('#people .po'); if (old) old.remove();
-    $('po-add').classList.toggle('hidden', !invite.plus_one_allowed || !!plusOne.name);
-    if (!plusOne.name) return;
-    const edit = el('button', { type: 'button', class: 'link' }, 'Change');
-    edit.addEventListener('click', openPlusOne);
-    $('people').append(el('div', { class: 'prow po' },
-      el('div', { class: 'prow-top' }, el('div', { class: 'who' }, plusOne.name, ' ', el('small', {}, '(plus one)')), edit),
-      plusOne.dietary ? el('div', { class: 'po-edit' }, plusOne.dietary) : ''));
+  const anyoneComing = () => !!document.querySelector('#people .prow[data-attending="true"]');
+  function syncPlusOne() {
+    const row = document.querySelector('#people .po'); if (!row) return;
+    const sh = $('po-sheet');
+    row.classList.toggle('hidden', !anyoneComing());
+    if (sh.ask) sh.ask.set(plusOne.name ? true : sh.ask.value === true ? null : sh.ask.value);
+    sh.info.innerHTML = '';
+    if (plusOne.name) sh.info.append(plusOne.name + (plusOne.dietary ? ' · ' + plusOne.dietary : '') + ' ', sh.change);
   }
   function openPlusOne() {
     $('po-name').value = plusOne.name; $('po-diet').value = plusOne.dietary;
     $('po-remove').classList.toggle('hidden', !plusOne.name);
     $('po-sheet').classList.remove('hidden'); $('po-name').focus();
   }
-  const closePlusOne = () => $('po-sheet').classList.add('hidden');
-  $('po-add').addEventListener('click', openPlusOne);
+  const closePlusOne = () => { $('po-sheet').classList.add('hidden'); syncPlusOne(); };
   $('po-cancel').addEventListener('click', closePlusOne);
   $('po-sheet').addEventListener('click', (e) => { if (e.target === $('po-sheet')) closePlusOne(); });
-  $('po-save').addEventListener('click', () => { plusOne = { name: $('po-name').value.trim(), dietary: $('po-diet').value.trim() }; closePlusOne(); renderPlusOne(); });
-  $('po-remove').addEventListener('click', () => { plusOne = { name: '', dietary: '' }; closePlusOne(); renderPlusOne(); });
+  $('po-save').addEventListener('click', () => {
+    const name = $('po-name').value.trim();
+    if (!name) { $('po-name').focus(); $('po-name').placeholder = 'Please add their name'; return; }
+    plusOne = { name, dietary: $('po-diet').value.trim() }; closePlusOne();
+  });
+  $('po-remove').addEventListener('click', () => { plusOne = { name: '', dietary: '' }; $('po-sheet').ask.set(false); closePlusOne(); });
   $('msg-add').addEventListener('click', () => { $('msg-add').classList.add('hidden'); $('msg-field').classList.remove('hidden'); $('message').focus(); });
 
   $('form').addEventListener('submit', (e) => {
@@ -292,16 +304,21 @@
       err.textContent = 'Please choose Coming or Can’t come for ' + joinNames(missing.map((c) => firstName(c.dataset.name))) + '.';
       err.classList.remove('hidden'); missing[0].scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
     }
+    const noDiet = cards.filter((c) => c.dataset.attending === 'true' && c.dietAsk.value === true && !c.querySelector('[data-diet]').value.trim());
+    if (noDiet.length) {
+      err.textContent = 'Please tell us the dietary needs for ' + joinNames(noDiet.map((c) => firstName(c.dataset.name))) + ', or choose No.';
+      err.classList.remove('hidden'); noDiet[0].querySelector('[data-diet]').focus(); return;
+    }
     err.classList.add('hidden');
     const guests = cards.map((c) => ({
       id: c.dataset.id, attending: c.dataset.attending === 'true',
-      dietary: (c.querySelector('[data-diet]') || {}).value || '',
-      age: (c.querySelector('[data-age]') || {}).value || ''
+      dietary: c.dietAsk.value === true ? c.querySelector('[data-diet]').value : '',
+      age: ''
     }));
     const btn = $('send'); btn.disabled = true; btn.textContent = 'Sending…';
     rpc('submit_rsvp', {
       p_code: code, p_guests: guests,
-      p_plus_one: plusOne,
+      p_plus_one: guests.some((g) => g.attending) ? plusOne : { name: '', dietary: '' },
       p_message: $('message').value
     }).then((data) => { invite = data; showThanks(); $('rsvp').scrollIntoView({ behavior: 'smooth' }); })
       .catch(() => { err.textContent = 'Sorry, that didn’t send. Please check your signal and try again.'; err.classList.remove('hidden'); })
