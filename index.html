@@ -173,7 +173,7 @@
         <p class="big">Saturday 7th August 2027</p>
         <div class="times">
           <div id="t-ceremony"><span>Ceremony</span><b>3PM</b></div>
-          <div><span>Garden party</span><b>3.30PM <i>until late</i></b></div>
+          <div><span>Garden party</span><b>3.30PM <i id="t-late">until late</i></b></div>
         </div>
         <div class="actions"><button class="btn ghost small" id="cal">Add to calendar</button></div>
       </div>
@@ -301,6 +301,7 @@
     const ceremony = invite.type === 'ceremony';
     $('front').src = ceremony ? 'img/front-ceremony.jpg' : 'img/front-garden.jpg';
     $('t-ceremony').classList.toggle('hidden', !ceremony);
+    $('t-late').classList.toggle('hidden', ceremony);
     renderGift();
     if (invite.responded_at) showThanks(); else renderForm();
   }
