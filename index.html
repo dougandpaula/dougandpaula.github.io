@@ -40,6 +40,7 @@
   .seg.small button { min-height: 34px; padding: 0 14px; font-size: 14px; }
   .seg.small button[aria-pressed=true] { background: #F3EDE1; color: #151413; }
   .extras input[type=text] { min-height: 42px; margin-top: 8px; }
+  .po .extras { margin-top: 4px; }
   .link { background: none; border: 0; padding: 6px 0; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; font-size: 15px; cursor: pointer; }
   .po-edit { color: var(--ink-soft); font-size: 15px; }
   .po .who { color: var(--ink); }
@@ -120,7 +121,7 @@
   .fact .actions { margin-top: 14px; }
 
   /* RSVP on cream "paper", like the invitation card */
-  #rsvp, #po-sheet .panel { --ink:#1B1A18; --ink-soft:#5E5A52; --line:#D9D2C3; --paper:#F8F9EB; --bad:#9A2F2F; color: var(--ink); }
+  #rsvp, #drink-sheet .panel { --ink:#1B1A18; --ink-soft:#5E5A52; --line:#D9D2C3; --paper:#F8F9EB; --bad:#9A2F2F; color: var(--ink); }
   #rsvp { background: #F8F9EB; border-radius: 4px; padding: 30px 20px 26px; margin: 8px 0 28px;
           box-shadow: 0 18px 40px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.4); outline: 1.5px solid #1B1A18; outline-offset: -9px; }
   #rsvp h2 { margin-top: 0; }
@@ -132,11 +133,10 @@
   #rsvp .seg button[aria-pressed=true].yes { background: #2F7A3E; color: #fff; }
   #rsvp .seg button[aria-pressed=true].no { background: #9A2F2F; color: #fff; }
   #rsvp .seg.small button[aria-pressed=true] { background: #1B1A18; color: #FBF8F1; }
-  #rsvp input[type=text], #rsvp textarea, #po-sheet input[type=text] { background: #fff; border-color: #CFC6B5; color: #1B1A18; }
-  #rsvp input:focus, #rsvp textarea:focus, #po-sheet input:focus { outline-color: #1B1A18; }
+  #rsvp input[type=text], #rsvp textarea { background: #fff; border-color: #CFC6B5; color: #1B1A18; }
+  #rsvp input:focus, #rsvp textarea:focus { outline-color: #1B1A18; }
   #rsvp .done { background: transparent; border: 0; padding: 4px 0 0; }
   .rule { display: none; }
-  #po-sheet .panel { background: #F8F9EB; border-top: 0; }
 </style>
 </head>
 <body>
@@ -217,15 +217,6 @@
 </div>
 
 <div class="zoom hidden" id="zoom" role="dialog" aria-label="Invitation card"><button aria-label="Close">×</button><img alt=""></div>
-<div class="sheet hidden" id="po-sheet" role="dialog" aria-modal="true" aria-labelledby="po-title">
-  <div class="panel">
-    <h3 id="po-title">Your plus one</h3>
-    <label class="field"><span>Their name</span><input type="text" id="po-name" maxlength="80" autocomplete="off"></label>
-    <label class="field"><span>Any dietary needs?</span><input type="text" id="po-diet" maxlength="300"></label>
-    <div class="btns"><button type="button" class="btn ghost small" id="po-cancel">Cancel</button><button type="button" class="btn small" id="po-save">Save</button></div>
-    <div class="center"><button type="button" class="link hidden" id="po-remove">Not bringing anyone</button></div>
-  </div>
-</div>
 <div class="sheet hidden" id="drink-sheet" role="dialog" aria-modal="true" aria-labelledby="drink-title">
   <div class="panel">
     <h3 id="drink-title">Cheers!</h3>
@@ -294,8 +285,6 @@
     if (invite.responded_at) showThanks(); else renderForm();
   }
 
-  let plusOne = { name: '', dietary: '' };
-
   // Small two-way switch. value: null (unanswered), true or false.
   function yesNo(labelYes, labelNo, cls, onChange) {
     const no = el('button', { type: 'button', class: 'no' }, labelNo);
@@ -329,16 +318,19 @@
       going.set(g.attending == null ? null : g.attending); sync(going.value);
     });
     const po = invite.guests.find((g) => g.is_plus_one);
-    plusOne = { name: po ? po.name : '', dietary: po ? (po.dietary || '') : '' };
     if (invite.plus_one_allowed) {
-      const poAsk = yesNo('Yes', 'No', 'small', (v) => { if (v) openPlusOne(); else { plusOne = { name: '', dietary: '' }; syncPlusOne(); } });
+      const name = el('input', { type: 'text', maxlength: '80', id: 'po-name', placeholder: 'Their name', autocomplete: 'off', 'aria-label': 'Plus one name' });
+      const diet = el('input', { type: 'text', maxlength: '300', id: 'po-diet', placeholder: 'e.g. vegetarian, nut allergy', 'aria-label': 'Plus one dietary needs' });
+      name.value = po ? po.name : ''; diet.value = po ? (po.dietary || '') : '';
+      const dietAsk = yesNo('Yes', 'No', 'small', (v) => { diet.classList.toggle('hidden', !v); if (v) diet.focus(); });
+      dietAsk.set(diet.value ? true : (po ? false : null)); diet.classList.toggle('hidden', !diet.value);
+      const extras = el('div', { class: 'extras' }, name, el('div', { class: 'ask' }, el('span', {}, 'Any dietary needs?'), dietAsk), diet);
+      const poAsk = yesNo('Yes', 'No', 'small', (v) => { extras.classList.toggle('hidden', !v); if (v && !name.value) name.focus(); });
       poAsk.setAttribute('aria-label', 'Bringing a plus one?');
-      const change = el('button', { type: 'button', class: 'link' }, 'Change');
-      change.addEventListener('click', openPlusOne);
-      const info = el('div', { class: 'po-edit' });
-      box.append(el('div', { class: 'prow po' }, el('div', { class: 'ask', style: 'margin:0' }, el('span', { class: 'who' }, 'Bringing a plus one?'), poAsk), info));
-      $('po-sheet').ask = poAsk; $('po-sheet').info = info; $('po-sheet').change = change;
-      poAsk.set(plusOne.name ? true : (invite.responded_at ? false : null));
+      const row = el('div', { class: 'prow po' }, el('div', { class: 'ask', style: 'margin:0' }, el('span', { class: 'who' }, 'Bringing a plus one?'), poAsk), extras);
+      row.poAsk = poAsk; row.dietAsk = dietAsk;
+      box.append(row);
+      poAsk.set(po ? true : (invite.responded_at ? false : null)); extras.classList.toggle('hidden', poAsk.value !== true);
     }
     syncPlusOne();
     $('message').value = invite.message || '';
@@ -349,27 +341,8 @@
 
   const anyoneComing = () => !!document.querySelector('#people .prow[data-attending="true"]');
   function syncPlusOne() {
-    const row = document.querySelector('#people .po'); if (!row) return;
-    const sh = $('po-sheet');
-    row.classList.toggle('hidden', !anyoneComing());
-    if (sh.ask) sh.ask.set(plusOne.name ? true : sh.ask.value === true ? null : sh.ask.value);
-    sh.info.innerHTML = '';
-    if (plusOne.name) sh.info.append(plusOne.name + (plusOne.dietary ? ' · ' + plusOne.dietary : '') + ' ', sh.change);
+    const row = document.querySelector('#people .po'); if (row) row.classList.toggle('hidden', !anyoneComing());
   }
-  function openPlusOne() {
-    $('po-name').value = plusOne.name; $('po-diet').value = plusOne.dietary;
-    $('po-remove').classList.toggle('hidden', !plusOne.name);
-    $('po-sheet').classList.remove('hidden'); $('po-name').focus();
-  }
-  const closePlusOne = () => { $('po-sheet').classList.add('hidden'); syncPlusOne(); };
-  $('po-cancel').addEventListener('click', closePlusOne);
-  $('po-sheet').addEventListener('click', (e) => { if (e.target === $('po-sheet')) closePlusOne(); });
-  $('po-save').addEventListener('click', () => {
-    const name = $('po-name').value.trim();
-    if (!name) { $('po-name').focus(); $('po-name').placeholder = 'Please add their name'; return; }
-    plusOne = { name, dietary: $('po-diet').value.trim() }; closePlusOne();
-  });
-  $('po-remove').addEventListener('click', () => { plusOne = { name: '', dietary: '' }; $('po-sheet').ask.set(false); closePlusOne(); });
   $('msg-add').addEventListener('click', () => { $('msg-add').classList.add('hidden'); $('msg-field').classList.remove('hidden'); $('message').focus(); });
 
   $('form').addEventListener('submit', (e) => {
@@ -386,6 +359,10 @@
       err.textContent = 'Please tell us the dietary needs for ' + joinNames(noDiet.map((c) => firstName(c.dataset.name))) + ', or choose No.';
       err.classList.remove('hidden'); noDiet[0].querySelector('[data-diet]').focus(); return;
     }
+    const poRow = document.querySelector('#people .po');
+    const poOn = poRow && !poRow.classList.contains('hidden') && poRow.poAsk.value === true;
+    if (poOn && !$('po-name').value.trim()) { err.textContent = 'Please add your plus one’s name, or choose No.'; err.classList.remove('hidden'); $('po-name').focus(); return; }
+    if (poOn && poRow.dietAsk.value === true && !$('po-diet').value.trim()) { err.textContent = 'Please tell us your plus one’s dietary needs, or choose No.'; err.classList.remove('hidden'); $('po-diet').focus(); return; }
     err.classList.add('hidden');
     const guests = cards.map((c) => ({
       id: c.dataset.id, attending: c.dataset.attending === 'true',
@@ -395,7 +372,7 @@
     const btn = $('send'); btn.disabled = true; btn.textContent = 'Sending…';
     rpc('submit_rsvp', {
       p_code: code, p_guests: guests,
-      p_plus_one: guests.some((g) => g.attending) ? plusOne : { name: '', dietary: '' },
+      p_plus_one: guests.some((g) => g.attending) && poOn ? { name: $('po-name').value.trim(), dietary: poRow.dietAsk.value === true ? $('po-diet').value.trim() : '' } : { name: '', dietary: '' },
       p_message: $('message').value
     }).then((data) => { invite = data; showThanks(); $('rsvp').scrollIntoView({ behavior: 'smooth' }); })
       .catch(() => { err.textContent = 'Sorry, that didn’t send. Please check your signal and try again.'; err.classList.remove('hidden'); })
