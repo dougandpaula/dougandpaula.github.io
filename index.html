@@ -76,6 +76,25 @@
   .gift { color: #F3EDE1; background: #0C0B0A; border: 1px solid #4A443C; box-shadow: 0 0 40px rgba(243,237,225,.08) inset; }
   .gift .neon { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,.6), 0 0 24px rgba(255,220,170,.35); }
   .done { border: 1px solid #34302B; }
+
+  /* RSVP on cream "paper", like the invitation card */
+  #rsvp, #po-sheet .panel { --ink:#1B1A18; --ink-soft:#5E5A52; --line:#D9D2C3; --paper:#FBF8F1; --bad:#9A2F2F; color: var(--ink); }
+  #rsvp { background: #FBF8F1; border-radius: 4px; padding: 30px 20px 26px; margin: 8px 0 28px;
+          box-shadow: 0 18px 40px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.4); outline: 1.5px solid #1B1A18; outline-offset: -9px; }
+  #rsvp h2 { margin-top: 0; }
+  #rsvp .rsvp-box { background: transparent; border: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; padding: 0; }
+  #rsvp .prow + .prow { border-top-color: var(--line); }
+  #rsvp .seg { border-color: #BDB4A3; }
+  #rsvp .seg button { background: #fff; color: #1B1A18; }
+  #rsvp .seg button + button { border-left-color: #BDB4A3; }
+  #rsvp .seg button[aria-pressed=true].yes { background: #2F7A3E; color: #fff; }
+  #rsvp .seg button[aria-pressed=true].no { background: #9A2F2F; color: #fff; }
+  #rsvp .seg.small button[aria-pressed=true] { background: #1B1A18; color: #FBF8F1; }
+  #rsvp input[type=text], #rsvp textarea, #po-sheet input[type=text] { background: #fff; border-color: #CFC6B5; color: #1B1A18; }
+  #rsvp input:focus, #rsvp textarea:focus, #po-sheet input:focus { outline-color: #1B1A18; }
+  #rsvp .done { background: transparent; border: 0; padding: 4px 0 0; }
+  .rule { display: none; }
+  #po-sheet .panel { background: #FBF8F1; border-top: 0; }
 </style>
 </head>
 <body>
