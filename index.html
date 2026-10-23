@@ -25,12 +25,28 @@
   .fact .actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
   h2 { font-family: var(--script); font-weight: 400; font-size: 44px; text-align: center; margin: 8px 0 4px; }
   .sub { text-align: center; margin: 0 0 18px; }
-  .person { border: 1.5px solid var(--line); border-radius: 14px; padding: 14px 16px; margin: 12px 0; background: #fff; }
-  .person .who { font-weight: 600; font-size: 18px; }
-  .choice { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-  .choice button { min-height: 48px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--paper); cursor: pointer; font-size: 16px; }
-  .choice button[aria-pressed=true].yes { background: var(--good); border-color: var(--good); color: #fff; }
-  .choice button[aria-pressed=true].no { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .rsvp-box { background: #1E1C1A; border: 1px solid #34302B; border-radius: 14px; padding: 2px 14px; }
+  .prow { padding: 12px 0; }
+  .prow + .prow { border-top: 1px solid #34302B; }
+  .prow-top { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+  .who { font-weight: 600; font-size: 17px; line-height: 1.3; }
+  .who small { font-weight: 400; color: var(--ink-soft); font-size: 14px; }
+  .seg { display: flex; border: 1px solid #45403A; border-radius: 999px; overflow: hidden; }
+  .seg button { min-height: 40px; padding: 0 13px; background: #2A2724; border: 0; color: #F3EDE1; font-size: 15px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid #45403A; }
+  .seg button[aria-pressed=true].yes { background: #3E8A4C; }
+  .seg button[aria-pressed=true].no { background: #A8423F; }
+  .extras { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; }
+  .extras input[type=text] { min-height: 42px; }
+  .extras .age { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--ink-soft); }
+  .extras .age input { width: 70px; min-height: 40px; }
+  .link { background: none; border: 0; padding: 6px 0; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; font-size: 15px; cursor: pointer; }
+  .po-edit { color: var(--ink-soft); font-size: 15px; }
+  .rsvp-more { display: flex; flex-wrap: wrap; gap: 4px 22px; justify-content: center; margin: 10px 0 6px; }
+  .sheet { position: fixed; inset: 0; z-index: 45; background: rgba(0,0,0,.65); display: flex; align-items: flex-end; justify-content: center; }
+  .sheet .panel { width: 100%; max-width: 640px; background: #211F1C; border-top: 1px solid #45403A; border-radius: 18px 18px 0 0; padding: 20px 18px calc(22px + env(safe-area-inset-bottom)); }
+  .sheet h3 { font-family: var(--script); font-weight: 400; font-size: 36px; margin: 0; text-align: center; }
+  .sheet .btns { display: flex; gap: 10px; justify-content: center; margin-top: 14px; }
   .gift { background: var(--ink); color: var(--paper); border-radius: 18px; padding: 24px 20px; text-align: center; margin: 32px 0; }
   .gift h2 { color: var(--paper); }
   .gift .neon { font-family: var(--script); font-size: 40px; text-shadow: 0 0 12px rgba(255,255,255,.35); margin: 0; }
@@ -54,12 +70,8 @@
   #front { transform: rotate(-1.2deg); }
   #back  { transform: rotate(1deg); margin-top: 28px; }
   .fact { background: #1E1C1A; border: 1px solid #34302B; }
-  .person { background: #1E1C1A; border-color: #3A3631; }
   input[type=text], input[type=number], textarea, select { background: #F7F3EA; color: #1B1A18; border-color: #F7F3EA; }
   input:focus, select:focus, textarea:focus { outline-color: #F3EDE1; }
-  .choice button { background: #2A2724; border-color: #45403A; color: #F3EDE1; }
-  .choice button[aria-pressed=true].yes { background: #3E8A4C; border-color: #3E8A4C; }
-  .choice button[aria-pressed=true].no { background: #A8423F; border-color: #A8423F; }
   .gift { color: #F3EDE1; background: #0C0B0A; border: 1px solid #4A443C; box-shadow: 0 0 40px rgba(243,237,225,.08) inset; }
   .gift .neon { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,.6), 0 0 24px rgba(255,220,170,.35); }
   .done { border: 1px solid #34302B; }
@@ -105,18 +117,14 @@
       <h2>RSVP</h2>
       <p class="sub muted">Please reply by <span id="rsvp-by"></span></p>
       <form id="form" novalidate>
-        <div id="people"></div>
-
-        <div id="plusone" class="person hidden">
-          <div class="who">Bringing a plus one?</div>
-          <p class="muted" style="margin:4px 0 0;font-size:15px">Leave blank if you're coming on your own.</p>
-          <label class="field"><span>Their name</span><input type="text" id="po-name" maxlength="80" autocomplete="off"></label>
-          <label class="field"><span>Any dietary needs?</span><input type="text" id="po-diet" maxlength="300"></label>
+        <div class="rsvp-box"><div id="people"></div></div>
+        <div class="rsvp-more">
+          <button type="button" class="link hidden" id="po-add">+ Bringing a plus one?</button>
+          <button type="button" class="link" id="msg-add">+ Add a message for us</button>
         </div>
-
-        <label class="field"><span>A message for us (optional)</span><textarea id="message" maxlength="1000"></textarea></label>
+        <label class="field hidden" id="msg-field"><span>A message for us</span><textarea id="message" maxlength="1000" rows="3"></textarea></label>
         <p id="form-error" class="center hidden" style="color:var(--bad)"></p>
-        <div class="center"><button class="btn" type="submit" id="send">Send our reply</button></div>
+        <div class="center" style="margin-top:14px"><button class="btn" type="submit" id="send">Send our reply</button></div>
       </form>
 
       <div id="thanks" class="done hidden">
@@ -141,6 +149,15 @@
 </div>
 
 <div class="zoom hidden" id="zoom" role="dialog" aria-label="Invitation card"><button aria-label="Close">×</button><img alt=""></div>
+<div class="sheet hidden" id="po-sheet" role="dialog" aria-modal="true" aria-labelledby="po-title">
+  <div class="panel">
+    <h3 id="po-title">Your plus one</h3>
+    <label class="field"><span>Their name</span><input type="text" id="po-name" maxlength="80" autocomplete="off"></label>
+    <label class="field"><span>Any dietary needs?</span><input type="text" id="po-diet" maxlength="300"></label>
+    <div class="btns"><button type="button" class="btn ghost small" id="po-cancel">Cancel</button><button type="button" class="btn small" id="po-save">Save</button></div>
+    <div class="center"><button type="button" class="link hidden" id="po-remove">Not bringing anyone</button></div>
+  </div>
+</div>
 <div class="toast" id="toast" role="status"></div>
 
 <script src="config.js"></script>
@@ -200,50 +217,79 @@
     if (invite.responded_at) showThanks(); else renderForm();
   }
 
+  let plusOne = { name: '', dietary: '' };
+
   function renderForm() {
     const box = $('people'); box.innerHTML = '';
     invite.guests.filter((g) => !g.is_plus_one).forEach((g) => {
       const state = { attending: g.attending };
-      const yes = el('button', { type: 'button', class: 'yes', 'aria-pressed': String(g.attending === true) }, 'Coming');
-      const no = el('button', { type: 'button', class: 'no', 'aria-pressed': String(g.attending === false) }, "Can't make it");
-      const diet = el('input', { type: 'text', maxlength: '300', 'data-diet': g.id });
-      diet.value = g.dietary || '';
-      const dietField = el('label', { class: 'field' }, el('span', {}, 'Any dietary needs?'), diet);
+      const yes = el('button', { type: 'button', class: 'yes' }, 'Coming');
+      const no = el('button', { type: 'button', class: 'no' }, "Can't come");
       const kid = g.age_group !== 'adult';
+      const diet = el('input', { type: 'text', maxlength: '300', 'data-diet': g.id, placeholder: 'Dietary needs for ' + firstName(g.name), 'aria-label': 'Dietary needs for ' + g.name });
+      diet.value = g.dietary || '';
+      const dietLink = el('button', { type: 'button', class: 'link' }, '+ Dietary needs');
+      dietLink.addEventListener('click', () => { dietLink.classList.add('hidden'); diet.classList.remove('hidden'); diet.focus(); });
+      if (diet.value) dietLink.classList.add('hidden'); else diet.classList.add('hidden');
       const age = el('input', { type: 'number', inputmode: 'numeric', min: '0', max: '17', 'data-age': g.id });
       if (g.age != null) age.value = g.age;
-      const ageField = el('label', { class: 'field' }, el('span', {}, 'Age on the day'), age);
-      const card = el('div', { class: 'person', 'data-id': g.id },
-        el('div', { class: 'who' }, g.name + (kid ? (g.age_group === 'teen' ? ' (teen)' : ' (child)') : '')),
-        el('div', { class: 'choice' }, yes, no), dietField);
-      if (kid) card.append(ageField);
+      const extras = el('div', { class: 'extras' });
+      if (kid) extras.append(el('label', { class: 'age' }, 'Age on the day', age));
+      extras.append(dietLink, diet);
+      const who = el('div', { class: 'who' }, g.name);
+      if (kid) who.append(' ', el('small', {}, g.age_group === 'teen' ? '(teen)' : '(child)'));
+      const row = el('div', { class: 'prow', 'data-id': g.id, 'data-name': g.name },
+        el('div', { class: 'prow-top' }, who, el('div', { class: 'seg', role: 'group', 'aria-label': g.name }, yes, no)), extras);
       const sync = () => {
         yes.setAttribute('aria-pressed', String(state.attending === true));
         no.setAttribute('aria-pressed', String(state.attending === false));
-        dietField.classList.toggle('hidden', state.attending !== true);
-        ageField.classList.toggle('hidden', state.attending !== true);
-        card.dataset.attending = state.attending == null ? '' : String(state.attending);
+        extras.classList.toggle('hidden', state.attending !== true);
+        row.dataset.attending = state.attending == null ? '' : String(state.attending);
       };
       yes.addEventListener('click', () => { state.attending = true; sync(); });
       no.addEventListener('click', () => { state.attending = false; sync(); });
       sync();
-      box.append(card);
+      box.append(row);
     });
     const po = invite.guests.find((g) => g.is_plus_one);
-    $('plusone').classList.toggle('hidden', !invite.plus_one_allowed);
-    $('po-name').value = po ? po.name : '';
-    $('po-diet').value = po ? (po.dietary || '') : '';
+    plusOne = { name: po ? po.name : '', dietary: po ? (po.dietary || '') : '' };
+    renderPlusOne();
     $('message').value = invite.message || '';
+    $('msg-field').classList.toggle('hidden', !invite.message);
+    $('msg-add').classList.toggle('hidden', !!invite.message);
     $('form').classList.remove('hidden'); $('thanks').classList.add('hidden');
   }
 
+  function renderPlusOne() {
+    const old = document.querySelector('#people .po'); if (old) old.remove();
+    $('po-add').classList.toggle('hidden', !invite.plus_one_allowed || !!plusOne.name);
+    if (!plusOne.name) return;
+    const edit = el('button', { type: 'button', class: 'link' }, 'Change');
+    edit.addEventListener('click', openPlusOne);
+    $('people').append(el('div', { class: 'prow po' },
+      el('div', { class: 'prow-top' }, el('div', { class: 'who' }, plusOne.name, ' ', el('small', {}, '(plus one)')), edit),
+      plusOne.dietary ? el('div', { class: 'po-edit' }, plusOne.dietary) : ''));
+  }
+  function openPlusOne() {
+    $('po-name').value = plusOne.name; $('po-diet').value = plusOne.dietary;
+    $('po-remove').classList.toggle('hidden', !plusOne.name);
+    $('po-sheet').classList.remove('hidden'); $('po-name').focus();
+  }
+  const closePlusOne = () => $('po-sheet').classList.add('hidden');
+  $('po-add').addEventListener('click', openPlusOne);
+  $('po-cancel').addEventListener('click', closePlusOne);
+  $('po-sheet').addEventListener('click', (e) => { if (e.target === $('po-sheet')) closePlusOne(); });
+  $('po-save').addEventListener('click', () => { plusOne = { name: $('po-name').value.trim(), dietary: $('po-diet').value.trim() }; closePlusOne(); renderPlusOne(); });
+  $('po-remove').addEventListener('click', () => { plusOne = { name: '', dietary: '' }; closePlusOne(); renderPlusOne(); });
+  $('msg-add').addEventListener('click', () => { $('msg-add').classList.add('hidden'); $('msg-field').classList.remove('hidden'); $('message').focus(); });
+
   $('form').addEventListener('submit', (e) => {
     e.preventDefault();
-    const cards = [...document.querySelectorAll('#people .person')];
+    const cards = [...document.querySelectorAll('#people .prow:not(.po)')];
     const missing = cards.filter((c) => c.dataset.attending === '');
     const err = $('form-error');
     if (missing.length) {
-      err.textContent = 'Please choose Coming or Can’t make it for ' + joinNames(missing.map((c) => c.querySelector('.who').textContent.replace(/ \((child|teen)\)$/, ''))) + '.';
+      err.textContent = 'Please choose Coming or Can’t come for ' + joinNames(missing.map((c) => firstName(c.dataset.name))) + '.';
       err.classList.remove('hidden'); missing[0].scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
     }
     err.classList.add('hidden');
@@ -255,7 +301,7 @@
     const btn = $('send'); btn.disabled = true; btn.textContent = 'Sending…';
     rpc('submit_rsvp', {
       p_code: code, p_guests: guests,
-      p_plus_one: { name: $('po-name').value, dietary: $('po-diet').value },
+      p_plus_one: plusOne,
       p_message: $('message').value
     }).then((data) => { invite = data; showThanks(); $('rsvp').scrollIntoView({ behavior: 'smooth' }); })
       .catch(() => { err.textContent = 'Sorry, that didn’t send. Please check your signal and try again.'; err.classList.remove('hidden'); })
