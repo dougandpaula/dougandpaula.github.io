@@ -117,11 +117,6 @@
   @media (prefers-reduced-motion: reduce) { .flick, .star { animation: none; } }
   .fact p.big { font-size: 21px; font-weight: 600; margin: 6px 0 0; line-height: 1.3; }
   .fact p.addr { font-size: 17px; color: #D6CFC1; margin: 4px 0 0; line-height: 1.5; }
-  .times { margin-top: 10px; border-top: 1px solid #34302B; }
-  .times div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 0; border-bottom: 1px solid #34302B; }
-  .times span { font-size: 17px; }
-  .times b { font-family: var(--caps); font-weight: 600; letter-spacing: .08em; font-size: 15px; text-align: right; }
-  .times b i { font-family: var(--body); font-weight: 400; letter-spacing: 0; font-size: 15px; color: var(--ink-soft); }
   .fact .actions { margin-top: 14px; }
 
   /* RSVP on cream "paper", like the invitation card */
@@ -169,10 +164,7 @@
       <div class="fact">
         <div class="caps">When</div>
         <p class="big">Saturday 7th August 2027</p>
-        <div class="times">
-          <div id="t-ceremony"><span>Ceremony</span><b>3PM</b></div>
-          <div id="t-garden"><span>Garden party</span><b>3.30PM</b></div>
-        </div>
+        <p class="addr" id="when-line"></p>
         <div class="actions"><button class="btn ghost small" id="cal">Add to calendar</button></div>
       </div>
       <div class="fact">
@@ -298,8 +290,7 @@
     document.querySelector('header .script').style.fontSize = ppl.length > 2 ? '38px' : '44px';
     const ceremony = invite.type === 'ceremony';
     $('front').src = ceremony ? 'img/front-ceremony.jpg' : 'img/front-garden.jpg';
-    $('t-ceremony').classList.toggle('hidden', !ceremony);
-    $('t-garden').classList.toggle('hidden', ceremony);
+    $('when-line').textContent = ceremony ? 'Ceremony · 3pm' : 'Garden party · 3.30pm';
     renderGift();
     if (invite.responded_at) showThanks(); else renderForm();
   }
