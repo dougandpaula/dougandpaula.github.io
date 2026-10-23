@@ -51,10 +51,14 @@
   .gift { background: var(--ink); color: var(--paper); border-radius: 18px; padding: 24px 20px; text-align: center; margin: 32px 0; }
   .gift h2 { color: var(--paper); }
   .gift .neon { font-family: var(--script); font-size: 40px; text-shadow: 0 0 12px rgba(255,255,255,.35); margin: 0; }
-  .bank { display: grid; gap: 10px; margin-top: 16px; text-align: left; }
-  .bank div { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: rgba(255,255,255,.08); border-radius: 10px; padding: 10px 12px; }
-  .bank b { font-family: var(--caps); font-weight: 400; letter-spacing: .1em; font-size: 12px; text-transform: uppercase; opacity: .75; display: block; }
-  .bank .btn { border-color: #F3EDE1; background: transparent; color: #F3EDE1; flex: none; }
+  .bank { margin: 18px auto 0; max-width: 360px; text-align: left; border: 1px solid rgba(243,237,225,.22); border-radius: 12px; overflow: hidden; }
+  .bank button { display: grid; grid-template-columns: 76px 1fr auto; align-items: baseline; gap: 8px; width: 100%; padding: 11px 12px;
+                 background: rgba(255,255,255,.04); border: 0; color: #F3EDE1; text-align: left; cursor: pointer; font-size: 16px; line-height: 1.35; }
+  .bank button + button { border-top: 1px solid rgba(243,237,225,.12); }
+  .bank button:active { background: rgba(255,255,255,.12); }
+  .bank b { font-family: var(--caps); font-weight: 400; letter-spacing: .05em; font-size: 10.5px; text-transform: uppercase; color: #ABA494; }
+  .bank i { font-style: normal; font-family: var(--caps); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: #ABA494; }
+  .bank-note { font-size: 14px; color: #ABA494; margin: 10px 0 0; }
   .done { text-align: center; background: var(--paper-2); border-radius: 18px; padding: 24px 18px; }
   .done ul { list-style: none; padding: 0; margin: 12px 0 18px; }
   .center { text-align: center; }
@@ -202,8 +206,9 @@
           <div class="mq-script teal">Dreams</div>
         </div>
       </div>
-      <p id="gift-text">No gifts needed, but if you fancy buying us a cocktail, we'll enjoy it on our honeymoon. You can send something here:</p>
+      <p id="gift-text">No gifts needed, but if you fancy buying us a cocktail, we'll enjoy it on our honeymoon.</p>
       <div class="bank" id="bank"></div>
+      <p class="bank-note hidden" id="bank-note">Tap a line to copy it. Pop the reference in so we know who to toast 🥂</p>
     </section>
 
     <footer class="muted">
@@ -401,15 +406,18 @@
 
   function renderGift() {
     const g = invite.gift || {};
-    const rows = [['Account name', g.gift_account_name], ['Sort code', g.gift_sort_code], ['Account number', g.gift_account_number],
-      ['Reference', 'Cocktail ' + firstName((invite.guests[0] || {}).name || '')]];
-    const bank = $('bank'); bank.innerHTML = '';
-    if (!g.gift_account_number || /^\[/.test(g.gift_account_number)) { $('gift-text').textContent = "No gifts needed, but if you fancy buying us a cocktail, we'll enjoy it on our honeymoon."; return; }
-    rows.forEach(([label, val]) => {
-      const b = el('button', { type: 'button', class: 'btn small' }, 'Copy');
+    const base = "No gifts needed, but if you fancy buying us a cocktail, we'll enjoy it on our honeymoon.";
+    const bank = $('bank'); bank.innerHTML = ''; $('bank-note').classList.add('hidden');
+    $('gift-text').textContent = base;
+    if (!g.gift_account_number || /^\[/.test(g.gift_account_number)) return;
+    $('gift-text').textContent = base + ' Or send one our way:';
+    [['Name', g.gift_account_name], ['Sort code', g.gift_sort_code], ['Account', g.gift_account_number],
+     ['Reference', 'Cocktail ' + firstName((invite.guests[0] || {}).name || '')]].forEach(([label, val]) => {
+      const b = el('button', { type: 'button', 'aria-label': 'Copy ' + label }, el('b', {}, label), el('span', {}, val), el('i', {}, 'Copy'));
       b.addEventListener('click', () => { navigator.clipboard.writeText(val).then(() => toast(label + ' copied')); });
-      bank.append(el('div', {}, el('span', {}, el('b', {}, label), val), b));
+      bank.append(b);
     });
+    $('bank-note').classList.remove('hidden');
   }
 
   $('cal').addEventListener('click', () => {
