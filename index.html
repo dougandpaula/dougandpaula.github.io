@@ -86,13 +86,18 @@
   /* Neon sign, 1960s marquee with static bulbs */
   .gift { background: #0E0C0B radial-gradient(ellipse at 50% 30%, rgba(255,90,60,.12), transparent 70%); border-color: #3A322B; }
   .marquee { position: relative; max-width: 300px; margin: 18px auto 12px; padding: 12px; border-radius: 26px; }
-  .marquee::before { content: ""; position: absolute; inset: 0; border-radius: 26px; padding: 12px;
-    background: radial-gradient(circle, #FFF8DC 0 2.4px, #FFC23A 3.4px, rgba(255,170,30,.35) 5px, transparent 6.5px) 0 0 / 15px 15px;
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
-            mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-    filter: drop-shadow(0 0 4px rgba(255,180,40,.9)); }
-  .mq-in { position: relative; border-radius: 16px; padding: 16px 10px 18px; text-align: center; background: rgba(0,0,0,.35);
-           box-shadow: inset 0 0 0 2px rgba(80,240,225,.9), inset 0 0 14px rgba(0,210,195,.45), 0 0 12px rgba(0,210,195,.4); }
+  .marquee { padding: 14px; background: #120F0C; box-shadow: 0 6px 24px rgba(0,0,0,.6); }
+  .bulbs { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
+  .bulbs rect { fill: none; stroke-linecap: round; stroke-dasharray: 0 1; }
+  .bulbs .halo { stroke: rgba(255,160,20,.45); stroke-width: 10.5; }
+  .bulbs .glass { stroke: #FFB52E; stroke-width: 7.4; }
+  .bulbs .hot { stroke: #FFF6D8; stroke-width: 4.4; }
+  .bulbs { filter: drop-shadow(0 0 4px rgba(255,180,40,.9)); }
+  /* Inner border as a neon tube: bright core with turquoise glow inside and out */
+  .mq-in { position: relative; z-index: 1; border-radius: 16px; padding: 16px 10px 18px; text-align: center; background: rgba(0,0,0,.45);
+           border: 3px solid #DFFFFA;
+           box-shadow: 0 0 2px #fff, 0 0 5px #3FF3E0, 0 0 9px rgba(0,217,196,.7),
+                       inset 0 0 2px #fff, inset 0 0 7px #3FF3E0, inset 0 0 16px rgba(0,217,196,.45); }
   .mq-script { font-family: 'Yellowtail', var(--script); font-size: 60px; line-height: 1; }
   .mq-script.red { color: #FFE3DE; text-shadow: 0 0 2px #fff, 0 0 7px #FF5A4A, 0 0 15px #FF3020, 0 0 30px #FF1A0A, 0 0 50px rgba(255,30,10,.55); }
   .mq-script.teal { color: #E6FFFB; text-shadow: 0 0 2px #fff, 0 0 7px #3FF3E0, 0 0 15px #00D9C4, 0 0 30px #00BFAE, 0 0 50px rgba(0,190,175,.55); }
@@ -202,6 +207,7 @@
 
     <section class="gift" id="gift">
       <div class="marquee" role="img" aria-label="Cocktails and Dreams neon sign">
+        <svg class="bulbs" aria-hidden="true"><rect class="halo" /><rect class="glass" /><rect class="hot" /></svg>
         <div class="mq-in">
           <div class="mq-script red"><span class="flick">C</span>ocktails</div>
           <div class="mq-amp"><span>&amp;</span></div>
@@ -280,7 +286,7 @@
     }
     invite = data;
     render();
-    $('invite').classList.remove('hidden');
+    $('invite').classList.remove('hidden'); layBulbs();
   }).catch(() => {
     $('loading').textContent = 'Sorry, something went wrong opening your invitation. Please try again in a moment.';
   });
@@ -446,6 +452,19 @@
     const a = el('a', { href: URL.createObjectURL(new Blob([ics], { type: 'text/calendar' })), download: 'paula-and-doug-wedding.ics' });
     document.body.append(a); a.click(); a.remove();
   });
+
+  // Marquee bulbs: evenly spaced dots round a rounded rectangle (corners included)
+  function layBulbs() {
+    const m = document.querySelector('.marquee'); if (!m || !m.clientWidth) return;
+    const w = m.clientWidth - 12, h = m.clientHeight - 12, r = 20;
+    const per = 2 * (w + h) - 8 * r + 2 * Math.PI * r, n = Math.round(per / 15);
+    m.querySelectorAll('.bulbs rect').forEach((el) => {
+      el.setAttribute('x', 6); el.setAttribute('y', 6); el.setAttribute('width', w); el.setAttribute('height', h);
+      el.setAttribute('rx', r); el.setAttribute('pathLength', n);
+    });
+  }
+  window.addEventListener('resize', layBulbs);
+  if (document.fonts) document.fonts.ready.then(layBulbs);
 
   const zoom = $('zoom');
   ['front', 'back'].forEach((id) => $(id).addEventListener('click', () => { zoom.querySelector('img').src = $(id).src; zoom.classList.remove('hidden'); }));
