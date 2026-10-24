@@ -53,10 +53,12 @@
   .gift h2 { color: var(--paper); }
   .gift .neon { font-family: var(--script); font-size: 40px; text-shadow: 0 0 12px rgba(255,255,255,.35); margin: 0; }
   .toast { top: 20px; bottom: auto; background: #1B1A18; color: #F8F9EB; box-shadow: 0 4px 18px rgba(0,0,0,.5); border: 1px solid #45403A; }
-  .cta { text-align: center; margin: 22px 0 6px; }
-  .btn.rsvpbtn { background: #F3EDE1; color: #151413; border-color: #F3EDE1; min-width: 220px; min-height: 54px; font-size: 16px; letter-spacing: .2em;
+  .cta { text-align: center; margin: 26px 0 8px; }
+  .btn.bigbtn { background: #F3EDE1; color: #151413; border-color: #F3EDE1; width: 100%; max-width: 300px; min-height: 54px; font-size: 16px; letter-spacing: .2em;
                  box-shadow: 0 6px 20px rgba(0,0,0,.45); }
-  .cta-by { margin: 10px 0 0; color: #ABA494; font-size: 15px; }
+  .cta-by { margin: 8px 0 0; color: #ABA494; font-size: 15px; }
+  #gift-open { margin-top: 18px; }
+  .cta-done { margin-bottom: 0; }
   .cta-done { background: #1E1C1A; border: 1px solid #34302B; border-radius: 14px; padding: 16px 18px; text-align: left; }
   .cta-title { margin: 0 0 6px; font-weight: 600; font-size: 18px; }
   .cta-title::before { content: "✓ "; color: #6BC17A; }
@@ -69,9 +71,10 @@
   .rsvp-screen #rsvp { margin-top: 6px; }
   .giftbar { text-align: center; margin: 22px 0 28px; }
   .btn.giftbtn { background: transparent; color: #F3EDE1; border-color: #F3EDE1; min-width: 200px; }
-  .reveal { position: fixed; inset: 0; z-index: 46; overflow-y: auto; display: flex; align-items: center; justify-content: center; padding: 24px 16px;
+  .reveal { position: fixed; inset: 0; z-index: 46; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 0 16px 32px;
             background: #0B0A09 radial-gradient(ellipse at 50% 35%, rgba(255,90,60,.14), transparent 65%); }
-  .reveal-in { width: 100%; max-width: 420px; text-align: center; color: #F3EDE1; animation: rise .35s ease-out; }
+  .reveal-top { position: sticky; top: 0; align-self: stretch; margin: 0 -16px 8px; background: transparent; backdrop-filter: none; }
+  .reveal-in { margin: auto 0; width: 100%; max-width: 420px; text-align: center; color: #F3EDE1; animation: rise .35s ease-out; }
   .reveal .marquee { animation: power 1.1s steps(1) both; }
   .confess { font-family: 'Yellowtail', var(--script); font-size: 34px; line-height: 1.15; margin: 18px 0 8px; color: #FFF4D6;
              text-shadow: 0 0 6px rgba(255,200,90,.6); }
@@ -195,11 +198,10 @@
 
     <img class="card" id="front" alt="Wedding invitation: together with their parents you are warmly invited to the wedding of Paula and Doug, Saturday 7th August 2027 at Friern Manor, Essex.">
     <img class="card" id="back" src="img/back.jpg" alt="The details: a note about the day, venue and RSVP, the plan for the day, food and drinks, games and fun.">
-    <p class="hint muted">Tap a card to zoom in</p>
 
     <section class="cta" id="cta">
       <div id="cta-ask">
-        <button type="button" class="btn rsvpbtn" id="rsvp-open">RSVP</button>
+        <button type="button" class="btn bigbtn" id="rsvp-open">RSVP</button>
         <p class="cta-by">Please reply by <span id="rsvp-by2"></span></p>
       </div>
       <div id="cta-done" class="cta-done hidden">
@@ -207,6 +209,7 @@
         <ul id="cta-list"></ul>
         <button type="button" class="link" id="cta-change">Change our reply</button>
       </div>
+      <button type="button" class="btn bigbtn" id="gift-open">Gift list</button>
     </section>
 
     <section class="facts">
@@ -225,9 +228,6 @@
     </section>
 
 
-    <section class="giftbar" id="gift">
-      <button type="button" class="btn giftbtn" id="gift-open">Gift list</button>
-    </section>
 
     <footer class="muted">
       Questions? Call or WhatsApp <a id="ph"></a><br>or email <a id="em"></a>
@@ -258,6 +258,7 @@
   </div>
 </div>
 <div class="reveal hidden" id="gift-modal" role="dialog" aria-modal="true" aria-labelledby="gift-confess">
+  <div class="rsvp-top reveal-top"><button type="button" class="btn ghost small" id="gift-back">← Back</button></div>
   <div class="reveal-in">
     <div class="marquee" role="img" aria-label="Cocktails and Dreams neon sign">
         <svg class="bulbs" aria-hidden="true"><rect class="halo" /><rect class="glass" /><rect class="hot" /></svg>
@@ -274,7 +275,6 @@
       <div class="bank" id="bank"></div>
       <p class="reveal-note">Tap a line to copy it. Please use the reference so we know who to thank.</p>
     </div>
-    <button type="button" class="btn ghost small" id="gift-close">Close</button>
   </div>
 </div>
 <div class="toast" id="toast" role="status"></div>
@@ -522,10 +522,15 @@
     });
   }
   const gm = $('gift-modal');
-  $('gift-open').addEventListener('click', () => { gm.classList.remove('hidden'); document.body.style.overflow = 'hidden'; layBulbs(); });
-  const closeGift = () => { gm.classList.add('hidden'); document.body.style.overflow = ''; $('bank-wrap').classList.add('hidden'); $('bank-show').classList.toggle('hidden', !bankReady); };
+  $('gift-open').addEventListener('click', () => { gm.classList.remove('hidden'); gm.scrollTop = 0; document.body.style.overflow = 'hidden'; layBulbs(); if (!history.state || !history.state.gift) history.pushState({ gift: true }, ''); });
+  const closeGift = (fromHistory) => {
+    if (gm.classList.contains('hidden')) return;
+    gm.classList.add('hidden'); document.body.style.overflow = ''; $('bank-wrap').classList.add('hidden'); $('bank-show').classList.toggle('hidden', !bankReady);
+    if (fromHistory !== true && history.state && history.state.gift) history.back();
+  };
+  $('gift-back').addEventListener('click', closeGift);
+  window.addEventListener('popstate', () => closeGift(true));
   $('bank-show').addEventListener('click', () => { $('bank-show').classList.add('hidden'); $('bank-wrap').classList.remove('hidden'); $('bank-wrap').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
-  $('gift-close').addEventListener('click', closeGift);
   gm.addEventListener('click', (e) => { if (e.target === gm) closeGift(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !gm.classList.contains('hidden')) closeGift(); });
 
