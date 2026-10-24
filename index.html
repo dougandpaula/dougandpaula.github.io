@@ -566,8 +566,18 @@
   if (document.fonts) document.fonts.ready.then(fitGreeting);
 
   const zoom = $('zoom');
-  ['front', 'back'].forEach((id) => $(id).addEventListener('click', () => { zoom.querySelector('img').src = $(id).src; zoom.classList.remove('hidden'); }));
-  zoom.addEventListener('click', () => zoom.classList.add('hidden'));
+  // Zoomed card: the phone's back button closes it instead of leaving the page
+  ['front', 'back'].forEach((id) => $(id).addEventListener('click', () => {
+    zoom.querySelector('img').src = $(id).src; zoom.classList.remove('hidden'); document.body.style.overflow = 'hidden';
+    history.pushState({ zoom: true }, '');
+  }));
+  const closeZoom = (fromHistory) => {
+    if (zoom.classList.contains('hidden')) return;
+    zoom.classList.add('hidden'); document.body.style.overflow = '';
+    if (fromHistory !== true && history.state && history.state.zoom) history.back();
+  };
+  zoom.addEventListener('click', closeZoom);
+  window.addEventListener('popstate', () => closeZoom(true));
 })();
 </script>
 </body>
