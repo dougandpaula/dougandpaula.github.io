@@ -53,7 +53,21 @@
   .gift h2 { color: var(--paper); }
   .gift .neon { font-family: var(--script); font-size: 40px; text-shadow: 0 0 12px rgba(255,255,255,.35); margin: 0; }
   .toast { top: 20px; bottom: auto; background: #1B1A18; color: #F8F9EB; box-shadow: 0 4px 18px rgba(0,0,0,.5); border: 1px solid #45403A; }
-  .giftbar { text-align: center; margin: 8px 0 28px; }
+  .cta { text-align: center; margin: 22px 0 6px; }
+  .btn.rsvpbtn { background: #F3EDE1; color: #151413; border-color: #F3EDE1; min-width: 220px; min-height: 54px; font-size: 16px; letter-spacing: .2em;
+                 box-shadow: 0 6px 20px rgba(0,0,0,.45); }
+  .cta-by { margin: 10px 0 0; color: #ABA494; font-size: 15px; }
+  .cta-done { background: #1E1C1A; border: 1px solid #34302B; border-radius: 14px; padding: 16px 18px; text-align: left; }
+  .cta-title { margin: 0 0 6px; font-weight: 600; font-size: 18px; }
+  .cta-title::before { content: "✓ "; color: #6BC17A; }
+  #cta-list { list-style: none; padding: 0; margin: 0 0 6px; color: #D6CFC1; font-size: 16px; line-height: 1.6; }
+  #cta-change { color: #ABA494; }
+  .rsvp-screen { position: fixed; inset: 0; z-index: 44; overflow-y: auto; -webkit-overflow-scrolling: touch;
+                 background: #151413 radial-gradient(ellipse at 50% 0%, #2A2723 0%, #151413 60%); padding-bottom: 40px; }
+  .rsvp-top { position: sticky; top: 0; z-index: 2; padding: 10px 16px; background: rgba(21,20,19,.92); backdrop-filter: blur(4px); }
+  .rsvp-top .btn { color: #F3EDE1; border-color: #5A544B; }
+  .rsvp-screen #rsvp { margin-top: 6px; }
+  .giftbar { text-align: center; margin: 22px 0 28px; }
   .btn.giftbtn { background: transparent; color: #F3EDE1; border-color: #F3EDE1; min-width: 200px; }
   .reveal { position: fixed; inset: 0; z-index: 46; overflow-y: auto; display: flex; align-items: center; justify-content: center; padding: 24px 16px;
             background: #0B0A09 radial-gradient(ellipse at 50% 35%, rgba(255,90,60,.14), transparent 65%); }
@@ -183,6 +197,18 @@
     <img class="card" id="back" src="img/back.jpg" alt="The details: a note about the day, venue and RSVP, the plan for the day, food and drinks, games and fun.">
     <p class="hint muted">Tap a card to zoom in</p>
 
+    <section class="cta" id="cta">
+      <div id="cta-ask">
+        <button type="button" class="btn rsvpbtn" id="rsvp-open">RSVP</button>
+        <p class="cta-by">Please reply by <span id="rsvp-by2"></span></p>
+      </div>
+      <div id="cta-done" class="cta-done hidden">
+        <p class="cta-title" id="cta-title"></p>
+        <ul id="cta-list"></ul>
+        <button type="button" class="link" id="cta-change">Change our reply</button>
+      </div>
+    </section>
+
     <section class="facts">
       <div class="fact">
         <div class="caps">When</div>
@@ -198,8 +224,22 @@
       </div>
     </section>
 
-    <hr class="rule">
 
+    <section class="giftbar" id="gift">
+      <button type="button" class="btn giftbtn" id="gift-open">Gift list</button>
+    </section>
+
+    <footer class="muted">
+      Questions? Call or WhatsApp <a id="ph"></a><br>or email <a id="em"></a>
+      <p class="script" style="font-size:32px;color:var(--ink);margin:16px 0 0">Paula &amp; Doug x</p>
+    </footer>
+  </main>
+</div>
+
+<div class="zoom hidden" id="zoom" role="dialog" aria-label="Invitation card"><button aria-label="Close">×</button><img alt=""></div>
+<div class="rsvp-screen hidden" id="rsvp-screen" role="dialog" aria-modal="true" aria-label="RSVP">
+  <div class="rsvp-top"><button type="button" class="btn ghost small" id="rsvp-back">← Back</button></div>
+  <div class="wrap">
     <section id="rsvp">
       <h2>RSVP</h2>
       <p class="sub muted">Please reply by <span id="rsvp-by"></span></p>
@@ -214,25 +254,9 @@
         <div class="center" style="margin-top:14px"><button class="btn" type="submit" id="send">Send</button></div>
       </form>
 
-      <div id="thanks" class="done hidden">
-        <p class="script" style="font-size:40px;margin:0" id="thanks-title"></p>
-        <ul id="summary"></ul>
-        <button class="btn ghost small" id="change">Change our reply</button>
-      </div>
     </section>
-
-    <section class="giftbar" id="gift">
-      <button type="button" class="btn giftbtn" id="gift-open">Gift list</button>
-    </section>
-
-    <footer class="muted">
-      Questions? Call or WhatsApp <a id="ph"></a><br>or email <a id="em"></a>
-      <p class="script" style="font-size:32px;color:var(--ink);margin:16px 0 0">Paula &amp; Doug x</p>
-    </footer>
-  </main>
+  </div>
 </div>
-
-<div class="zoom hidden" id="zoom" role="dialog" aria-label="Invitation card"><button aria-label="Close">×</button><img alt=""></div>
 <div class="reveal hidden" id="gift-modal" role="dialog" aria-modal="true" aria-labelledby="gift-confess">
   <div class="reveal-in">
     <div class="marquee" role="img" aria-label="Cocktails and Dreams neon sign">
@@ -282,7 +306,7 @@
 
   $('ph').textContent = C.contact.phone; $('ph').href = 'tel:' + C.contact.phone.replace(/\s/g, '');
   $('em').textContent = C.contact.email; $('em').href = 'mailto:' + C.contact.email;
-  $('rsvp-by').textContent = C.rsvpBy;
+  $('rsvp-by').textContent = C.rsvpBy; $('rsvp-by2').textContent = C.rsvpBy;
 
   if (!code) { $('loading').classList.add('hidden'); $('nolink').classList.remove('hidden'); return; }
 
@@ -309,7 +333,7 @@
     $('front').src = ceremony ? 'img/front-ceremony.jpg' : 'img/front-garden.jpg';
     $('when-line').textContent = ceremony ? 'Ceremony · 3pm' : 'Garden party · 3.30pm';
     renderGift();
-    if (invite.responded_at) showThanks(); else renderForm();
+    renderForm(); renderCta();
   }
 
   // Small two-way switch. value: null (unanswered), true or false.
@@ -370,7 +394,6 @@
     $('message').value = invite.message || '';
     $('msg-field').classList.toggle('hidden', !invite.message);
     $('msg-add').classList.toggle('hidden', !!invite.message);
-    $('form').classList.remove('hidden'); $('thanks').classList.add('hidden');
   }
 
   const anyoneComing = () => !!document.querySelector('#people .prow[data-attending="true"]');
@@ -446,19 +469,37 @@
       p_plus_one: guests.some((g) => g.attending) && poOn ? { name: $('po-name').value.trim(), dietary: poRow.dietAsk.value === true ? $('po-diet').value.trim() : '' } : { name: '', dietary: '' },
       p_message: $('message').value,
       p_confirmed: $('confirm').checked
-    }).then((data) => { invite = data; showThanks(); $('rsvp').scrollIntoView({ behavior: 'smooth' }); })
+    }).then((data) => { invite = data; renderCta(); closeRsvp(false); toast('Thank you, your reply has been sent'); $('cta').scrollIntoView({ behavior: 'smooth', block: 'center' }); })
       .catch(() => { err.textContent = 'Sorry, that didn’t send. Please check your signal and try again.'; err.classList.remove('hidden'); })
       .finally(() => { btn.disabled = false; btn.textContent = 'Send'; });
   });
 
-  function showThanks() {
+  // ---------- RSVP screen + summary on the page ----------
+  function renderCta() {
+    const done = !!invite.responded_at;
+    $('cta-ask').classList.toggle('hidden', done); $('cta-done').classList.toggle('hidden', !done);
+    if (!done) return;
     const coming = invite.guests.filter((g) => g.attending);
-    $('thanks-title').textContent = coming.length ? 'Thank you! See you there' : 'Thank you for letting us know';
-    const ul = $('summary'); ul.innerHTML = '';
+    $('cta-title').textContent = coming.length ? 'Thanks for your reply, see you there!' : 'Thanks for letting us know';
+    const ul = $('cta-list'); ul.innerHTML = '';
     invite.guests.forEach((g) => ul.append(el('li', {}, g.name + (g.is_plus_one ? ' (plus one)' : '') + ': ' + (g.attending ? 'coming' : "can't make it") + (g.attending && g.dietary ? ' · ' + g.dietary : ''))));
-    $('form').classList.add('hidden'); $('thanks').classList.remove('hidden');
   }
-  $('change').addEventListener('click', renderForm);
+  function showThanks() { renderCta(); }
+  const rs = $('rsvp-screen');
+  function openRsvp(fresh) {
+    if (fresh) renderForm();
+    rs.classList.remove('hidden'); rs.scrollTop = 0; document.body.style.overflow = 'hidden';
+    if (!history.state || !history.state.rsvp) history.pushState({ rsvp: true }, '');
+  }
+  function closeRsvp(fromHistory) {
+    if (rs.classList.contains('hidden')) return;
+    rs.classList.add('hidden'); document.body.style.overflow = '';
+    if (!fromHistory && history.state && history.state.rsvp) history.back();
+  }
+  $('rsvp-open').addEventListener('click', () => openRsvp(false));
+  $('cta-change').addEventListener('click', () => openRsvp(true));
+  $('rsvp-back').addEventListener('click', () => closeRsvp(false));
+  window.addEventListener('popstate', () => closeRsvp(true));
 
   // Bank references are max 18 characters, letters/numbers only. Drop leading words until it fits.
   function bankRef(h) {
