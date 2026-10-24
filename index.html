@@ -13,8 +13,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Great+Vibes&family=Yellowtail&family=Josefin+Sans:wght@400;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap">
 <link rel="stylesheet" href="style.css">
 <style>
-  header { text-align: center; padding: 36px 0 8px; }
-  header .script { font-size: 44px; line-height: 1.1; margin: 6px 0 0; }
+  header { text-align: center; padding: 14px 0 2px; }
+  #greeting { font-family: var(--body); font-style: italic; font-size: 18px; color: #D6CFC1; margin: 0; letter-spacing: .01em; }
   .names { font-family: var(--display); font-size: 40px; letter-spacing: .02em; margin: 4px 0; }
   .card { margin: 20px 0; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 18px rgba(0,0,0,.12); background: #fff; cursor: zoom-in; }
   .hint { text-align: center; font-size: 14px; }
@@ -74,8 +74,8 @@
   .reveal { position: fixed; inset: 0; z-index: 46; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 0 16px 32px;
             background: #0B0A09 radial-gradient(ellipse at 50% 35%, rgba(255,90,60,.14), transparent 65%); }
   .reveal-top { position: sticky; top: 0; align-self: stretch; margin: 0 -16px 8px; background: transparent; backdrop-filter: none; }
-  .reveal-in { margin: auto 0; width: 100%; max-width: 420px; text-align: center; color: #F3EDE1; animation: rise .35s ease-out; }
-  .reveal .marquee { animation: power 1.1s steps(1) both; }
+  .reveal-in { margin: 4px 0 0; width: 100%; max-width: 420px; text-align: center; color: #F3EDE1; animation: rise .35s ease-out; }
+  .reveal .marquee { animation: power 1.1s steps(1) both; margin-top: 4px; }
   .confess { font-family: 'Yellowtail', var(--script); font-size: 34px; line-height: 1.15; margin: 18px 0 8px; color: #FFF4D6;
              text-shadow: 0 0 6px rgba(255,200,90,.6); }
   .reveal-text { font-size: 17px; line-height: 1.5; margin: 0 0 18px; }
@@ -193,7 +193,7 @@
 
   <main id="invite" class="hidden">
     <header>
-      <p class="script" id="greeting"></p>
+      <p id="greeting"></p>
     </header>
 
     <img class="card" id="front" alt="Wedding invitation: together with their parents you are warmly invited to the wedding of Paula and Doug, Saturday 7th August 2027 at Friern Manor, Essex.">
@@ -328,7 +328,6 @@
     const ppl = invite.guests.filter((g) => !g.is_plus_one);
     const named = ppl.filter((g) => g.age_group === 'adult').map((g) => firstName(g.name)).filter((n) => n && !/^(hubby|missus|wife|fella|bird|partner|child)$/i.test(n)).slice(0, 2);
     $('greeting').textContent = 'Dear ' + (ppl.length > 2 ? (named.length ? named.join(', ') + ' & family' : 'all') : joinNames(named));
-    document.querySelector('header .script').style.fontSize = ppl.length > 2 ? '38px' : '44px';
     const ceremony = invite.type === 'ceremony';
     $('front').src = ceremony ? 'img/front-ceremony.jpg' : 'img/front-garden.jpg';
     $('when-line').textContent = ceremony ? 'Ceremony · 3pm' : 'Garden party · 3.30pm';
