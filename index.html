@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <style>
   header { text-align: left; padding: 14px 4px 2px; }
-  #greeting { font-family: var(--body); font-style: italic; font-size: 18px; color: #D6CFC1; margin: 0; letter-spacing: .01em; }
+  #greeting { font-family: var(--body); font-style: italic; font-size: 22px; white-space: nowrap; color: #D6CFC1; margin: 0; letter-spacing: .01em; }
   .names { font-family: var(--display); font-size: 40px; letter-spacing: .02em; margin: 4px 0; }
   .card { margin: 20px 0; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 18px rgba(0,0,0,.12); background: #fff; cursor: zoom-in; }
   .hint { text-align: center; font-size: 14px; }
@@ -319,7 +319,7 @@
     }
     invite = data;
     render();
-    $('invite').classList.remove('hidden'); layBulbs();
+    $('invite').classList.remove('hidden'); layBulbs(); fitGreeting();
   }).catch(() => {
     $('loading').textContent = 'Sorry, something went wrong opening your invitation. Please try again in a moment.';
   });
@@ -555,6 +555,15 @@
   }
   window.addEventListener('resize', layBulbs);
   if (document.fonts) document.fonts.ready.then(layBulbs);
+
+  // Greeting stays on one line: shrink the text a little if a long name would wrap
+  function fitGreeting() {
+    const g = $('greeting'); if (!g || !g.clientWidth) return;
+    let size = 22; g.style.fontSize = size + 'px';
+    while (g.scrollWidth > g.clientWidth && size > 14) { size -= 0.5; g.style.fontSize = size + 'px'; }
+  }
+  window.addEventListener('resize', fitGreeting);
+  if (document.fonts) document.fonts.ready.then(fitGreeting);
 
   const zoom = $('zoom');
   ['front', 'back'].forEach((id) => $(id).addEventListener('click', () => { zoom.querySelector('img').src = $(id).src; zoom.classList.remove('hidden'); }));
