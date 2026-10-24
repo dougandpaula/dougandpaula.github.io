@@ -53,9 +53,22 @@
   .gift h2 { color: var(--paper); }
   .gift .neon { font-family: var(--script); font-size: 40px; text-shadow: 0 0 12px rgba(255,255,255,.35); margin: 0; }
   .toast { top: 20px; bottom: auto; background: #1B1A18; color: #F8F9EB; box-shadow: 0 4px 18px rgba(0,0,0,.5); border: 1px solid #45403A; }
+  .giftbar { text-align: center; margin: 8px 0 28px; }
+  .btn.giftbtn { background: transparent; color: #F3EDE1; border-color: #F3EDE1; min-width: 200px; }
+  .reveal { position: fixed; inset: 0; z-index: 46; overflow-y: auto; display: flex; align-items: center; justify-content: center; padding: 24px 16px;
+            background: #0B0A09 radial-gradient(ellipse at 50% 35%, rgba(255,90,60,.14), transparent 65%); }
+  .reveal-in { width: 100%; max-width: 420px; text-align: center; color: #F3EDE1; animation: rise .35s ease-out; }
+  .reveal .marquee { animation: power 1.1s steps(1) both; }
+  .confess { font-family: 'Yellowtail', var(--script); font-size: 34px; line-height: 1.15; margin: 18px 0 8px; color: #FFF4D6;
+             text-shadow: 0 0 6px rgba(255,200,90,.6); }
+  .reveal-text { font-size: 17px; line-height: 1.5; margin: 0 0 18px; }
+  .reveal-note { font-size: 14px; color: #ABA494; margin: 10px 0 0; }
+  #bank-wrap { margin-bottom: 18px; }
+  #gift-close { margin-top: 4px; color: #F3EDE1; border-color: #F3EDE1; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes power { 0% { opacity: 0; } 18% { opacity: .9; } 26% { opacity: .15; } 38% { opacity: 1; } 46% { opacity: .35; } 58%, 100% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .reveal-in, .reveal .marquee { animation: none; } }
   .btn.drink { margin-top: 14px; background: #F3EDE1; color: #151413; border-color: #F3EDE1; }
-  #drink-sheet .panel { --ink:#1B1A18; color: #1B1A18; background: #F8F9EB; border-top: 0; }
-  #drink-sheet .btn { background: #1B1A18; color: #F8F9EB; border-color: #1B1A18; }
   .bank { margin: 0 auto; text-align: left; border: 1px solid #D9D2C3; border-radius: 12px; overflow: hidden; background: #fff; }
   .bank button { display: grid; grid-template-columns: 80px 1fr auto; align-items: baseline; gap: 8px; width: 100%; padding: 12px 14px;
                  background: transparent; border: 0; color: #1B1A18; text-align: left; cursor: pointer; font-size: 16px; line-height: 1.35; }
@@ -121,7 +134,7 @@
   .fact .actions { margin-top: 14px; }
 
   /* RSVP on cream "paper", like the invitation card */
-  #rsvp, #drink-sheet .panel { --ink:#1B1A18; --ink-soft:#5E5A52; --line:#D9D2C3; --paper:#F8F9EB; --bad:#9A2F2F; color: var(--ink); }
+  #rsvp { --ink:#1B1A18; --ink-soft:#5E5A52; --line:#D9D2C3; --paper:#F8F9EB; --bad:#9A2F2F; color: var(--ink); }
   #rsvp { background: #F8F9EB; border-radius: 4px; padding: 30px 20px 26px; margin: 8px 0 28px;
           box-shadow: 0 18px 40px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.4); outline: 1.5px solid #1B1A18; outline-offset: -9px; }
   #rsvp h2 { margin-top: 0; }
@@ -206,17 +219,8 @@
       </div>
     </section>
 
-    <section class="gift" id="gift">
-      <div class="marquee" role="img" aria-label="Cocktails and Dreams neon sign">
-        <svg class="bulbs" aria-hidden="true"><rect class="halo" /><rect class="glass" /><rect class="hot" /></svg>
-        <div class="mq-in">
-          <div class="mq-script red"><span class="flick">C</span>ocktails</div>
-          <div class="mq-amp"><span>&amp;</span></div>
-          <div class="mq-script teal">Dreams</div>
-        </div>
-      </div>
-      <p id="gift-text">Sharing our special day with you will create happy memories, and that’s the best gift of all. But if you’d like to give something, a small contribution to our honeymoon will help us make even more.</p>
-      <button type="button" class="btn drink hidden" id="drink-btn">Honeymoon memories</button>
+    <section class="giftbar" id="gift">
+      <button type="button" class="btn giftbtn" id="gift-open">Gift list</button>
     </section>
 
     <footer class="muted">
@@ -227,13 +231,23 @@
 </div>
 
 <div class="zoom hidden" id="zoom" role="dialog" aria-label="Invitation card"><button aria-label="Close">×</button><img alt=""></div>
-<div class="sheet hidden" id="drink-sheet" role="dialog" aria-modal="true" aria-labelledby="drink-title">
-  <div class="panel">
-    <h3 id="drink-title">Thank you!</h3>
-    <p class="center" style="margin:2px 0 12px;font-size:15px;color:#5E5A52">Tap a line to copy it into your banking app</p>
-    <div class="bank" id="bank"></div>
-    <p class="center" style="margin:10px 0 0;font-size:14px;color:#5E5A52">Use the reference so we know who to thank</p>
-    <div class="btns"><button type="button" class="btn small" id="drink-close">Done</button></div>
+<div class="reveal hidden" id="gift-modal" role="dialog" aria-modal="true" aria-labelledby="gift-confess">
+  <div class="reveal-in">
+    <div class="marquee" role="img" aria-label="Cocktails and Dreams neon sign">
+        <svg class="bulbs" aria-hidden="true"><rect class="halo" /><rect class="glass" /><rect class="hot" /></svg>
+        <div class="mq-in">
+          <div class="mq-script red"><span class="flick">C</span>ocktails</div>
+          <div class="mq-amp"><span>&amp;</span></div>
+          <div class="mq-script teal">Dreams</div>
+        </div>
+      </div>
+    <p class="confess" id="gift-confess">Confession: there’s no gift list!</p>
+    <p class="reveal-text" id="gift-text">Making happy memories with you is the best gift of all. But if you’d like to, a contribution to our honeymoon would be lovely.</p>
+    <div id="bank-wrap" class="hidden">
+      <div class="bank" id="bank"></div>
+      <p class="reveal-note">Tap a line to copy it. Please use the reference so we know who to thank.</p>
+    </div>
+    <button type="button" class="btn ghost small" id="gift-close">Close</button>
   </div>
 </div>
 <div class="toast" id="toast" role="status"></div>
@@ -453,7 +467,7 @@
     const g = invite.gift || {};
     const bank = $('bank'); bank.innerHTML = '';
     const ready = g.gift_account_number && !/^\[/.test(g.gift_account_number);
-    $('drink-btn').classList.toggle('hidden', !ready);
+    $('bank-wrap').classList.toggle('hidden', !ready);
     if (!ready) return;
     [['Name', g.gift_account_name], ['Sort code', g.gift_sort_code], ['Account', g.gift_account_number],
      ['Reference', bankRef(invite.household)]].forEach(([label, val]) => {
@@ -462,9 +476,12 @@
       bank.append(b);
     });
   }
-  $('drink-btn').addEventListener('click', () => $('drink-sheet').classList.remove('hidden'));
-  $('drink-close').addEventListener('click', () => $('drink-sheet').classList.add('hidden'));
-  $('drink-sheet').addEventListener('click', (e) => { if (e.target === $('drink-sheet')) $('drink-sheet').classList.add('hidden'); });
+  const gm = $('gift-modal');
+  $('gift-open').addEventListener('click', () => { gm.classList.remove('hidden'); document.body.style.overflow = 'hidden'; layBulbs(); });
+  const closeGift = () => { gm.classList.add('hidden'); document.body.style.overflow = ''; };
+  $('gift-close').addEventListener('click', closeGift);
+  gm.addEventListener('click', (e) => { if (e.target === gm) closeGift(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !gm.classList.contains('hidden')) closeGift(); });
 
   $('cal').addEventListener('click', () => {
     const start = invite.type === 'ceremony' ? '20270807T140000Z' : '20270807T143000Z';
