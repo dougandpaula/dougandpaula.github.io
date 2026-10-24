@@ -63,8 +63,10 @@
              text-shadow: 0 0 6px rgba(255,200,90,.6); }
   .reveal-text { font-size: 17px; line-height: 1.5; margin: 0 0 18px; }
   .reveal-note { font-size: 14px; color: #ABA494; margin: 10px 0 0; }
-  #bank-wrap { margin-bottom: 18px; }
-  #gift-close { margin-top: 4px; color: #F3EDE1; border-color: #F3EDE1; }
+  #bank-wrap { margin-bottom: 18px; animation: rise .3s ease-out; }
+  .btn.honey { background: #F3EDE1; color: #151413; border-color: #F3EDE1; margin-bottom: 14px; }
+  .reveal .btns-col { display: flex; flex-direction: column; align-items: center; }
+  #gift-close { display: block; margin: 4px auto 0; color: #F3EDE1; border-color: #F3EDE1; }
   @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   @keyframes power { 0% { opacity: 0; } 18% { opacity: .9; } 26% { opacity: .15; } 38% { opacity: 1; } 46% { opacity: .35; } 58%, 100% { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .reveal-in, .reveal .marquee { animation: none; } }
@@ -243,6 +245,7 @@
       </div>
     <p class="confess" id="gift-confess">Confession: there’s no gift list!</p>
     <p class="reveal-text" id="gift-text">Making happy memories with you is the best gift of all. But if you’d like to, a contribution to our honeymoon would be lovely.</p>
+    <button type="button" class="btn honey hidden" id="bank-show">Honeymoon memories</button>
     <div id="bank-wrap" class="hidden">
       <div class="bank" id="bank"></div>
       <p class="reveal-note">Tap a line to copy it. Please use the reference so we know who to thank.</p>
@@ -463,11 +466,12 @@
     while (w.length > 1 && w.join(' ').length > 18) w.shift();
     return (w.join(' ') || 'Wedding').slice(0, 18);
   }
+  let bankReady = false;
   function renderGift() {
     const g = invite.gift || {};
     const bank = $('bank'); bank.innerHTML = '';
     const ready = g.gift_account_number && !/^\[/.test(g.gift_account_number);
-    $('bank-wrap').classList.toggle('hidden', !ready);
+    $('bank-show').classList.toggle('hidden', !ready); $('bank-wrap').classList.add('hidden'); bankReady = ready;
     if (!ready) return;
     [['Name', g.gift_account_name], ['Sort code', g.gift_sort_code], ['Account', g.gift_account_number],
      ['Reference', bankRef(invite.household)]].forEach(([label, val]) => {
@@ -478,7 +482,8 @@
   }
   const gm = $('gift-modal');
   $('gift-open').addEventListener('click', () => { gm.classList.remove('hidden'); document.body.style.overflow = 'hidden'; layBulbs(); });
-  const closeGift = () => { gm.classList.add('hidden'); document.body.style.overflow = ''; };
+  const closeGift = () => { gm.classList.add('hidden'); document.body.style.overflow = ''; $('bank-wrap').classList.add('hidden'); $('bank-show').classList.toggle('hidden', !bankReady); };
+  $('bank-show').addEventListener('click', () => { $('bank-show').classList.add('hidden'); $('bank-wrap').classList.remove('hidden'); $('bank-wrap').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
   $('gift-close').addEventListener('click', closeGift);
   gm.addEventListener('click', (e) => { if (e.target === gm) closeGift(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !gm.classList.contains('hidden')) closeGift(); });
