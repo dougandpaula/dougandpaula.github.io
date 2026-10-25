@@ -27,6 +27,8 @@
   .star.a { top: 18px; left: 18px; }
   .star.b { bottom: 18px; right: 18px; width: 38px; height: 38px; }
   #greeting { font-style: italic; font-weight: 600; font-size: 22px; color: #F8F9EB; margin: 0 4px 14px; }
+  #for { color: #ABA494; font-size: 15px; margin: -10px 4px 14px; }
+  .cal { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
   .ask { text-align: center; margin-top: 28px; }
   .ask h2 { font-family: var(--script); font-weight: 400; font-size: 40px; margin: 0 0 14px; }
   .choices { display: grid; gap: 12px; justify-items: center; }
@@ -55,6 +57,7 @@
 
   <main id="page" class="hidden">
     <p id="greeting"></p>
+    <p id="for" class="hidden"></p>
     <section class="std" aria-label="Save the date">
       <svg class="star a" viewBox="-50 -50 100 100" aria-hidden="true"><g stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><line x1="0" y1="-46" x2="0" y2="46"/><line x1="-46" y1="0" x2="46" y2="0"/><line x1="-22" y1="-22" x2="22" y2="22"/><line x1="-22" y1="22" x2="22" y2="-22"/></g><circle r="5" fill="currentColor"/></svg>
       <svg class="star b" viewBox="-50 -50 100 100" aria-hidden="true"><g stroke="currentColor" stroke-width="3.6" stroke-linecap="round"><line x1="0" y1="-46" x2="0" y2="46"/><line x1="-46" y1="0" x2="46" y2="0"/><line x1="-22" y1="-22" x2="22" y2="22"/><line x1="-22" y1="22" x2="22" y2="-22"/></g><circle r="5" fill="currentColor"/></svg>
@@ -87,6 +90,10 @@
     <section class="done hidden" id="done">
       <h2 id="done-title"></h2>
       <p id="done-text"></p>
+      <div class="cal" id="cal">
+        <a class="btn line" id="cal-ics" href="wedding.ics">Add to calendar</a>
+        <a class="btn line" id="cal-g" target="_blank" rel="noopener">Google Calendar</a>
+      </div>
       <button class="link" id="change" style="margin-top:12px">Change my answer</button>
     </section>
 
@@ -126,6 +133,9 @@
     const ppl = std.guests, many = ppl.length > 1;
     const adults = ppl.filter((g) => g.age_group === 'adult').map((g) => firstOf(g.name)).filter((n) => n && !PH.test(n));
     $('greeting').textContent = 'Dear ' + (ppl.length > 2 ? (adults.length ? adults.slice(0, 2).join(', ') + ' & family' : 'all') : join(adults.slice(0, 2)) || 'friend');
+    const all = ppl.map((g) => firstOf(g.name)).filter((n) => n && !PH.test(n));
+    $('for').classList.toggle('hidden', ppl.length <= 2);
+    $('for').textContent = 'For ' + join(all) + (all.length < ppl.length ? ' & family' : '');
     $('a-saved').textContent = 'Got it, date saved!';
     $('a-cant').textContent = many ? "Sorry, we definitely can't make it" : "Sorry, I definitely can't make it";
     $('a-some').classList.toggle('hidden', !many);
@@ -142,6 +152,7 @@
   function showDone() {
     $('ask').classList.add('hidden'); $('done').classList.remove('hidden');
     const cant = std.guests.filter((g) => g.cant).map((g) => firstOf(g.name));
+    $('cal').classList.toggle('hidden', std.answer === 'cant');
     if (std.answer === 'saved') { $('done-title').textContent = 'Wonderful!'; $('done-text').textContent = "Thank you! The date's in the diary. Your invitation, with all the details, will follow."; }
     else if (std.answer === 'cant') { $('done-title').textContent = 'Thank you'; $('done-text').textContent = "Thanks for letting us know. We'll miss you, and we'll raise a glass to you on the day."; }
     else { $('done-title').textContent = 'Thank you'; $('done-text').textContent = "Thanks for letting us know that " + join(cant) + " can't make it. Your invitation, with all the details, will follow."; }
@@ -162,6 +173,11 @@
     send('some', ids);
   });
   $('change').addEventListener('click', showAsk);
+
+  // Add to calendar: an all-day event (times differ for ceremony and garden party guests; the invitation has them)
+  $('cal-g').href = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent("Paula & Doug's wedding")
+    + '&dates=20270807/20270808&location=' + encodeURIComponent('Friern Manor, Brentwood, Essex')
+    + '&details=' + encodeURIComponent('Save the date! Invitation with all the details to follow.');
 })();
 </script>
 </body>
