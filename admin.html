@@ -20,6 +20,7 @@
   .stat b { display: block; font-size: 26px; font-family: var(--body); }
   .stat span { font-size: 13px; color: var(--ink-soft); }
   .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+  .filters #f-sort { grid-column: 1 / -1; }
   .filters input { grid-column: 1 / -1; }
   .bar { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; align-items: center; }
   .hh { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; margin: 10px 0; }
@@ -50,6 +51,12 @@
   details { background: var(--paper-2); border-radius: 12px; padding: 10px 14px; margin: 12px 0; }
   summary { cursor: pointer; font-weight: 600; min-height: 32px; }
   .count { color: var(--ink-soft); font-size: 14px; }
+  .stdline { font-size: 14px; margin: 0 0 10px; color: var(--ink-soft); }
+  .stdline b { font-weight: 600; }
+  .stdline .ok { color: var(--good); } .stdline .no { color: var(--bad); }
+  .std-sum { background: var(--paper-2); border-radius: 12px; padding: 10px 14px; margin: 10px 0; font-size: 15px; }
+  .std-sum p { margin: 4px 0; }
+  .std-prev { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 15px; white-space: pre-wrap; }
 </style>
 </head>
 <body>
@@ -97,10 +104,12 @@
       <select id="f-priority"></select>
       <select id="f-type"><option value="">All invites</option><option value="ceremony">Ceremony</option><option value="garden">Garden party</option></select>
       <select id="f-status"><option value="">Any status</option><option value="incomplete">Incomplete</option><option value="post">Sending by post</option><option value="person">Giving in person</option><option value="notsent">Not sent</option><option value="sent">Sent, not opened</option><option value="opened">Opened, no reply</option><option value="replied">Replied</option><option value="check">Names to check</option><option value="invite">On the invite list</option><option value="Doug">Doug sends</option><option value="Paula">Paula sends</option><option value="nonumber">No phone numbers</option><option value="suggest">Mobiles to check</option><option value="reserve">Reserves</option></select>
+      <select id="f-std"><option value="">Save the date: any</option><option value="notsent">STD not sent</option><option value="waiting">STD sent, no answer</option><option value="opened">STD opened, no answer</option><option value="saved">STD date saved</option><option value="cant">STD can't make it</option><option value="some">STD some can't</option></select>
       <select id="f-sort"><option value="priority">Sort: priority</option><option value="name">Sort: name</option><option value="recent">Sort: latest reply</option></select>
     </div>
     <div class="bar">
       <button class="btn small" id="add">+ Add household</button>
+      <button class="btn small" id="std-open">Save the date texts</button>
       <button class="btn ghost small" id="export">Export CSV</button>
       <button class="btn ghost small" id="export-log">Export RSVP log</button>
       <button class="btn ghost small" id="show-book">Contacts</button>
@@ -165,6 +174,23 @@
       <button class="btn ghost small" id="h-close" type="button">Close</button>
     </div>
     <div id="h-list" style="margin-top:10px"></div>
+  </div>
+</div>
+<div class="modal hidden" id="stdm" role="dialog" aria-modal="true" aria-labelledby="sd-title">
+  <div class="sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h3 id="sd-title" style="margin:0">Save the date texts</h3>
+      <button class="btn ghost small" id="sd-close" type="button">Close</button>
+    </div>
+    <div class="std-sum" id="sd-sum"></div>
+    <p class="muted" style="font-size:14px;margin:12px 0 4px">Example message</p>
+    <div class="std-prev" id="sd-prev"></div>
+    <div class="acts" style="margin-top:14px">
+      <button class="btn small" id="sd-csv">1. Download file for text service</button>
+      <button class="btn ghost small" id="sd-nomob">List without a mobile</button>
+    </div>
+    <p class="muted" style="font-size:14px">Upload the file as it is (don't open and save it in Excel first, it can spoil the phone numbers). Send a test to yourself first.</p>
+    <div class="acts"><button class="btn ghost small" id="sd-mark">2. Mark these as sent</button></div>
   </div>
 </div>
 <div class="toast" id="toast" role="status"></div>
@@ -247,6 +273,23 @@
   // One message per household: the chosen main contact, else the first person with a mobile.
   const HOW = { whatsapp: 'WhatsApp', post: 'Post', person: 'In person' };
   const mainContact = (i) => { const c = contacts(i); return c.find((g) => g.id === i.main_contact) || c[0] || null; };
+  // ---------- save the date ----------
+  const stdLink = (i) => C.siteUrl + '?s=' + i.std_code;
+  const stdMsg = (i, g) => 'Hi ' + firstOf(g.name) + ", it's Doug & Paula! We're getting married on Saturday 7th August 2027 at Friern Manor, Brentwood, and we'd love "
+    + (i.guests.filter((x) => !x.is_plus_one).length > 1 ? 'you all' : 'you') + ' to be there. Please save the date - invitations will follow. Tap to let us know: '
+    + stdLink(i) + ' Any problems, call or text Doug on ' + C.contact.phone;
+  const isMobile = (g) => /^447\d{9}$/.test(waNum(g && g.phone));
+  // Lead with a mobile: the main contact if they have a mobile, otherwise the first person who does.
+  const stdLead = (i) => { const m = i.guests.filter((g) => !g.is_plus_one && isMobile(g)); return m.find((g) => g.id === i.main_contact) || m[0] || null; };
+  const segments = (t) => (t.length <= 160 ? 1 : Math.ceil(t.length / 153));
+  function stdStatus(i) {
+    if (i.std_answer === 'saved') return ['saved', 'Date saved'];
+    if (i.std_answer === 'cant') return ['cant', "Can't make it"];
+    if (i.std_answer === 'some') return ['some', "Some can't"];
+    if (i.std_opened_at) return ['opened', 'Opened, no answer'];
+    if (i.std_sent_at) return ['waiting', 'Sent, no answer'];
+    return ['notsent', 'Not sent'];
+  }
   // "Joan & Bob", or "Jennifer, Dan & family" when there are more than two people in the household.
   const householdHello = (i) => {
     const ppl = i.guests.filter((g) => !g.is_plus_one);
@@ -313,13 +356,17 @@
       [coming.filter((g) => g.age_group === 'adult').length + ' · ' + coming.filter((g) => g.age_group === 'teen').length + ' · ' + coming.filter((g) => g.age_group === 'child').length, 'adults · teens · children'],
       [people.filter((g) => g.attending === false).length, "can't make it"],
       [coming.filter((g) => g.dietary).length, 'dietary needs'],
-      [data.invites.filter((i) => live(i) && issues(i).length).length, 'households incomplete']
+      [data.invites.filter((i) => live(i) && issues(i).length).length, 'households incomplete'],
+      [inv.filter((i) => i.std_answer === 'saved').length + ' · ' + inv.filter((i) => i.std_answer && i.std_answer !== 'saved').length + ' · ' + inv.filter((i) => i.std_sent_at && !i.std_answer).length,
+        'save the date: saved · can\'t/some can\'t · waiting']
     ];
     $('stats').innerHTML = ''; stats.forEach(([b, s]) => $('stats').append(el('div', { class: 'stat' }, el('b', {}, String(b)), el('span', {}, s))));
 
     const q = $('f-search').value.trim().toLowerCase(), fp = $('f-priority').value, ft = $('f-type').value, fs = $('f-status').value, so = $('f-sort').value;
     let rows = data.invites.filter((i) => {
       if (fp && (i.priority || '') !== fp) return false;
+      const fsd = $('f-std').value, ss = stdStatus(i)[0];
+      if (fsd && !(fsd === ss || (fsd === 'waiting' && (ss === 'waiting' || ss === 'opened')))) return false;
       if (ft && i.invite_type !== ft) return false;
       const st = status(i)[0];
       if (fs === 'notsent' && st !== '') return false;
@@ -366,12 +413,16 @@
             el('button', { class: 'btn ghost small', onclick: () => resolvePhone(g, false) }, '✗ No'),
             el('button', { class: 'btn ghost small', onclick: () => openEdit(i) }, 'Search contacts')))),
         live(i) && issues(i).length ? el('p', { class: 'todo' }, 'To do: ' + issues(i).join(' · ')) : null,
+        (i.std_sent_at || i.std_answer) ? (() => { const [k, t] = stdStatus(i); const cant = i.guests.filter((g) => g.std_cant).map((g) => g.name);
+          return el('p', { class: 'stdline' }, 'Save the date: ', el('b', { class: k === 'saved' ? 'ok' : (k === 'cant' || k === 'some') ? 'no' : '' }, t),
+            cant.length && k === 'some' ? ' · can\'t come: ' + cant.join(', ') : null); })() : null,
         i.message ? el('p', { style: 'margin:0 0 10px;font-style:italic' }, '“' + i.message + '”') : null,
         i.notes ? el('p', { class: 'muted', style: 'margin:0 0 10px;font-size:14px' }, 'Note: ' + i.notes) : null,
         el('div', { class: 'acts' },
           el('button', { class: 'btn small', onclick: () => openEdit(i) }, 'Edit'),
           el('button', { class: 'btn ghost small', onclick: () => share(i, 'copy') }, 'Copy link'),
           i.responded_at ? el('button', { class: 'btn ghost small', onclick: () => showHistory(i) }, 'History') : null,
+          live(i) && !place[i.id].reserve ? el('button', { class: 'btn ghost small', onclick: () => copyStd(i) }, 'Copy save the date') : null,
           /^test/.test(i.code || '') ? el('button', { class: 'btn ghost small', onclick: () => resetTest(i) }, 'Reset test') : null,
           (i.send_method || 'whatsapp') !== 'whatsapp' ? null : mainContact(i)
             ? el('button', { class: 'btn small', onclick: () => sendTo(i, mainContact(i)) }, 'WhatsApp ' + firstOf(mainContact(i).name))
@@ -382,7 +433,7 @@
       list.append(card);
     });
   }
-  ['f-search', 'f-priority', 'f-type', 'f-status', 'f-sort'].forEach((id) => $(id).addEventListener('input', render));
+  ['f-search', 'f-priority', 'f-type', 'f-status', 'f-std', 'f-sort'].forEach((id) => $(id).addEventListener('input', render));
   $('reload').addEventListener('click', start);
 
   function replaceInvite(saved) { const k = data.invites.findIndex((x) => x.id === saved.id); if (k >= 0) data.invites[k] = saved; else data.invites.push(saved); render(); }
@@ -572,6 +623,46 @@
       el('p', { class: 'muted', style: 'margin:0;font-size:13px' }, e.confirm_text ? (e.confirmed ? '☑ Ticked: ' : '☐ Not ticked: ') + e.confirm_text : 'No one coming, so no allergy confirmation needed.'))));
   }
   $('h-close').addEventListener('click', () => $('hist').classList.add('hidden'));
+
+  // ---------- save the date texts ----------
+  function copyStd(i) {
+    const g = stdLead(i) || mainContact(i) || i.guests.find((x) => !x.is_plus_one);
+    if (!g) return toast('No one in this household');
+    navigator.clipboard.writeText(stdMsg(i, g)).then(() => toast('Save the date copied for ' + firstOf(g.name)));
+  }
+  let stdBatch = [];
+  const download = (name, lines, bom = true) => { const a = el('a', { href: URL.createObjectURL(new Blob([(bom ? '\ufeff' : '') + lines.join('\r\n')], { type: 'text/csv' })), download: name }); document.body.append(a); a.click(); a.remove(); };
+  const csvEsc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  function openStd() {
+    allocate();
+    const list = data.invites.filter((i) => live(i) && !place[i.id].reserve && !i.std_sent_at).sort(byList);
+    stdBatch = list.filter((i) => stdLead(i));
+    const without = list.filter((i) => !stdLead(i));
+    const msgs = stdBatch.map((i) => stdMsg(i, stdLead(i)));
+    const segs = msgs.reduce((n, m) => n + segments(m), 0), longest = Math.max(0, ...msgs.map((m) => m.length));
+    const already = data.invites.filter((i) => live(i) && !place[i.id].reserve && i.std_sent_at).length;
+    $('sd-sum').innerHTML = '';
+    [[stdBatch.length + ' households to text', ' (one text each, to the household lead)'],
+     [without.length + ' households without a mobile', without.length ? ' – download their list and contact them another way' : ''],
+     [already + ' already sent', ' (not included again)'],
+     ['About ' + segs + ' text credits', ' (each message is ' + (msgs.some((m) => segments(m) > 2) ? 'up to ' + longest + ' characters – ' + msgs.filter((m) => segments(m) > 2).length + ' will cost 3 credits because of long names' : '2 credits') + ')']]
+      .forEach(([b, t]) => $('sd-sum').append(el('p', {}, el('b', {}, b), t)));
+    $('sd-prev').textContent = stdBatch.length ? msgs[0] : 'No households left to text.';
+    $('sd-csv').disabled = $('sd-mark').disabled = !stdBatch.length;
+    $('sd-nomob').disabled = !without.length;
+    $('sd-nomob').onclick = () => download('save-the-date-no-mobile.csv', [['Round', 'Household', 'People', 'Phone(s)', 'Sends', 'Address', 'Link'].map(csvEsc).join(',')]
+      .concat(without.map((i) => [i.priority, i.household_name, i.guests.filter((g) => !g.is_plus_one).map((g) => g.name).join(', '), i.guests.map((g) => g.phone).filter(Boolean).join(' / '), i.sent_by, i.address, stdLink(i)].map(csvEsc).join(','))));
+    $('stdm').classList.remove('hidden');
+  }
+  $('std-open').addEventListener('click', openStd);
+  $('sd-close').addEventListener('click', () => $('stdm').classList.add('hidden'));
+  $('sd-csv').addEventListener('click', () => download('save-the-date-texts.csv', [['Phone', 'Name', 'Message', 'Household'].map(csvEsc).join(',')]
+    .concat(stdBatch.map((i) => { const g = stdLead(i); return [waNum(g.phone), firstOf(g.name), stdMsg(i, g), i.household_name].map(csvEsc).join(','); })), false));
+  $('sd-mark').addEventListener('click', async () => {
+    if (!confirm('Mark ' + stdBatch.length + ' households as save the date sent? Only do this once the texts have gone.')) return;
+    try { await rpc('admin_mark_std_sent', { p_list: stdBatch.map((i) => i.id), p_sent: true }); toast(stdBatch.length + ' marked as sent'); $('stdm').classList.add('hidden'); await start(); }
+    catch (e) { toast('Could not mark them: ' + (e.message || e)); }
+  });
 
   // ---------- export ----------
   $('export-log').addEventListener('click', async () => {

@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Save the date · Paula &amp; Doug</title>
+<meta property="og:title" content="Save the date · Paula & Doug">
+<meta property="og:description" content="Saturday 7th August 2027 · Friern Manor, Brentwood">
+<meta property="og:image" content="https://dougandpaula.github.io/img/preview.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Great+Vibes&family=Josefin+Sans:wght@400;600&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  body { background: #151413; color: #F3EDE1; }
+  .wrap { padding-top: 22px; padding-bottom: 40px; }
+  .std { position: relative; background: #F8F9EB; color: #1B1A18; border-radius: 6px; padding: 38px 22px 30px; text-align: center;
+         box-shadow: 0 18px 40px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.4); overflow: hidden; }
+  .std .caps { font-size: 14px; letter-spacing: .32em; color: #1B1A18; }
+  .std .names { font-family: var(--script); font-size: 62px; line-height: 1.05; margin: 14px 0 2px; }
+  .std .married { font-style: italic; margin: 0 0 18px; color: #3A3732; }
+  .std .date { font-family: var(--display); font-size: 30px; line-height: 1.15; margin: 0; letter-spacing: .01em; }
+  .std .place { font-family: var(--caps); text-transform: uppercase; letter-spacing: .16em; font-size: 14px; margin: 10px 0 0; }
+  .std .follow { margin: 22px auto 0; max-width: 30ch; font-size: 16px; color: #3A3732; }
+  .star { position: absolute; width: 46px; height: 46px; color: #1B1A18; }
+  .star.a { top: 18px; left: 18px; }
+  .star.b { bottom: 18px; right: 18px; width: 38px; height: 38px; }
+  #greeting { font-style: italic; font-weight: 600; font-size: 22px; color: #F8F9EB; margin: 0 4px 14px; }
+  .ask { text-align: center; margin-top: 28px; }
+  .ask h2 { font-family: var(--script); font-weight: 400; font-size: 40px; margin: 0 0 14px; }
+  .choices { display: grid; gap: 12px; justify-items: center; }
+  .btn.big { width: 100%; max-width: 320px; min-height: 54px; font-size: 14px; letter-spacing: .14em; }
+  .btn.cream { background: #F8F9EB; color: #151413; border-color: #F8F9EB; box-shadow: 0 6px 20px rgba(0,0,0,.45); }
+  .btn.line { background: transparent; color: #F3EDE1; border-color: #8C857A; }
+  .link { background: none; border: 0; padding: 8px 0; color: #ABA494; text-decoration: underline; text-underline-offset: 3px; font-size: 16px; cursor: pointer; }
+  .who { background: #1E1C1A; border: 1px solid #34302B; border-radius: 14px; padding: 4px 14px; margin: 6px auto 14px; max-width: 360px; text-align: left; }
+  .who label { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; font-size: 17px; cursor: pointer; }
+  .who label + label { border-top: 1px solid #34302B; }
+  .who input { width: 22px; height: 22px; accent-color: #A8423F; }
+  .who small { color: #ABA494; font-size: 14px; }
+  .done { text-align: center; margin-top: 28px; }
+  .done h2 { font-family: var(--script); font-weight: 400; font-size: 42px; margin: 0 0 6px; }
+  .done p { margin: 0 auto; max-width: 32ch; }
+  .contact { text-align: center; color: #ABA494; font-size: 15px; margin-top: 34px; }
+  .contact a { color: #F3EDE1; }
+  .msg { text-align: center; margin-top: 30vh; color: #ABA494; }
+  .toast { top: 20px; bottom: auto; background: #1B1A18; color: #F8F9EB; border: 1px solid #45403A; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="msg" id="loading">Opening…</p>
+  <p class="msg hidden" id="nolink"></p>
+
+  <main id="page" class="hidden">
+    <p id="greeting"></p>
+    <section class="std" aria-label="Save the date">
+      <svg class="star a" viewBox="-50 -50 100 100" aria-hidden="true"><g stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><line x1="0" y1="-46" x2="0" y2="46"/><line x1="-46" y1="0" x2="46" y2="0"/><line x1="-22" y1="-22" x2="22" y2="22"/><line x1="-22" y1="22" x2="22" y2="-22"/></g><circle r="5" fill="currentColor"/></svg>
+      <svg class="star b" viewBox="-50 -50 100 100" aria-hidden="true"><g stroke="currentColor" stroke-width="3.6" stroke-linecap="round"><line x1="0" y1="-46" x2="0" y2="46"/><line x1="-46" y1="0" x2="46" y2="0"/><line x1="-22" y1="-22" x2="22" y2="22"/><line x1="-22" y1="22" x2="22" y2="-22"/></g><circle r="5" fill="currentColor"/></svg>
+      <p class="caps">Save the date</p>
+      <p class="names">Paula &amp; Doug</p>
+      <p class="married">are getting married</p>
+      <p class="date">Saturday 7th August 2027</p>
+      <p class="place">Friern Manor · Brentwood, Essex</p>
+      <p class="follow">We're finalising the details with the venue. Your invitation, with everything you need to know, will follow.</p>
+    </section>
+
+    <section class="ask" id="ask">
+      <h2 id="ask-title">Can you make it?</h2>
+      <div class="choices" id="choices">
+        <button class="btn big cream" id="a-saved"></button>
+        <button class="btn big line" id="a-cant"></button>
+        <button class="link hidden" id="a-some">Some of us can't make it</button>
+      </div>
+      <div class="hidden" id="some">
+        <p style="margin:0 0 4px">Who can't make it?</p>
+        <div class="who" id="who"></div>
+        <div class="choices">
+          <button class="btn big cream" id="some-send">Send</button>
+          <button class="link" id="some-back">Back</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="done hidden" id="done">
+      <h2 id="done-title"></h2>
+      <p id="done-text"></p>
+      <button class="link" id="change" style="margin-top:12px">Change my answer</button>
+    </section>
+
+    <p class="contact">Any problems? Call or text Doug on <a id="ph"></a></p>
+  </main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  const C = window.WEDDING_CONFIG;
+  const $ = (id) => document.getElementById(id);
+  const code = new URLSearchParams(location.search).get('s');
+  let std = null;
+
+  function rpc(fn, body) {
+    return fetch(C.supabaseUrl + '/rest/v1/rpc/' + fn, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', apikey: C.supabaseKey }, body: JSON.stringify(body)
+    }).then(async (r) => { if (!r.ok) throw new Error(await r.text()); return r.json(); });
+  }
+  function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); }
+  const firstOf = (n) => String(n || '').replace(/\s*\?\s*$/, '').split(' ')[0];
+  const join = (a) => a.length < 2 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' & ' + a[a.length - 1];
+  const PH = /^(hubby|missus|wife|fella|bird|partner|child|kid|plus one)$/i;
+
+  $('ph').textContent = C.contact.phone; $('ph').href = 'tel:' + C.contact.phone.replace(/\s/g, '');
+  const fail = (t) => { $('loading').classList.add('hidden'); $('nolink').textContent = t; $('nolink').classList.remove('hidden'); };
+  if (!code) return fail("This link doesn't look quite right. Please call or text Doug on " + C.contact.phone + '.');
+
+  rpc('get_std', { p_code: code }).then((d) => {
+    if (!d) return fail("We couldn't find that link. Please call or text Doug on " + C.contact.phone + '.');
+    std = d; $('loading').classList.add('hidden'); $('page').classList.remove('hidden'); render();
+  }).catch(() => fail('Sorry, something went wrong. Please try again in a moment.'));
+
+  function render() {
+    const ppl = std.guests, many = ppl.length > 1;
+    const adults = ppl.filter((g) => g.age_group === 'adult').map((g) => firstOf(g.name)).filter((n) => n && !PH.test(n));
+    $('greeting').textContent = 'Dear ' + (ppl.length > 2 ? (adults.length ? adults.slice(0, 2).join(', ') + ' & family' : 'all') : join(adults.slice(0, 2)) || 'friend');
+    $('a-saved').textContent = many ? "Date saved! We'll be there" : "Date saved! I'll be there";
+    $('a-cant').textContent = many ? "Sorry, we can't make it" : "Sorry, I can't make it";
+    $('a-some').classList.toggle('hidden', !many);
+    $('who').innerHTML = '';
+    ppl.forEach((g) => {
+      const l = document.createElement('label');
+      l.innerHTML = '<span></span><input type="checkbox">';
+      l.firstChild.textContent = g.name; l.lastChild.value = g.id; l.lastChild.checked = !!g.cant;
+      $('who').append(l);
+    });
+    if (std.answer) showDone(); else showAsk();
+  }
+  function showAsk() { $('done').classList.add('hidden'); $('ask').classList.remove('hidden'); $('choices').classList.remove('hidden'); $('some').classList.add('hidden'); $('ask-title').textContent = 'Can you make it?'; }
+  function showDone() {
+    $('ask').classList.add('hidden'); $('done').classList.remove('hidden');
+    const cant = std.guests.filter((g) => g.cant).map((g) => firstOf(g.name));
+    if (std.answer === 'saved') { $('done-title').textContent = 'Wonderful!'; $('done-text').textContent = "Thank you. We can't wait to celebrate with you. Look out for your invitation."; }
+    else if (std.answer === 'cant') { $('done-title').textContent = 'Thank you'; $('done-text').textContent = "Thanks for letting us know. We'll miss you, and we'll raise a glass to you on the day."; }
+    else { $('done-title').textContent = 'Thank you'; $('done-text').textContent = "Thanks for letting us know that " + join(cant) + " can't make it. We can't wait to celebrate with everyone else. Look out for your invitation."; }
+  }
+  async function send(answer, cant) {
+    document.querySelectorAll('button').forEach((b) => (b.disabled = true));
+    try { std = await rpc('answer_std', { p_code: code, p_answer: answer, p_cant: cant || [] }); render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    catch (e) { toast("Sorry, that didn't send. Please try again."); }
+    document.querySelectorAll('button').forEach((b) => (b.disabled = false));
+  }
+  $('a-saved').addEventListener('click', () => send('saved'));
+  $('a-cant').addEventListener('click', () => send('cant'));
+  $('a-some').addEventListener('click', () => { $('choices').classList.add('hidden'); $('some').classList.remove('hidden'); $('ask-title').textContent = 'Some of you?'; });
+  $('some-back').addEventListener('click', showAsk);
+  $('some-send').addEventListener('click', () => {
+    const ids = [...$('who').querySelectorAll('input:checked')].map((i) => i.value);
+    if (!ids.length) return toast('Tick who can’t make it');
+    send('some', ids);
+  });
+  $('change').addEventListener('click', showAsk);
+})();
+</script>
+</body>
+</html>
