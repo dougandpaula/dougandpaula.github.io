@@ -104,7 +104,7 @@
       <select id="f-priority"></select>
       <select id="f-type"><option value="">All invites</option><option value="ceremony">Ceremony</option><option value="garden">Garden party</option></select>
       <select id="f-status"><option value="">Any status</option><option value="incomplete">Incomplete</option><option value="post">Sending by post</option><option value="person">Giving in person</option><option value="notsent">Not sent</option><option value="sent">Sent, not opened</option><option value="opened">Opened, no reply</option><option value="replied">Replied</option><option value="check">Names to check</option><option value="invite">On the invite list</option><option value="Doug">Doug sends</option><option value="Paula">Paula sends</option><option value="nonumber">No phone numbers</option><option value="suggest">Mobiles to check</option><option value="reserve">Reserves</option></select>
-      <select id="f-std"><option value="">Save the date: any</option><option value="notsent">STD not sent</option><option value="waiting">STD sent, no answer</option><option value="opened">STD opened, no answer</option><option value="saved">STD date saved</option><option value="cant">STD can't make it</option><option value="some">STD some can't</option></select>
+      <select id="f-std"><option value="">Save the date: any</option><option value="notsent">STD not sent</option><option value="waiting">STD sent, no answer</option><option value="opened">STD opened, no answer</option><option value="saved">STD got it</option><option value="cant">STD definitely can't</option><option value="some">STD some can't</option></select>
       <select id="f-sort"><option value="priority">Sort: priority</option><option value="name">Sort: name</option><option value="recent">Sort: latest reply</option></select>
     </div>
     <div class="bar">
@@ -283,9 +283,9 @@
   const stdLead = (i) => { const m = i.guests.filter((g) => !g.is_plus_one && isMobile(g)); return m.find((g) => g.id === i.main_contact) || m[0] || null; };
   const segments = (t) => (t.length <= 160 ? 1 : Math.ceil(t.length / 153));
   function stdStatus(i) {
-    if (i.std_answer === 'saved') return ['saved', 'Date saved'];
-    if (i.std_answer === 'cant') return ['cant', "Can't make it"];
-    if (i.std_answer === 'some') return ['some', "Some can't"];
+    if (i.std_answer === 'saved') return ['saved', 'Got it'];
+    if (i.std_answer === 'cant') return ['cant', "Definitely can't"];
+    if (i.std_answer === 'some') return ['some', "Some definitely can't"];
     if (i.std_opened_at) return ['opened', 'Opened, no answer'];
     if (i.std_sent_at) return ['waiting', 'Sent, no answer'];
     return ['notsent', 'Not sent'];
@@ -358,7 +358,7 @@
       [coming.filter((g) => g.dietary).length, 'dietary needs'],
       [data.invites.filter((i) => live(i) && issues(i).length).length, 'households incomplete'],
       [inv.filter((i) => i.std_answer === 'saved').length + ' · ' + inv.filter((i) => i.std_answer && i.std_answer !== 'saved').length + ' · ' + inv.filter((i) => i.std_sent_at && !i.std_answer).length,
-        'save the date: saved · can\'t/some can\'t · waiting']
+        'save the date: got it · can\'t/some can\'t · waiting']
     ];
     $('stats').innerHTML = ''; stats.forEach(([b, s]) => $('stats').append(el('div', { class: 'stat' }, el('b', {}, String(b)), el('span', {}, s))));
 

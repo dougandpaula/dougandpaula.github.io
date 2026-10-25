@@ -67,11 +67,12 @@
     </section>
 
     <section class="ask" id="ask">
-      <h2 id="ask-title">Can you make it?</h2>
+      <h2 id="ask-title">Got it?</h2>
+      <p id="ask-sub" style="margin:-6px auto 16px;max-width:32ch;color:#ABA494">Please let us know you got this. You can tell us if you're coming when your invitation arrives.</p>
       <div class="choices" id="choices">
         <button class="btn big cream" id="a-saved"></button>
         <button class="btn big line" id="a-cant"></button>
-        <button class="link hidden" id="a-some">Some of us can't make it</button>
+        <button class="link hidden" id="a-some">Some of us definitely can't make it</button>
       </div>
       <div class="hidden" id="some">
         <p style="margin:0 0 4px">Who can't make it?</p>
@@ -125,8 +126,8 @@
     const ppl = std.guests, many = ppl.length > 1;
     const adults = ppl.filter((g) => g.age_group === 'adult').map((g) => firstOf(g.name)).filter((n) => n && !PH.test(n));
     $('greeting').textContent = 'Dear ' + (ppl.length > 2 ? (adults.length ? adults.slice(0, 2).join(', ') + ' & family' : 'all') : join(adults.slice(0, 2)) || 'friend');
-    $('a-saved').textContent = many ? "Date saved! We'll be there" : "Date saved! I'll be there";
-    $('a-cant').textContent = many ? "Sorry, we can't make it" : "Sorry, I can't make it";
+    $('a-saved').textContent = 'Got it, date saved!';
+    $('a-cant').textContent = many ? "Sorry, we definitely can't make it" : "Sorry, I definitely can't make it";
     $('a-some').classList.toggle('hidden', !many);
     $('who').innerHTML = '';
     ppl.forEach((g) => {
@@ -137,13 +138,13 @@
     });
     if (std.answer) showDone(); else showAsk();
   }
-  function showAsk() { $('done').classList.add('hidden'); $('ask').classList.remove('hidden'); $('choices').classList.remove('hidden'); $('some').classList.add('hidden'); $('ask-title').textContent = 'Can you make it?'; }
+  function showAsk() { $('done').classList.add('hidden'); $('ask').classList.remove('hidden'); $('choices').classList.remove('hidden'); $('ask-sub').classList.remove('hidden'); $('some').classList.add('hidden'); $('ask-title').textContent = 'Got it?'; }
   function showDone() {
     $('ask').classList.add('hidden'); $('done').classList.remove('hidden');
     const cant = std.guests.filter((g) => g.cant).map((g) => firstOf(g.name));
-    if (std.answer === 'saved') { $('done-title').textContent = 'Wonderful!'; $('done-text').textContent = "Thank you. We can't wait to celebrate with you. Look out for your invitation."; }
+    if (std.answer === 'saved') { $('done-title').textContent = 'Wonderful!'; $('done-text').textContent = "Thank you! The date's in the diary. Your invitation, with all the details, will follow."; }
     else if (std.answer === 'cant') { $('done-title').textContent = 'Thank you'; $('done-text').textContent = "Thanks for letting us know. We'll miss you, and we'll raise a glass to you on the day."; }
-    else { $('done-title').textContent = 'Thank you'; $('done-text').textContent = "Thanks for letting us know that " + join(cant) + " can't make it. We can't wait to celebrate with everyone else. Look out for your invitation."; }
+    else { $('done-title').textContent = 'Thank you'; $('done-text').textContent = "Thanks for letting us know that " + join(cant) + " can't make it. Your invitation, with all the details, will follow."; }
   }
   async function send(answer, cant) {
     document.querySelectorAll('button').forEach((b) => (b.disabled = true));
@@ -153,7 +154,7 @@
   }
   $('a-saved').addEventListener('click', () => send('saved'));
   $('a-cant').addEventListener('click', () => send('cant'));
-  $('a-some').addEventListener('click', () => { $('choices').classList.add('hidden'); $('some').classList.remove('hidden'); $('ask-title').textContent = 'Some of you?'; });
+  $('a-some').addEventListener('click', () => { $('choices').classList.add('hidden'); $('some').classList.remove('hidden'); $('ask-title').textContent = 'Some of you?'; $('ask-sub').classList.add('hidden'); });
   $('some-back').addEventListener('click', showAsk);
   $('some-send').addEventListener('click', () => {
     const ids = [...$('who').querySelectorAll('input:checked')].map((i) => i.value);
