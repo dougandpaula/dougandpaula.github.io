@@ -197,7 +197,7 @@
     </header>
 
     <img class="card" id="front" alt="Wedding invitation: together with their parents you are warmly invited to the wedding of Paula and Doug, Saturday 7th August 2027 at Friern Manor, Essex.">
-    <img class="card" id="back" src="img/back.jpg" alt="The details: a note about the day, venue and RSVP, the plan for the day, food and drinks, games and fun.">
+    <img class="card" id="back" alt="A note about the day, Friern Manor, the plan for the day, and food and drinks.">
 
     <section class="cta" id="cta">
       <div id="cta-ask">
@@ -330,6 +330,7 @@
     $('greeting').textContent = 'Dear ' + (ppl.length > 2 ? (named.length ? named.join(', ') + ' & family' : 'all') : joinNames(named));
     const ceremony = invite.type === 'ceremony';
     $('front').src = ceremony ? 'img/front-ceremony.jpg' : 'img/front-garden.jpg';
+    $('back').src = ceremony ? 'img/back-ceremony.jpg' : 'img/back-garden.jpg';
     $('when-line').textContent = ceremony ? 'Ceremony · 3pm' : 'Garden party · 3.30pm';
     renderGift();
     renderForm(); renderCta();
