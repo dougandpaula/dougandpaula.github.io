@@ -372,6 +372,7 @@
           el('button', { class: 'btn small', onclick: () => openEdit(i) }, 'Edit'),
           el('button', { class: 'btn ghost small', onclick: () => share(i, 'copy') }, 'Copy link'),
           i.responded_at ? el('button', { class: 'btn ghost small', onclick: () => showHistory(i) }, 'History') : null,
+          /^test/.test(i.code || '') ? el('button', { class: 'btn ghost small', onclick: () => resetTest(i) }, 'Reset test') : null,
           (i.send_method || 'whatsapp') !== 'whatsapp' ? null : mainContact(i)
             ? el('button', { class: 'btn small', onclick: () => sendTo(i, mainContact(i)) }, 'WhatsApp ' + firstOf(mainContact(i).name))
             : el('button', { class: 'btn ghost small', onclick: () => share(i, 'whatsapp') }, 'WhatsApp'),
@@ -455,6 +456,11 @@
   $('show-book').addEventListener('click', async () => { $('book').classList.remove('hidden'); $('b-list').innerHTML = '<li class="muted">Loading…</li>'; await loadPhoneBook(); renderBook(); });
   $('b-close').addEventListener('click', () => $('book').classList.add('hidden'));
   ['b-q', 'b-f'].forEach((id) => $(id).addEventListener('input', renderBook));
+  async function resetTest(i) {
+    if (!confirm('Reset ' + i.household_name + ' to "not replied"?')) return;
+    try { replaceInvite(await rpc('admin_reset_test', { p_id: i.id })); toast('Test reset'); }
+    catch (e) { toast('Could not reset: ' + (e.message || e)); }
+  }
   async function markSent(i, sent) { replaceInvite(await rpc('admin_mark_sent', { p_id: i.id, p_sent: sent })); }
   function sendTo(i, g) {
     window.open('https://wa.me/' + waNum(g.phone) + '?text=' + encodeURIComponent(inviteMsg(householdHello(i) || firstOf(g.name), i)), '_blank', 'noopener');
