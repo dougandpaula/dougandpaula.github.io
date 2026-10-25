@@ -65,7 +65,7 @@
       <p class="names">Paula &amp; Doug</p>
       <p class="married">are getting married</p>
       <p class="date">Saturday 7th August 2027</p>
-      <p class="place">Friern Manor · Brentwood, Essex</p>
+      <p class="place">Friern Manor<br>Brentwood · Essex</p>
       <p class="follow">We're finalising the details with the venue. Your invitation, with everything you need to know, will follow.</p>
     </section>
 
@@ -91,8 +91,7 @@
       <h2 id="done-title"></h2>
       <p id="done-text"></p>
       <div class="cal" id="cal">
-        <a class="btn line" id="cal-ics" href="wedding.ics">Add to calendar</a>
-        <a class="btn line" id="cal-g" target="_blank" rel="noopener">Google Calendar</a>
+        <button class="btn line" id="cal-add">Add to calendar</button>
       </div>
       <button class="link" id="change" style="margin-top:12px">Change my answer</button>
     </section>
@@ -174,10 +173,16 @@
   });
   $('change').addEventListener('click', showAsk);
 
-  // Add to calendar: an all-day event (times differ for ceremony and garden party guests; the invitation has them)
-  $('cal-g').href = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent("Paula & Doug's wedding")
-    + '&dates=20270807/20270808&location=' + encodeURIComponent('Friern Manor, Brentwood, Essex')
-    + '&details=' + encodeURIComponent('Save the date! Invitation with all the details to follow.');
+  // Same calendar entry as the invitation's button (same UID), so adding it again later updates it rather than duplicating
+  $('cal-add').addEventListener('click', () => {
+    const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Paula and Doug//Wedding//EN', 'BEGIN:VEVENT',
+      'UID:paula-doug-wedding-2027@dougandpaula.github.io', 'DTSTAMP:20261025T000000Z', 'DTSTART;VALUE=DATE:20270807', 'DTEND;VALUE=DATE:20270808',
+      "SUMMARY:Paula & Doug's wedding", 'LOCATION:Friern Manor\\, Lower Dunton Road\\, Brentwood CM13 3SL',
+      'DESCRIPTION:Save the date! Invitation with all the details to follow.', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' })); a.download = 'paula-and-doug-wedding.ics';
+    document.body.append(a); a.click(); a.remove();
+  });
 })();
 </script>
 </body>
