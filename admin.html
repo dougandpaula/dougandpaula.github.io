@@ -422,7 +422,7 @@
           el('button', { class: 'btn small', onclick: () => openEdit(i) }, 'Edit'),
           el('button', { class: 'btn ghost small', onclick: () => share(i, 'copy') }, 'Copy link'),
           i.responded_at ? el('button', { class: 'btn ghost small', onclick: () => showHistory(i) }, 'History') : null,
-          live(i) && !place[i.id].reserve ? el('button', { class: 'btn ghost small', onclick: () => copyStd(i) }, 'Copy save the date') : null,
+          (live(i) && !place[i.id].reserve) || /^test/.test(i.code || '') ? el('button', { class: 'btn ghost small', onclick: () => copyStd(i) }, 'Copy save the date') : null,
           /^test/.test(i.code || '') ? el('button', { class: 'btn ghost small', onclick: () => resetTest(i) }, 'Reset test') : null,
           (i.send_method || 'whatsapp') !== 'whatsapp' ? null : mainContact(i)
             ? el('button', { class: 'btn small', onclick: () => sendTo(i, mainContact(i)) }, 'WhatsApp ' + firstOf(mainContact(i).name))
