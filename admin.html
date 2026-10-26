@@ -38,6 +38,7 @@
   .run-row .flag { font-size: 12px; color: #8A5A12; }
   .run-row .mv { display: flex; gap: 4px; }
   .run-row .mv button { min-width: 38px; padding: 0 8px; }
+  .run-row.moved { border-color: #2D3D6B; background: #EEF1F8; }
   .run-row.picked { border-color: var(--ink); box-shadow: 0 0 0 2px var(--ink) inset; }
   .run-line { display: flex; align-items: center; gap: 8px; margin: 12px 0; font-family: var(--caps); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
   .run-line::before, .run-line::after { content: ''; flex: 1; border-top: 2px dashed currentColor; }
@@ -722,10 +723,20 @@
   const runSort = (a, b) => (a.run_order ?? 1e6) - (b.run_order ?? 1e6) || byList(a, b);
   let picked = null;
   function runList() { return data.invites.filter(inRun).sort(runSort); }
-  async function saveRun(list) {
+  // Save shortly after the last move, so tapping ↓ ten times sends one save, in order.
+  let runTimer = null, lastMoved = null;
+  function saveRun(list, keep, mark) {
     list.forEach((i, k) => { i.run_order = k + 1; });
+    // keep the moved household's box where it was on screen; the others slide around it
+    const before = keep && document.querySelector('.run-row[data-id="' + keep + '"]');
+    const top = before ? before.getBoundingClientRect().top : null;
+    lastMoved = mark || keep || null;
     renderRun();
-    try { await rpc('admin_run_order', { p_list: list.map((i) => i.id) }); } catch (e) { toast('Could not save the order'); }
+    if (top != null) { const after = document.querySelector('.run-row[data-id="' + keep + '"]'); if (after) window.scrollBy(0, after.getBoundingClientRect().top - top); }
+    clearTimeout(runTimer);
+    runTimer = setTimeout(async () => {
+      try { await rpc('admin_run_order', { p_list: runList().map((i) => i.id) }); } catch (e) { toast('Could not save the order'); }
+    }, 600);
   }
   function renderRun() {
     const list = runList(), CM = CMAX(), wrap = $('run-list'); wrap.innerHTML = '';
@@ -739,13 +750,13 @@
       if (zone === 'cer') { cerN++; cerP += n; } else if (zone === 'eve') { eveN++; eveP += n; } else { resN++; resP += n; }
       const isCer = i.invite_type === 'ceremony';
       const flag = zone === 'cer' && !isCer ? 'Evening now – above the ceremony line' : zone !== 'cer' && isCer ? 'Ceremony now – below the ceremony line' : '';
-      const up = el('button', { class: 'btn ghost small', 'aria-label': 'Move up', onclick: (e) => { e.stopPropagation(); if (k) { const l = runList(); [l[k - 1], l[k]] = [l[k], l[k - 1]]; saveRun(l); } } }, '↑');
-      const dn = el('button', { class: 'btn ghost small', 'aria-label': 'Move down', onclick: (e) => { e.stopPropagation(); const l = runList(); if (k < l.length - 1) { [l[k + 1], l[k]] = [l[k], l[k + 1]]; saveRun(l); } } }, '↓');
-      const row = el('div', { class: 'run-row' + (picked === i.id ? ' picked' : ''), onclick: () => {
+      const up = el('button', { class: 'btn ghost small', 'aria-label': 'Move up', onclick: (e) => { e.stopPropagation(); if (k) { const l = runList(); [l[k - 1], l[k]] = [l[k], l[k - 1]]; saveRun(l, i.id); } } }, '↑');
+      const dn = el('button', { class: 'btn ghost small', 'aria-label': 'Move down', onclick: (e) => { e.stopPropagation(); const l = runList(); if (k < l.length - 1) { [l[k + 1], l[k]] = [l[k], l[k + 1]]; saveRun(l, i.id); } } }, '↓');
+      const row = el('div', { class: 'run-row' + (picked === i.id ? ' picked' : '') + (lastMoved === i.id ? ' moved' : ''), 'data-id': i.id, onclick: () => {
           if (!picked) { picked = i.id; renderRun(); return; }
           if (picked === i.id) { picked = null; renderRun(); return; }
           const l = runList(), from = l.findIndex((x) => x.id === picked), mv = l.splice(from, 1)[0];
-          l.splice(l.findIndex((x) => x.id === i.id) + (from < k ? 1 : 0), 0, mv); picked = null; saveRun(l);
+          l.splice(l.findIndex((x) => x.id === i.id) + (from < k ? 1 : 0), 0, mv); picked = null; saveRun(l, i.id, mv.id);
         } },
         el('span', { class: 'pos' }, String(k + 1)),
         el('div', {}, el('div', { class: 'nm' }, i.household_name),
@@ -761,7 +772,7 @@
       el('b', {}, 'Evening (garden party): '), eveP + ' (' + eveN + ')', el('span', { class: 'muted' }, ' · '), el('b', {}, 'Reserves: '), resP + ' (' + resN + ')'),
       ...(picked ? [el('div', { style: 'color:var(--bad)' }, 'Now tap where ' + (data.invites.find((x) => x.id === picked) || {}).household_name + ' should go (tap it again to cancel)')] : []));
   }
-  $('run-open').addEventListener('click', () => { picked = null; ['list', 'stats'].forEach((id) => $(id).classList.add('hidden')); document.querySelectorAll('.filters, .bar, details').forEach((e) => e.classList.add('hidden')); $('run').classList.remove('hidden'); renderRun(); window.scrollTo(0, 0); });
+  $('run-open').addEventListener('click', () => { picked = null; lastMoved = null; ['list', 'stats'].forEach((id) => $(id).classList.add('hidden')); document.querySelectorAll('.filters, .bar, details').forEach((e) => e.classList.add('hidden')); $('run').classList.remove('hidden'); renderRun(); window.scrollTo(0, 0); });
   $('run-close').addEventListener('click', () => { $('run').classList.add('hidden'); ['list', 'stats'].forEach((id) => $(id).classList.remove('hidden')); document.querySelectorAll('.filters, .bar, details').forEach((e) => e.classList.remove('hidden')); render(); });
 
   // ---------- save the date texts ----------
