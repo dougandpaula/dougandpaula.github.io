@@ -30,6 +30,18 @@
   .badge.replied { background: #DCEBDD; color: var(--good); }
   .badge.opened { background: #F5E8C8; color: #6B4F12; }
   .badge.sent { background: #E3E7F2; color: #2D3D6B; }
+  .run-head { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .run-row { display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; align-items: center; background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 10px; margin: 6px 0; }
+  .run-row .pos { font-family: var(--caps); font-size: 15px; color: var(--ink-soft); text-align: center; }
+  .run-row .nm { font-weight: 600; font-size: 15px; line-height: 1.25; }
+  .run-row .sub { font-size: 13px; color: var(--ink-soft); }
+  .run-row .flag { font-size: 12px; color: #8A5A12; }
+  .run-row .mv { display: flex; gap: 4px; }
+  .run-row .mv button { min-width: 38px; padding: 0 8px; }
+  .run-row.picked { border-color: var(--ink); box-shadow: 0 0 0 2px var(--ink) inset; }
+  .run-line { display: flex; align-items: center; gap: 8px; margin: 12px 0; font-family: var(--caps); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+  .run-line::before, .run-line::after { content: ''; flex: 1; border-top: 2px dashed currentColor; }
+  .run-line.cer { color: #2F6B3A; } .run-line.tot { color: #8A2F2F; }
   .badge.declined { background: #E4E1DB; color: #55524C; }
   .badge.promoted { background: #DCEBDD; color: var(--good); }
   .hh.declined { opacity: .6; }
@@ -115,13 +127,14 @@
     <div class="filters">
       <input type="search" id="f-search" placeholder="Search names…">
       <select id="f-priority"></select>
-      <select id="f-type"><option value="">All invites</option><option value="ceremony">Ceremony</option><option value="garden">Garden party</option></select>
-      <select id="f-status"><option value="">Any status</option><option value="incomplete">Incomplete</option><option value="post">Sending by post</option><option value="person">Giving in person</option><option value="notsent">Not sent</option><option value="sent">Sent, not opened</option><option value="opened">Opened, no reply</option><option value="replied">Replied</option><option value="check">Names to check</option><option value="invite">On the invite list</option><option value="Doug">Doug sends</option><option value="Paula">Paula sends</option><option value="nonumber">No phone numbers</option><option value="suggest">Mobiles to check</option><option value="reserve">Reserves</option><option value="nextup">Garden party: next to promote</option><option value="promoted">Promoted to ceremony</option><option value="declined">Declined</option></select>
+      <select id="f-type"><option value="">All invites</option><option value="ceremony">Ceremony</option><option value="garden">Evening (garden party)</option></select>
+      <select id="f-status"><option value="">Any status</option><option value="incomplete">Incomplete</option><option value="post">Sending by post</option><option value="person">Giving in person</option><option value="notsent">Not sent</option><option value="sent">Sent, not opened</option><option value="opened">Opened, no reply</option><option value="replied">Replied</option><option value="check">Names to check</option><option value="invite">On the invite list</option><option value="Doug">Doug sends</option><option value="Paula">Paula sends</option><option value="nonumber">No phone numbers</option><option value="suggest">Mobiles to check</option><option value="reserve">Reserves</option><option value="nextup">Evening: next to promote</option><option value="promoted">Promoted to ceremony</option><option value="declined">Declined</option></select>
       <select id="f-std"><option value="">Save the date: any</option><option value="notsent">STD not sent</option><option value="waiting">STD sent, no answer</option><option value="opened">STD opened, no answer</option><option value="saved">STD got it</option><option value="cant">STD definitely can't</option><option value="some">STD some can't</option></select>
       <select id="f-sort"><option value="priority">Sort: priority</option><option value="name">Sort: name</option><option value="recent">Sort: latest reply</option></select>
     </div>
     <div class="bar">
       <button class="btn small" id="add">+ Add household</button>
+      <button class="btn small" id="run-open">Running order</button>
       <button class="btn small" id="std-open">Save the date texts</button>
       <button class="btn ghost small" id="export">Export CSV</button>
       <button class="btn ghost small" id="export-log">Export RSVP log</button>
@@ -131,6 +144,17 @@
       <span class="count" id="count"></span>
     </div>
     <div id="list"></div>
+    <section id="run" class="hidden">
+      <div class="run-head">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <b style="font-size:17px">Running order</b>
+          <button class="btn ghost small" id="run-close">Back to list</button>
+        </div>
+        <div id="run-sum" style="margin-top:6px"></div>
+      </div>
+      <p class="muted" style="font-size:14px">One list, most wanted first. Everyone above the green line is a ceremony guest, down to the red line is evening (garden party), and below that are reserves. This is the plan only — it doesn't change anyone's invitation. Use ↑ ↓, or tap a household then tap where it should go.</p>
+      <div id="run-list"></div>
+    </section>
   </section>
 </div>
 
@@ -140,7 +164,7 @@
     <label class="field"><span>Household name (only you see this)</span><input type="text" id="m-name"></label>
     <div class="grid2">
       <label class="field"><span>Priority / round</span><input type="text" id="m-priority"></label>
-      <label class="field"><span>Invite</span><select id="m-type"><option value="ceremony">Ceremony (3pm)</option><option value="garden">Garden party (3.30pm)</option></select></label>
+      <label class="field"><span>Invite</span><select id="m-type"><option value="ceremony">Ceremony (3pm)</option><option value="garden">Evening (garden party, 3.30pm)</option></select></label>
     </div>
     <div class="grid2">
       <label class="field"><span>Category</span><input type="text" id="m-category" list="cats"></label>
@@ -447,7 +471,7 @@
       if (i.plus_one_allowed && !i.guests.some((g) => g.is_plus_one)) ppl.append(el('li', { class: 'muted' }, '+ plus one allowed'));
       const card = el('div', { class: 'hh' + (i.declined_at ? ' declined' : '') },
         el('h3', {}, el('span', {}, i.household_name), el('span', { style: 'display:flex;gap:4px' }, live(i) && place[i.id].reserve ? el('span', { class: 'badge reserve' }, 'Reserve ' + place[i.id].pos) : null, needsCheck(i) ? el('span', { class: 'badge check' }, 'Check') : null, i.promoted_at && !i.declined_at ? el('span', { class: 'badge promoted' }, 'Promoted') : null, el('span', { class: 'badge ' + cls }, label))),
-        el('div', { class: 'meta' }, 'Round ' + (i.priority || '–') + ' · ' + (i.invite_type === 'ceremony' ? 'Ceremony' : 'Garden party') + (i.category ? ' · ' + i.category : '') + (i.sent_by ? ' · ' + i.sent_by + ' sends' : '') + ((i.send_method || 'whatsapp') !== 'whatsapp' ? ' · ' + HOW[i.send_method] : '')),
+        el('div', { class: 'meta' }, 'Round ' + (i.priority || '–') + ' · ' + (i.invite_type === 'ceremony' ? 'Ceremony' : 'Evening (garden party)') + (i.category ? ' · ' + i.category : '') + (i.sent_by ? ' · ' + i.sent_by + ' sends' : '') + ((i.send_method || 'whatsapp') !== 'whatsapp' ? ' · ' + HOW[i.send_method] : '')),
         i.send_method === 'post' && i.address ? el('p', { class: 'muted', style: 'margin:0 0 10px;font-size:14px;white-space:pre-line' }, '\u{1F4EE} ' + i.address) : null,
         ppl,
         ...i.guests.filter((g) => g.phone_suggest).map((g) => el('div', { class: 'suggest' },
@@ -565,9 +589,9 @@
   }
   async function promote(i, on) {
     const q = on ? 'Promote ' + i.household_name + ' to the ceremony? Their invitation link will show the ceremony card and times.'
-                 : 'Move ' + i.household_name + ' back to the garden party?';
+                 : 'Move ' + i.household_name + ' back to the evening (garden party)?';
     if (!confirm(q)) return;
-    try { replaceInvite(await rpc('admin_promote', { p_id: i.id, p_promote: on })); toast(on ? 'Promoted to ceremony' : 'Moved back to garden party'); }
+    try { replaceInvite(await rpc('admin_promote', { p_id: i.id, p_promote: on })); toast(on ? 'Promoted to ceremony' : 'Moved back to the evening (garden party)'); }
     catch (e) { toast('Could not update: ' + (e.message || e)); }
   }
   async function resetTest(i) {
@@ -691,6 +715,54 @@
       el('p', { class: 'muted', style: 'margin:0;font-size:13px' }, e.confirm_text ? (e.confirmed ? '☑ Ticked: ' : '☐ Not ticked: ') + e.confirm_text : 'No one coming, so no allergy confirmation needed.'))));
   }
   $('h-close').addEventListener('click', () => $('hist').classList.add('hidden'));
+
+  // ---------- running order ----------
+  // Households in the plan: everyone except round x (not inviting) and declined. Saved order first, then rounds.
+  const inRun = (i) => live(i);
+  const runSort = (a, b) => (a.run_order ?? 1e6) - (b.run_order ?? 1e6) || byList(a, b);
+  let picked = null;
+  function runList() { return data.invites.filter(inRun).sort(runSort); }
+  async function saveRun(list) {
+    list.forEach((i, k) => { i.run_order = k + 1; });
+    renderRun();
+    try { await rpc('admin_run_order', { p_list: list.map((i) => i.id) }); } catch (e) { toast('Could not save the order'); }
+  }
+  function renderRun() {
+    const list = runList(), CM = CMAX(), wrap = $('run-list'); wrap.innerHTML = '';
+    let cum = 0, cerDrawn = false, totDrawn = false, cerN = 0, cerP = 0, eveN = 0, eveP = 0, resN = 0, resP = 0;
+    list.forEach((i, k) => {
+      const n = seats(i);
+      if (!cerDrawn && cum + n > CM) { wrap.append(el('div', { class: 'run-line cer' }, 'Ceremony line · ' + CM)); cerDrawn = true; }
+      if (!totDrawn && cum + n > MAX) { if (!cerDrawn) { wrap.append(el('div', { class: 'run-line cer' }, 'Ceremony line · ' + CM)); cerDrawn = true; } wrap.append(el('div', { class: 'run-line tot' }, 'Total line · ' + MAX)); totDrawn = true; }
+      cum += n;
+      const zone = !cerDrawn ? 'cer' : !totDrawn ? 'eve' : 'res';
+      if (zone === 'cer') { cerN++; cerP += n; } else if (zone === 'eve') { eveN++; eveP += n; } else { resN++; resP += n; }
+      const isCer = i.invite_type === 'ceremony';
+      const flag = zone === 'cer' && !isCer ? 'Evening now – above the ceremony line' : zone !== 'cer' && isCer ? 'Ceremony now – below the ceremony line' : '';
+      const up = el('button', { class: 'btn ghost small', 'aria-label': 'Move up', onclick: (e) => { e.stopPropagation(); if (k) { const l = runList(); [l[k - 1], l[k]] = [l[k], l[k - 1]]; saveRun(l); } } }, '↑');
+      const dn = el('button', { class: 'btn ghost small', 'aria-label': 'Move down', onclick: (e) => { e.stopPropagation(); const l = runList(); if (k < l.length - 1) { [l[k + 1], l[k]] = [l[k], l[k + 1]]; saveRun(l); } } }, '↓');
+      const row = el('div', { class: 'run-row' + (picked === i.id ? ' picked' : ''), onclick: () => {
+          if (!picked) { picked = i.id; renderRun(); return; }
+          if (picked === i.id) { picked = null; renderRun(); return; }
+          const l = runList(), from = l.findIndex((x) => x.id === picked), mv = l.splice(from, 1)[0];
+          l.splice(l.findIndex((x) => x.id === i.id) + (from < k ? 1 : 0), 0, mv); picked = null; saveRun(l);
+        } },
+        el('span', { class: 'pos' }, String(k + 1)),
+        el('div', {}, el('div', { class: 'nm' }, i.household_name),
+          el('div', { class: 'sub' }, n + (n === 1 ? ' place' : ' places') + ' · ' + (isCer ? 'Ceremony' : 'Evening (garden party)') + (i.priority ? ' · round ' + i.priority : '') + ' · running total ' + cum),
+          flag ? el('div', { class: 'flag' }, '⚠ ' + flag) : null),
+        el('div', { class: 'mv' }, up, dn));
+      wrap.append(row);
+    });
+    if (!cerDrawn) wrap.append(el('div', { class: 'run-line cer' }, 'Ceremony line · ' + CM));
+    if (!totDrawn) wrap.append(el('div', { class: 'run-line tot' }, 'Total line · ' + MAX));
+    $('run-sum').innerHTML = '';
+    $('run-sum').append(el('div', {}, el('b', {}, 'Ceremony: '), cerP + ' people (' + cerN + ' households)', el('span', { class: 'muted' }, ' · '),
+      el('b', {}, 'Evening (garden party): '), eveP + ' (' + eveN + ')', el('span', { class: 'muted' }, ' · '), el('b', {}, 'Reserves: '), resP + ' (' + resN + ')'),
+      ...(picked ? [el('div', { style: 'color:var(--bad)' }, 'Now tap where ' + (data.invites.find((x) => x.id === picked) || {}).household_name + ' should go (tap it again to cancel)')] : []));
+  }
+  $('run-open').addEventListener('click', () => { picked = null; ['list', 'stats'].forEach((id) => $(id).classList.add('hidden')); document.querySelectorAll('.filters, .bar, details').forEach((e) => e.classList.add('hidden')); $('run').classList.remove('hidden'); renderRun(); window.scrollTo(0, 0); });
+  $('run-close').addEventListener('click', () => { $('run').classList.add('hidden'); ['list', 'stats'].forEach((id) => $(id).classList.remove('hidden')); document.querySelectorAll('.filters, .bar, details').forEach((e) => e.classList.remove('hidden')); render(); });
 
   // ---------- save the date texts ----------
   function copyStd(i) {
