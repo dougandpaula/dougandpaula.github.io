@@ -30,6 +30,9 @@
   .badge.replied { background: #DCEBDD; color: var(--good); }
   .badge.opened { background: #F5E8C8; color: #6B4F12; }
   .badge.sent { background: #E3E7F2; color: #2D3D6B; }
+  .badge.declined { background: #E4E1DB; color: #55524C; }
+  .badge.promoted { background: #DCEBDD; color: var(--good); }
+  .hh.declined { opacity: .6; }
   .badge.reserve { background: #EADCF2; color: #5B2D73; }
   .suggest { background: #FFF7DC; border: 1px solid #EAD9A0; border-radius: 10px; padding: 8px 10px; margin: 0 0 10px; font-size: 15px; }
   .hits { list-style: none; margin: 4px 0 0; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: #fff; overflow: hidden; }
@@ -92,6 +95,11 @@
       <button class="btn small" id="s-save">Save bank details</button>
       <p class="muted" style="font-size:14px">Guests only see these on their own personal invitation.</p>
     </details>
+    <details id="cer-box">
+      <summary>Ceremony places</summary>
+      <label class="field"><span>Most people at the ceremony</span><input type="number" id="s-cermax" inputmode="numeric" min="1" style="max-width:140px"></label>
+      <button class="btn small" id="s-cermax-save">Save</button>
+    </details>
     <details id="allergy-box">
       <summary>Allergy wording (RSVP checkbox)</summary>
       <label class="field"><span>Guests must tick this when anyone is coming</span><textarea id="s-allergy" rows="4"></textarea></label>
@@ -103,7 +111,7 @@
       <input type="search" id="f-search" placeholder="Search names…">
       <select id="f-priority"></select>
       <select id="f-type"><option value="">All invites</option><option value="ceremony">Ceremony</option><option value="garden">Garden party</option></select>
-      <select id="f-status"><option value="">Any status</option><option value="incomplete">Incomplete</option><option value="post">Sending by post</option><option value="person">Giving in person</option><option value="notsent">Not sent</option><option value="sent">Sent, not opened</option><option value="opened">Opened, no reply</option><option value="replied">Replied</option><option value="check">Names to check</option><option value="invite">On the invite list</option><option value="Doug">Doug sends</option><option value="Paula">Paula sends</option><option value="nonumber">No phone numbers</option><option value="suggest">Mobiles to check</option><option value="reserve">Reserves</option></select>
+      <select id="f-status"><option value="">Any status</option><option value="incomplete">Incomplete</option><option value="post">Sending by post</option><option value="person">Giving in person</option><option value="notsent">Not sent</option><option value="sent">Sent, not opened</option><option value="opened">Opened, no reply</option><option value="replied">Replied</option><option value="check">Names to check</option><option value="invite">On the invite list</option><option value="Doug">Doug sends</option><option value="Paula">Paula sends</option><option value="nonumber">No phone numbers</option><option value="suggest">Mobiles to check</option><option value="reserve">Reserves</option><option value="nextup">Garden party: next to promote</option><option value="promoted">Promoted to ceremony</option><option value="declined">Declined</option></select>
       <select id="f-std"><option value="">Save the date: any</option><option value="notsent">STD not sent</option><option value="waiting">STD sent, no answer</option><option value="opened">STD opened, no answer</option><option value="saved">STD got it</option><option value="cant">STD definitely can't</option><option value="some">STD some can't</option></select>
       <select id="f-sort"><option value="priority">Sort: priority</option><option value="name">Sort: name</option><option value="recent">Sort: latest reply</option></select>
     </div>
@@ -297,10 +305,11 @@
     if (ppl.length > 2) return a.length ? a.join(', ') + ' & family' : 'all';
     return a.length < 2 ? (a[0] || '') : a[0] + ' & ' + a[1];
   };
-  const live = (i) => i.priority !== 'x';
+  const live = (i) => i.priority !== 'x' && !i.declined_at;
   const PLACEHOLDER = /\?|^(hubby|missus|wife|fella|partner|child|kid|bird|plus one)$/i;
   const needsCheck = (i) => i.guests.some((g) => PLACEHOLDER.test(g.name.trim()) || (g.age_group !== 'adult' && g.age == null));
   function status(i) {
+    if (i.declined_at) return ['declined', 'Declined'];
     if (i.responded_at) return ['replied', 'Replied'];
     if (i.first_opened_at) return ['opened', 'Opened'];
     if (i.sent_at) return ['sent', 'Sent'];
@@ -312,7 +321,8 @@
   const byList = (a, b) => prioNum(a.priority) - prioNum(b.priority) || (a.list_order ?? 9999) - (b.list_order ?? 9999) || a.household_name.localeCompare(b.household_name);
   // Places a household takes: what they've said if they've replied, otherwise everyone invited (plus one included).
   const seats = (i) => i.responded_at ? i.guests.filter((g) => g.attending).length
-    : i.guests.filter((g) => !g.is_plus_one).length + (i.plus_one_allowed ? 1 : 0);
+    : i.guests.filter((g) => !g.is_plus_one && !g.std_cant).length + (i.plus_one_allowed ? 1 : 0);
+  const CMAX = () => parseInt(data.settings.ceremony_max, 10) || 110;
   let place = {};
   function allocate() {
     place = {}; let used = 0, over = false, pos = 0;
@@ -335,6 +345,7 @@
     fp.value = keep;
     $('cats').innerHTML = ''; [...new Set(data.invites.map((i) => i.category).filter(Boolean))].sort().forEach((c) => $('cats').append(el('option', { value: c })));
     $('s-allergy').value = data.settings.rsvp_allergy_text || '';
+    $('s-cermax').value = CMAX();
     $('s-name').value = data.settings.gift_account_name || ''; $('s-sort').value = data.settings.gift_sort_code || ''; $('s-acc').value = data.settings.gift_account_number || '';
     render();
   }
@@ -346,11 +357,13 @@
     const people = inv.flatMap((i) => i.guests);
     const slots = inv.reduce((n, i) => n + i.guests.filter((g) => !g.is_plus_one).length + (i.plus_one_allowed ? 1 : 0), 0);
     const coming = people.filter((g) => g.attending === true);
-    const cerSlots = inv.filter((i) => i.invite_type === 'ceremony').reduce((n, i) => n + i.guests.filter((g) => !g.is_plus_one).length + (i.plus_one_allowed ? 1 : 0), 0);
+    const cerInv = inv.filter((i) => i.invite_type === 'ceremony');
+    const cerTaken = cerInv.reduce((n, i) => n + seats(i), 0);
+    const cerYes = cerInv.flatMap((i) => i.guests).filter((g) => g.attending === true).length;
     const stats = [
       [used + ' / ' + MAX, 'places taken (replies + still invited)'],
       [reserves.length ? reserves.length + ' (' + reserves.reduce((n, i) => n + seats(i), 0) + ' people)' : '0', 'reserve households' + (reserves[0] ? ' · next: ' + reserves[0].household_name : '')],
-      [slots, 'invited (incl. plus ones)'], [cerSlots, 'at the ceremony'],
+      [slots, 'invited (incl. plus ones)'], [cerTaken + ' / ' + CMAX(), 'ceremony places (' + cerYes + ' confirmed) · ' + Math.max(0, CMAX() - cerTaken) + ' free' + (cerTaken > CMAX() ? ' · ' + (cerTaken - CMAX()) + ' over' : '')],
       [inv.filter((i) => i.responded_at).length + ' / ' + inv.length, 'households replied'],
       [coming.length, 'coming'],
       [coming.filter((g) => g.age_group === 'adult').length + ' · ' + coming.filter((g) => g.age_group === 'teen').length + ' · ' + coming.filter((g) => g.age_group === 'child').length, 'adults · teens · children'],
@@ -381,12 +394,15 @@
       if (fs === 'suggest' && !i.guests.some((g) => g.phone_suggest)) return false;
       if (fs === 'invite' && (!live(i) || place[i.id].reserve)) return false;
       if (fs === 'reserve' && !(live(i) && place[i.id].reserve)) return false;
+      if (fs === 'nextup' && !(live(i) && !place[i.id].reserve && i.invite_type === 'garden')) return false;
+      if (fs === 'promoted' && !i.promoted_at) return false;
+      if (fs === 'declined' && !i.declined_at) return false;
       if (q && !(i.household_name + ' ' + i.guests.map((g) => g.name).join(' ') + ' ' + (i.category || '')).toLowerCase().includes(q)) return false;
       return true;
     });
     if (so === 'name') rows.sort((a, b) => a.household_name.localeCompare(b.household_name));
     else if (so === 'recent') rows.sort((a, b) => String(b.responded_at || '').localeCompare(String(a.responded_at || '')));
-    else rows.sort(byList);
+    else rows.sort((a, b) => (!!a.declined_at - !!b.declined_at) || byList(a, b));
     $('count').textContent = rows.length + ' households';
 
     const list = $('list'); list.innerHTML = '';
@@ -400,8 +416,8 @@
           g.dietary ? el('span', { class: 'muted' }, ' · ' + g.dietary) : null));
       });
       if (i.plus_one_allowed && !i.guests.some((g) => g.is_plus_one)) ppl.append(el('li', { class: 'muted' }, '+ plus one allowed'));
-      const card = el('div', { class: 'hh' },
-        el('h3', {}, el('span', {}, i.household_name), el('span', { style: 'display:flex;gap:4px' }, live(i) && place[i.id].reserve ? el('span', { class: 'badge reserve' }, 'Reserve ' + place[i.id].pos) : null, needsCheck(i) ? el('span', { class: 'badge check' }, 'Check') : null, el('span', { class: 'badge ' + cls }, label))),
+      const card = el('div', { class: 'hh' + (i.declined_at ? ' declined' : '') },
+        el('h3', {}, el('span', {}, i.household_name), el('span', { style: 'display:flex;gap:4px' }, live(i) && place[i.id].reserve ? el('span', { class: 'badge reserve' }, 'Reserve ' + place[i.id].pos) : null, needsCheck(i) ? el('span', { class: 'badge check' }, 'Check') : null, i.promoted_at && !i.declined_at ? el('span', { class: 'badge promoted' }, 'Promoted') : null, el('span', { class: 'badge ' + cls }, label))),
         el('div', { class: 'meta' }, 'Round ' + (i.priority || '–') + ' · ' + (i.invite_type === 'ceremony' ? 'Ceremony' : 'Garden party') + (i.category ? ' · ' + i.category : '') + (i.sent_by ? ' · ' + i.sent_by + ' sends' : '') + ((i.send_method || 'whatsapp') !== 'whatsapp' ? ' · ' + HOW[i.send_method] : '')),
         i.send_method === 'post' && i.address ? el('p', { class: 'muted', style: 'margin:0 0 10px;font-size:14px;white-space:pre-line' }, '\u{1F4EE} ' + i.address) : null,
         ppl,
@@ -422,6 +438,10 @@
           el('button', { class: 'btn small', onclick: () => openEdit(i) }, 'Edit'),
           el('button', { class: 'btn ghost small', onclick: () => share(i, 'copy') }, 'Copy link'),
           i.responded_at ? el('button', { class: 'btn ghost small', onclick: () => showHistory(i) }, 'History') : null,
+          !i.declined_at && (i.std_answer === 'cant' || (i.responded_at && !i.guests.some((g) => g.attending))) ? el('button', { class: 'btn small', onclick: () => setDeclined(i, true) }, 'Mark declined') : null,
+          i.declined_at ? el('button', { class: 'btn ghost small', onclick: () => setDeclined(i, false) }, 'Undo declined') : null,
+          (live(i) || (/^test/.test(i.code || '') && !i.declined_at)) && i.invite_type === 'garden' ? el('button', { class: 'btn ghost small', onclick: () => promote(i, true) }, 'Promote to ceremony') : null,
+          i.promoted_at && !i.declined_at ? el('button', { class: 'btn ghost small', onclick: () => promote(i, false) }, 'Undo promotion') : null,
           (live(i) && !place[i.id].reserve) || /^test/.test(i.code || '') ? el('button', { class: 'btn ghost small', onclick: () => copyStd(i) }, 'Copy save the date') : null,
           /^test/.test(i.code || '') ? el('button', { class: 'btn ghost small', onclick: () => resetTest(i) }, 'Reset test') : null,
           (i.send_method || 'whatsapp') !== 'whatsapp' ? null : mainContact(i)
@@ -507,6 +527,18 @@
   $('show-book').addEventListener('click', async () => { $('book').classList.remove('hidden'); $('b-list').innerHTML = '<li class="muted">Loading…</li>'; await loadPhoneBook(); renderBook(); });
   $('b-close').addEventListener('click', () => $('book').classList.add('hidden'));
   ['b-q', 'b-f'].forEach((id) => $(id).addEventListener('input', renderBook));
+  async function setDeclined(i, on) {
+    if (on && !confirm('Mark ' + i.household_name + ' as declined? They drop to the bottom and out of all counts and send lists.')) return;
+    try { replaceInvite(await rpc('admin_set_declined', { p_id: i.id, p_declined: on })); toast(on ? 'Marked declined' : 'Back on the list'); }
+    catch (e) { toast('Could not update: ' + (e.message || e)); }
+  }
+  async function promote(i, on) {
+    const q = on ? 'Promote ' + i.household_name + ' to the ceremony? Their invitation link will show the ceremony card and times.'
+                 : 'Move ' + i.household_name + ' back to the garden party?';
+    if (!confirm(q)) return;
+    try { replaceInvite(await rpc('admin_promote', { p_id: i.id, p_promote: on })); toast(on ? 'Promoted to ceremony' : 'Moved back to garden party'); }
+    catch (e) { toast('Could not update: ' + (e.message || e)); }
+  }
   async function resetTest(i) {
     if (!confirm('Reset ' + i.household_name + ' to "not replied"?')) return;
     try { replaceInvite(await rpc('admin_reset_test', { p_id: i.id })); toast('Test reset'); }
@@ -602,6 +634,11 @@
     toast('Bank details saved');
   });
 
+  $('s-cermax-save').addEventListener('click', async () => {
+    const v = String(parseInt($('s-cermax').value, 10) || '');
+    if (!v) return toast('Enter a number');
+    try { await rpc('admin_save_settings', { p: { ceremony_max: v } }); data.settings.ceremony_max = v; render(); toast('Saved'); } catch (e) { toast('Could not save'); }
+  });
   $('s-allergy-save').addEventListener('click', async () => {
     const t = $('s-allergy').value.trim(); if (!t) { toast('Wording can’t be empty'); return; }
     await rpc('admin_save_settings', { p: { rsvp_allergy_text: t } }); data.settings.rsvp_allergy_text = t;
