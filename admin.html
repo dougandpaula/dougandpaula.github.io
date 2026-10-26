@@ -324,14 +324,29 @@
     : i.guests.filter((g) => !g.is_plus_one && !g.std_cant).length + (i.plus_one_allowed ? 1 : 0);
   const CMAX = () => parseInt(data.settings.ceremony_max, 10) || 110;
   let place = {};
+  // The invite list is fixed: households only move on or off it when you press a button.
+  // (Before it's been fixed for the first time, it's worked out from priority order and the 180 places.)
+  const listFixed = () => data.invites.some((i) => i.on_list != null);
   function allocate() {
     place = {}; let used = 0, over = false, pos = 0;
+    const fixed = listFixed();
     data.invites.filter(live).sort(byList).forEach((i) => {
       const n = seats(i);
-      if (!over && used + n <= MAX) { used += n; place[i.id] = { reserve: false }; }
+      if (fixed ? i.on_list : (!over && used + n <= MAX)) { used += n; place[i.id] = { reserve: false }; }
       else { over = true; place[i.id] = { reserve: true, pos: ++pos }; }
     });
     return used;
+  }
+  async function fixList() {
+    if (listFixed() || !data.invites.length) return;
+    allocate();
+    const ids = data.invites.filter((i) => live(i) && !place[i.id].reserve).map((i) => i.id);
+    try { await rpc('admin_set_list', { p_list: ids, p_on: true }); data.invites.forEach((i) => { if (ids.includes(i.id)) i.on_list = true; }); } catch (e) {}
+  }
+  async function setList(i, on) {
+    if (!confirm(on ? 'Move ' + i.household_name + ' onto the invite list?' : 'Move ' + i.household_name + ' to the reserves?')) return;
+    try { await rpc('admin_set_list', { p_list: [i.id], p_on: on }); i.on_list = on; render(); toast(on ? 'On the invite list' : 'Moved to reserves'); }
+    catch (e) { toast('Could not update: ' + (e.message || e)); }
   }
 
   // ---------- data ----------
@@ -346,6 +361,7 @@
     $('cats').innerHTML = ''; [...new Set(data.invites.map((i) => i.category).filter(Boolean))].sort().forEach((c) => $('cats').append(el('option', { value: c })));
     $('s-allergy').value = data.settings.rsvp_allergy_text || '';
     $('s-cermax').value = CMAX();
+    await fixList();
     $('s-name').value = data.settings.gift_account_name || ''; $('s-sort').value = data.settings.gift_sort_code || ''; $('s-acc').value = data.settings.gift_account_number || '';
     render();
   }
@@ -361,7 +377,7 @@
     const cerTaken = cerInv.reduce((n, i) => n + seats(i), 0);
     const cerYes = cerInv.flatMap((i) => i.guests).filter((g) => g.attending === true).length;
     const stats = [
-      [used + ' / ' + MAX, 'places taken (replies + still invited)'],
+      [used + ' / ' + MAX, 'places taken (replies + still invited)' + (used < MAX ? ' · ' + (MAX - used) + ' free' : used > MAX ? ' · ' + (used - MAX) + ' over' : '')],
       [reserves.length ? reserves.length + ' (' + reserves.reduce((n, i) => n + seats(i), 0) + ' people)' : '0', 'reserve households' + (reserves[0] ? ' · next: ' + reserves[0].household_name : '')],
       [slots, 'invited (incl. plus ones)'], [cerTaken + ' / ' + CMAX(), 'ceremony places (' + cerYes + ' confirmed) · ' + Math.max(0, CMAX() - cerTaken) + ' free' + (cerTaken > CMAX() ? ' · ' + (cerTaken - CMAX()) + ' over' : '')],
       [inv.filter((i) => i.responded_at).length + ' / ' + inv.length, 'households replied'],
@@ -440,6 +456,8 @@
           i.responded_at ? el('button', { class: 'btn ghost small', onclick: () => showHistory(i) }, 'History') : null,
           !i.declined_at && (i.std_answer === 'cant' || (i.responded_at && !i.guests.some((g) => g.attending))) ? el('button', { class: 'btn small', onclick: () => setDeclined(i, true) }, 'Mark declined') : null,
           i.declined_at ? el('button', { class: 'btn ghost small', onclick: () => setDeclined(i, false) }, 'Undo declined') : null,
+          live(i) && place[i.id].reserve ? el('button', { class: 'btn small', onclick: () => setList(i, true) }, 'Move to invite list') : null,
+          live(i) && !place[i.id].reserve ? el('button', { class: 'btn ghost small', onclick: () => setList(i, false) }, 'Move to reserves') : null,
           (live(i) || (/^test/.test(i.code || '') && !i.declined_at)) && i.invite_type === 'garden' ? el('button', { class: 'btn ghost small', onclick: () => promote(i, true) }, 'Promote to ceremony') : null,
           i.promoted_at && !i.declined_at ? el('button', { class: 'btn ghost small', onclick: () => promote(i, false) }, 'Undo promotion') : null,
           (live(i) && !place[i.id].reserve) || /^test/.test(i.code || '') ? el('button', { class: 'btn ghost small', onclick: () => copyStd(i) }, 'Copy save the date') : null,
