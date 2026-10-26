@@ -95,6 +95,11 @@
       <button class="btn small" id="s-save">Save bank details</button>
       <p class="muted" style="font-size:14px">Guests only see these on their own personal invitation.</p>
     </details>
+    <details id="lock-box">
+      <summary>Invite list</summary>
+      <p class="muted" id="lock-state" style="font-size:14px;margin:6px 0 10px"></p>
+      <button class="btn small" id="lock-btn"></button>
+    </details>
     <details id="cer-box">
       <summary>Ceremony places</summary>
       <label class="field"><span>Most people at the ceremony</span><input type="number" id="s-cermax" inputmode="numeric" min="1" style="max-width:140px"></label>
@@ -337,12 +342,20 @@
     });
     return used;
   }
-  async function fixList() {
-    if (listFixed() || !data.invites.length) return;
-    allocate();
-    const ids = data.invites.filter((i) => live(i) && !place[i.id].reserve).map((i) => i.id);
-    try { await rpc('admin_set_list', { p_list: ids, p_on: true }); data.invites.forEach((i) => { if (ids.includes(i.id)) i.on_list = true; }); } catch (e) {}
+  function renderLock() {
+    const f = listFixed();
+    $('lock-state').textContent = f ? 'Locked: households only move on or off the invite list when you press Move to invite list / Move to reserves.'
+      : 'Not locked: the invite list is worked out from priority order and the ' + MAX + ' places, so it changes as you edit.';
+    $('lock-btn').textContent = f ? 'Unlock invite list' : 'Lock invite list as it is now';
   }
+  $('lock-btn').addEventListener('click', async () => {
+    const f = listFixed();
+    if (!confirm(f ? 'Unlock the invite list? It will go back to being worked out from priority order.' : 'Lock the invite list as it is now?')) return;
+    allocate();
+    const ids = f ? data.invites.map((i) => i.id) : data.invites.filter((i) => live(i) && !place[i.id].reserve).map((i) => i.id);
+    try { await rpc('admin_set_list', { p_list: ids, p_on: f ? null : true }); data.invites.forEach((i) => { if (f) i.on_list = null; else if (ids.includes(i.id)) i.on_list = true; }); render(); renderLock(); toast(f ? 'Unlocked' : 'Locked'); }
+    catch (e) { toast('Could not update: ' + (e.message || e)); }
+  });
   async function setList(i, on) {
     if (!confirm(on ? 'Move ' + i.household_name + ' onto the invite list?' : 'Move ' + i.household_name + ' to the reserves?')) return;
     try { await rpc('admin_set_list', { p_list: [i.id], p_on: on }); i.on_list = on; render(); toast(on ? 'On the invite list' : 'Moved to reserves'); }
@@ -361,7 +374,7 @@
     $('cats').innerHTML = ''; [...new Set(data.invites.map((i) => i.category).filter(Boolean))].sort().forEach((c) => $('cats').append(el('option', { value: c })));
     $('s-allergy').value = data.settings.rsvp_allergy_text || '';
     $('s-cermax').value = CMAX();
-    await fixList();
+    renderLock();
     $('s-name').value = data.settings.gift_account_name || ''; $('s-sort').value = data.settings.gift_sort_code || ''; $('s-acc').value = data.settings.gift_account_number || '';
     render();
   }
@@ -456,8 +469,8 @@
           i.responded_at ? el('button', { class: 'btn ghost small', onclick: () => showHistory(i) }, 'History') : null,
           !i.declined_at && (i.std_answer === 'cant' || (i.responded_at && !i.guests.some((g) => g.attending))) ? el('button', { class: 'btn small', onclick: () => setDeclined(i, true) }, 'Mark declined') : null,
           i.declined_at ? el('button', { class: 'btn ghost small', onclick: () => setDeclined(i, false) }, 'Undo declined') : null,
-          live(i) && place[i.id].reserve ? el('button', { class: 'btn small', onclick: () => setList(i, true) }, 'Move to invite list') : null,
-          live(i) && !place[i.id].reserve ? el('button', { class: 'btn ghost small', onclick: () => setList(i, false) }, 'Move to reserves') : null,
+          listFixed() && live(i) && place[i.id].reserve ? el('button', { class: 'btn small', onclick: () => setList(i, true) }, 'Move to invite list') : null,
+          listFixed() && live(i) && !place[i.id].reserve ? el('button', { class: 'btn ghost small', onclick: () => setList(i, false) }, 'Move to reserves') : null,
           (live(i) || (/^test/.test(i.code || '') && !i.declined_at)) && i.invite_type === 'garden' ? el('button', { class: 'btn ghost small', onclick: () => promote(i, true) }, 'Promote to ceremony') : null,
           i.promoted_at && !i.declined_at ? el('button', { class: 'btn ghost small', onclick: () => promote(i, false) }, 'Undo promotion') : null,
           (live(i) && !place[i.id].reserve) || /^test/.test(i.code || '') ? el('button', { class: 'btn ghost small', onclick: () => copyStd(i) }, 'Copy save the date') : null,
