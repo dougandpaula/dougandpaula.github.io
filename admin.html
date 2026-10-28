@@ -4,75 +4,126 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#151413">
 <title>Wedding admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Josefin+Sans:wght@400;600&family=Lora:wght@400;600&display=swap">
 <link rel="stylesheet" href="style.css">
 <style>
-  body { font-size: 16px; }
-  .wrap { max-width: 900px; }
-  .top { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--paper); z-index: 5; }
-  .top .script { font-size: 30px; }
-  .login { max-width: 380px; margin: 60px auto; text-align: center; }
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 18px 0; }
-  .stat { background: var(--paper-2); border-radius: 12px; padding: 12px 14px; }
-  .stat b { display: block; font-size: 26px; font-family: var(--body); }
-  .stat span { font-size: 13px; color: var(--ink-soft); }
-  .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
-  .filters #f-sort { grid-column: 1 / -1; }
-  .filters input { grid-column: 1 / -1; }
-  .bar { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; align-items: center; }
-  .hh { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; margin: 10px 0; }
-  .hh h3 { margin: 0; font-size: 17px; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
-  .meta { font-size: 13px; color: var(--ink-soft); margin: 2px 0 8px; }
-  .badge { font-family: var(--caps); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: var(--paper-2); white-space: nowrap; }
-  .badge.replied { background: #DCEBDD; color: var(--good); }
-  .badge.opened { background: #F5E8C8; color: #6B4F12; }
-  .badge.sent { background: #E3E7F2; color: #2D3D6B; }
-  .run-head { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
-  .run-row { display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; align-items: center; background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 10px; margin: 6px 0; }
-  .run-row .pos { font-family: var(--caps); font-size: 15px; color: var(--ink-soft); text-align: center; }
+  /* Dark page like the invitation, cream cards (#F8F9EB) with dark text */
+  :root { --night: #151413; --night-2: #211F1C; --night-line: #3A3631; --cream: #F8F9EB; --cream-line: #DCD8C6;
+          --soft: #6E695F; --soft-dark: #ABA494; --warn: #A8423F; --paper: #F8F9EB; --paper-2: #EFEEDF; --line: #DCD8C6; --ink-soft: #6E695F; }
+  body { font-size: 16px; background: var(--night); color: var(--cream); }
+  .wrap { max-width: 760px; padding-bottom: 40px; }
+  .hidden { display: none !important; }
+  .card, .hh, .sheet, .panel, .box { background: var(--cream); color: var(--ink); }
+  .btn { background: var(--night); color: var(--cream); border-color: var(--night); }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--ink); }
+  .on-dark .btn.ghost, header .btn.ghost { color: var(--cream); border-color: var(--cream); }
+
+  /* header + menu */
+  header { position: sticky; top: 0; z-index: 20; background: var(--night); border-bottom: 1px solid #2E2B27; display: flex; align-items: center; gap: 10px; padding: 8px 12px; margin: 0 -16px; }
+  .burger { width: 42px; height: 42px; border: 0; background: none; display: grid; place-items: center; cursor: pointer; }
+  .burger span { display: block; width: 20px; height: 2px; background: var(--cream); box-shadow: 0 -6px 0 var(--cream), 0 6px 0 var(--cream); }
+  header .t { font-family: var(--script); font-size: 30px; line-height: 1; white-space: nowrap; }
+  header .v { margin-left: auto; font-size: 13px; color: var(--soft-dark); white-space: nowrap; }
+  .drawer { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.6); }
+  .drawer nav { width: 290px; max-width: 85vw; height: 100%; overflow: auto; background: var(--night); border-right: 1px solid #2E2B27; padding: 14px 0 30px; }
+  .drawer .t { font-family: var(--script); font-size: 32px; padding: 0 20px 10px; color: var(--cream); }
+  .drawer a, .drawer button { display: flex; justify-content: space-between; align-items: baseline; width: 100%; text-align: left; padding: 13px 20px; font-size: 16px; color: var(--cream);
+                              border: 0; border-top: 1px solid #2A2724; background: none; text-decoration: none; cursor: pointer; font-family: var(--body); }
+  .drawer small { color: var(--soft-dark); font-size: 13px; }
+  .drawer .on { background: var(--night-2); box-shadow: inset 3px 0 0 var(--cream); }
+  .drawer .sec { font-family: var(--caps); text-transform: uppercase; letter-spacing: .14em; font-size: 11px; color: var(--soft-dark); padding: 16px 20px 6px; }
+
+  /* summary */
+  .box { border-radius: 14px; padding: 12px 14px; margin: 12px 0; }
+  .sum-h { display: flex; justify-content: space-between; align-items: baseline; }
+  .sum-h b { font-size: 15px; }
+  .link-btn { background: none; border: 0; padding: 4px 0; cursor: pointer; font-family: var(--caps); text-transform: uppercase; letter-spacing: .12em; font-size: 12px; color: var(--soft); }
+  .row { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; padding: 6px 0; border-top: 1px solid var(--cream-line); }
+  .row:first-of-type { border-top: 0; }
+  .row .k { color: var(--soft); white-space: nowrap; } .row .v { text-align: right; } .w { color: var(--warn); }
+
+  /* list controls */
+  .ctl { display: flex; gap: 8px; margin: 14px 0 6px; }
+  .ctl input, .ctl select, .ctl2 select { min-height: 44px; border: 1px solid var(--night-line); border-radius: 12px; padding: 0 12px; background: var(--night-2); color: var(--cream); font: inherit; }
+  .ctl input { flex: 1 1 auto; width: auto; min-width: 0; } .ctl select, .ctl2 select { width: auto; flex: none; }
+  .ctl2 label[for] { white-space: nowrap; } .ctl input::placeholder { color: #8C857A; }
+  .ctl2 { display: flex; align-items: center; gap: 10px; margin: 8px 2px; color: var(--soft-dark); font-size: 14px; }
+  .ctl2 select { min-height: 38px; margin-left: auto; font-size: 14px; max-width: 55%; }
+  .sw { position: relative; width: 42px; height: 26px; flex: none; }
+  .sw input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; z-index: 1; width: 100%; height: 100%; }
+  .sw i { position: absolute; inset: 0; border-radius: 999px; background: var(--night-line); transition: background .15s; }
+  .sw i::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--cream); transition: left .15s; }
+  .sw input:checked + i { background: var(--cream); } .sw input:checked + i::after { left: 19px; background: var(--night); }
+  .count { color: var(--soft-dark); font-size: 13px; margin: 0 2px 4px; }
+
+  /* household cards */
+  .hh { border-radius: 12px; padding: 10px 12px; margin: 8px 0; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; cursor: pointer; }
+  .hh .nm { font-weight: 600; font-size: 16px; line-height: 1.3; }
+  .hh .nm .pos { font-weight: 400; color: var(--soft); font-size: 13px; margin-right: 6px; }
+  .hh .nm .more { font-weight: 400; color: var(--soft); }
+  .hh .grp { font-size: 13px; color: var(--soft); }
+  .hh .type { text-align: right; font-size: 13px; line-height: 1.3; } .hh .type small { display: block; color: var(--soft); font-size: 12px; }
+  .hh .st { grid-column: 1 / -1; font-size: 13px; color: var(--soft); margin-top: 4px; display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 34px; }
+  .hh .acts { display: flex; gap: 8px; align-items: center; flex: none; }
+  .nb { font-family: var(--caps); text-transform: uppercase; letter-spacing: .1em; font-size: 11px; background: var(--night); color: var(--cream); border: 0; border-radius: 999px; padding: 10px 13px; white-space: nowrap; cursor: pointer; }
+  .dots { background: none; border: 0; font-size: 20px; color: var(--soft); padding: 2px 6px; cursor: pointer; line-height: 1; }
+  .hh.dim { opacity: .55; }
+
+  /* bottom panel (household details + actions) */
+  .shade { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.6); display: flex; align-items: flex-end; justify-content: center; }
+  .panel { width: 100%; max-width: 640px; max-height: 88vh; overflow: auto; border-radius: 18px 18px 0 0; padding: 18px 18px calc(24px + env(safe-area-inset-bottom)); }
+  .panel h3 { margin: 0; font-size: 18px; } .panel .sub { font-size: 13px; color: var(--soft); margin: 2px 0 10px; }
+  .panel .ppl { list-style: none; padding: 0; margin: 0 0 10px; font-size: 15px; }
+  .panel .ppl li { padding: 4px 0; border-top: 1px solid var(--cream-line); display: flex; justify-content: space-between; gap: 10px; }
+  .panel .ppl li:first-child { border-top: 0; }
+  .panel .ppl a { color: var(--ink); white-space: nowrap; }
+  .panel .note { font-size: 14px; color: var(--soft); margin: 4px 0; }
+  .panel .todo { font-size: 14px; color: var(--warn); margin: 4px 0; }
+  .panel .acts { display: grid; gap: 8px; margin-top: 14px; }
+  .panel .act { text-align: left; border: 1px solid var(--cream-line); border-radius: 12px; padding: 12px 14px; font-size: 15px; background: #fff; color: var(--ink); cursor: pointer; font-family: var(--body); }
+  .panel .act.main { background: var(--night); color: var(--cream); border-color: var(--night); }
+  .panel .act.warn { color: var(--warn); }
+  .suggest { background: #FFF7DC; border: 1px solid #EAD9A0; border-radius: 10px; padding: 8px 10px; margin: 6px 0; font-size: 15px; color: var(--ink); }
+
+  /* views */
+  .view-h { display: flex; justify-content: space-between; align-items: center; margin: 14px 0 6px; }
+  .view-h h2 { font-family: var(--body); font-weight: 600; font-size: 20px; margin: 0; }
+  .help { color: var(--soft-dark); font-size: 14px; margin: 4px 0 10px; }
+  .run-row { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: center; background: var(--cream); color: var(--ink); border-radius: 12px; padding: 8px 10px; margin: 6px 0; cursor: pointer; }
+  .run-row .pos { font-size: 14px; color: var(--soft); text-align: center; }
   .run-row .nm { font-weight: 600; font-size: 15px; line-height: 1.25; }
-  .run-row .sub { font-size: 13px; color: var(--ink-soft); }
-  .run-row .flag { font-size: 12px; color: #8A5A12; }
+  .run-row .sub { font-size: 13px; color: var(--soft); }
+  .run-row .flag { font-size: 12px; color: var(--warn); }
   .run-row .mv { display: flex; gap: 4px; }
-  .run-row .mv button { min-width: 38px; padding: 0 8px; }
-  .run-row.moved { border-color: #2D3D6B; background: #EEF1F8; }
-  .run-row.picked { border-color: var(--ink); box-shadow: 0 0 0 2px var(--ink) inset; }
-  .run-line { display: flex; align-items: center; gap: 8px; margin: 12px 0; font-family: var(--caps); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
-  .run-line::before, .run-line::after { content: ''; flex: 1; border-top: 2px dashed currentColor; }
-  .run-line.cer { color: #2F6B3A; } .run-line.tot { color: #8A2F2F; }
-  .badge.declined { background: #E4E1DB; color: #55524C; }
-  .badge.promoted { background: #DCEBDD; color: var(--good); }
-  .hh.declined { opacity: .6; }
-  .badge.reserve { background: #EADCF2; color: #5B2D73; }
-  .suggest { background: #FFF7DC; border: 1px solid #EAD9A0; border-radius: 10px; padding: 8px 10px; margin: 0 0 10px; font-size: 15px; }
-  .hits { list-style: none; margin: 4px 0 0; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: #fff; overflow: hidden; }
-  .hits li button { width: 100%; text-align: left; min-height: 44px; padding: 6px 10px; border: 0; border-bottom: 1px solid var(--line); background: #fff; cursor: pointer; font-size: 15px; }
-  .hits li:last-child button { border-bottom: 0; }
-  .todo { margin: 0 0 10px; font-size: 14px; color: #8A2F2F; background: #FBEDED; border-radius: 8px; padding: 6px 10px; }
-  .badge.check { background: #F3D9D9; color: var(--bad); }
-  .ppl { list-style: none; padding: 0; margin: 0 0 10px; font-size: 15px; }
-  .ppl li { padding: 2px 0; }
-  .ppl .y { color: var(--good); } .ppl .n { color: var(--bad); } .ppl .q { color: var(--ink-soft); }
-  .acts { display: flex; gap: 6px; flex-wrap: wrap; }
-  .modal { position: fixed; inset: 0; background: rgba(20,20,20,.5); z-index: 30; overflow: auto; padding: 16px; }
-  .sheet { background: var(--paper); max-width: 640px; margin: 0 auto; border-radius: 16px; padding: 18px; }
+  .run-row .mv button { min-width: 38px; min-height: 38px; border-radius: 999px; border: 1px solid var(--cream-line); background: #fff; font-size: 16px; cursor: pointer; }
+  .run-row.moved { box-shadow: 0 0 0 2px #C9B98C inset; }
+  .run-row.picked { box-shadow: 0 0 0 3px var(--night) inset, 0 0 0 2px var(--cream); }
+  .run-line { display: flex; align-items: center; gap: 8px; margin: 14px 0; font-family: var(--caps); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--cream); }
+  .run-line::before, .run-line::after { content: ''; flex: 1; border-top: 1.5px dashed currentColor; }
+  .run-line.tot { color: var(--soft-dark); }
+  .box h3 { margin: 0 0 8px; font-size: 16px; }
+  .box .field > span { color: var(--soft); }
+
+  /* sheets (edit, contacts, history) */
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 35; overflow: auto; padding: 16px; }
+  .sheet { max-width: 640px; margin: 0 auto; border-radius: 16px; padding: 18px; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
-  .g-row { background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 10px; margin: 8px 0; }
+  .g-row { background: #fff; border: 1px solid var(--cream-line); border-radius: 12px; padding: 8px 10px; margin: 8px 0; }
   .g-row .grid2 .field { margin: 6px 0; }
   .check-row { display: flex; align-items: center; gap: 10px; min-height: 44px; }
   .check-row input { width: 22px; height: 22px; }
-  details { background: var(--paper-2); border-radius: 12px; padding: 10px 14px; margin: 12px 0; }
-  summary { cursor: pointer; font-weight: 600; min-height: 32px; }
-  .count { color: var(--ink-soft); font-size: 14px; }
-  .stdline { font-size: 14px; margin: 0 0 10px; color: var(--ink-soft); }
-  .stdline b { font-weight: 600; }
-  .stdline .ok { color: var(--good); } .stdline .no { color: var(--bad); }
-  .std-sum { background: var(--paper-2); border-radius: 12px; padding: 10px 14px; margin: 10px 0; font-size: 15px; }
-  .std-sum p { margin: 4px 0; }
-  .std-prev { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 15px; white-space: pre-wrap; }
+  .acts-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .hits { list-style: none; margin: 4px 0 0; padding: 0; border: 1px solid var(--cream-line); border-radius: 10px; background: #fff; overflow: hidden; }
+  .hits li button { width: 100%; text-align: left; min-height: 44px; padding: 6px 10px; border: 0; border-bottom: 1px solid var(--cream-line); background: #fff; cursor: pointer; font-size: 15px; }
+  .hits li:last-child button { border-bottom: 0; }
+  .hist-item { background: #fff; border: 1px solid var(--cream-line); border-radius: 12px; padding: 10px 12px; margin: 0 0 10px; }
+
+  .login { max-width: 380px; margin: 60px auto; text-align: center; background: var(--cream); color: var(--ink); border-radius: 16px; padding: 22px 20px; }
+  .toast { top: 16px; bottom: auto; background: var(--cream); color: var(--ink); }
 </style>
 </head>
 <body>
@@ -90,74 +141,107 @@
   </section>
 
   <section id="app" class="hidden">
-    <div class="top">
-      <span class="script">Wedding admin</span>
-      <span style="display:flex;gap:6px"><a class="btn ghost small" href="sheet.html">Spreadsheet</a>
-      <button class="btn ghost small" id="logout">Sign out</button></span>
-    </div>
+    <header>
+      <button class="burger" id="menu-open" aria-label="Menu"><span></span></button>
+      <span class="t">Wedding admin</span>
+      <span class="v" id="view-name"></span>
+    </header>
 
-    <div class="stats" id="stats"></div>
-
-    <details id="gift-box">
-      <summary>Gift bank details</summary>
-      <label class="field"><span>Account name</span><input type="text" id="s-name"></label>
-      <div class="grid2">
-        <label class="field"><span>Sort code</span><input type="text" id="s-sort" inputmode="numeric"></label>
-        <label class="field"><span>Account number</span><input type="text" id="s-acc" inputmode="numeric"></label>
+    <!-- Guest list -->
+    <div id="v-list">
+      <section class="box" id="sum">
+        <div class="sum-h"><b>Summary</b><button class="link-btn" id="sum-tog">Hide</button></div>
+        <div id="sum-rows"></div>
+      </section>
+      <div class="ctl">
+        <input type="search" id="f-search" placeholder="Search names…">
+        <select id="f-sort" aria-label="Sort"><option value="run">Running order</option><option value="name">Name</option><option value="recent">Latest reply</option></select>
       </div>
-      <button class="btn small" id="s-save">Save bank details</button>
-      <p class="muted" style="font-size:14px">Guests only see these on their own personal invitation.</p>
-    </details>
-    <details id="lock-box">
-      <summary>Invite list</summary>
-      <p class="muted" id="lock-state" style="font-size:14px;margin:6px 0 10px"></p>
-      <button class="btn small" id="lock-btn"></button>
-    </details>
-    <details id="cer-box">
-      <summary>Ceremony places</summary>
-      <label class="field"><span>Most people at the ceremony</span><input type="number" id="s-cermax" inputmode="numeric" min="1" style="max-width:140px"></label>
-      <button class="btn small" id="s-cermax-save">Save</button>
-    </details>
-    <details id="allergy-box">
-      <summary>Allergy wording (RSVP checkbox)</summary>
-      <label class="field"><span>Guests must tick this when anyone is coming</span><textarea id="s-allergy" rows="4"></textarea></label>
-      <button class="btn small" id="s-allergy-save">Save wording</button>
-      <p class="muted" style="font-size:14px">Each reply saves a copy of the wording the guest agreed to, so changing it later doesn't alter past replies.</p>
-    </details>
-
-    <div class="filters">
-      <input type="search" id="f-search" placeholder="Search names…">
-      <select id="f-priority"></select>
-      <select id="f-type"><option value="">All invites</option><option value="ceremony">Ceremony</option><option value="garden">Evening (garden party)</option></select>
-      <select id="f-status"><option value="">Any status</option><option value="incomplete">Incomplete</option><option value="post">Sending by post</option><option value="person">Giving in person</option><option value="notsent">Not sent</option><option value="sent">Sent, not opened</option><option value="opened">Opened, no reply</option><option value="replied">Replied</option><option value="check">Names to check</option><option value="invite">On the invite list</option><option value="Doug">Doug sends</option><option value="Paula">Paula sends</option><option value="nonumber">No phone numbers</option><option value="suggest">Mobiles to check</option><option value="reserve">Reserves</option><option value="nextup">Evening: next to promote</option><option value="promoted">Promoted to ceremony</option><option value="declined">Declined</option></select>
-      <select id="f-std"><option value="">Save the date: any</option><option value="notsent">STD not sent</option><option value="waiting">STD sent, no answer</option><option value="opened">STD opened, no answer</option><option value="saved">STD got it</option><option value="cant">STD definitely can't</option><option value="some">STD some can't</option></select>
-      <select id="f-sort"><option value="priority">Sort: priority</option><option value="name">Sort: name</option><option value="recent">Sort: latest reply</option></select>
-    </div>
-    <div class="bar">
-      <button class="btn small" id="add">+ Add household</button>
-      <button class="btn small" id="run-open">Running order</button>
-      <button class="btn small" id="std-open">Save the date texts</button>
-      <button class="btn ghost small" id="export">Export CSV</button>
-      <button class="btn ghost small" id="export-log">Export RSVP log</button>
-      <button class="btn ghost small" id="show-book">Contacts</button>
-      <a class="btn ghost small" href="slips.html">Post slips</a>
-      <button class="btn ghost small" id="reload">Refresh</button>
-      <span class="count" id="count"></span>
-    </div>
-    <div id="list"></div>
-    <section id="run" class="hidden">
-      <div class="run-head">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-          <b style="font-size:17px">Running order</b>
-          <button class="btn ghost small" id="run-close">Back to list</button>
-        </div>
-        <div id="run-sum" style="margin-top:6px"></div>
+      <div class="ctl2">
+        <label class="sw"><input type="checkbox" id="f-out"><i></i></label><label for="f-out">Outstanding only</label>
+        <select id="f-show" aria-label="Show">
+          <option value="">Everyone</option><option value="ceremony">Ceremony</option><option value="garden">Evening (garden party)</option>
+          <option value="details">Missing details</option><option value="Doug">Doug sends</option><option value="Paula">Paula sends</option>
+          <option value="reserve">Reserves</option><option value="declined">Declined</option><option value="x">Not inviting (round x)</option>
+        </select>
       </div>
-      <p class="muted" style="font-size:14px">One list, most wanted first. Everyone above the green line is a ceremony guest, down to the red line is evening (garden party), and below that are reserves. This is the plan only — it doesn't change anyone's invitation. Use ↑ ↓, or tap a household then tap where it should go.</p>
+      <p class="count" id="count"></p>
+      <div id="list"></div>
+    </div>
+
+    <!-- Running order -->
+    <div id="v-run" class="hidden">
+      <div class="view-h"><h2>Running order</h2></div>
+      <p class="help">Most wanted first. Above the ceremony line are ceremony guests, then evening (garden party) down to the total line, then reserves. This is the plan only – it doesn't change anyone's invitation. Use ↑ ↓, or tap a household then tap where it should go.</p>
+      <section class="box" id="run-sum"></section>
       <div id="run-list"></div>
-    </section>
+    </div>
+
+    <!-- Exports -->
+    <div id="v-exports" class="hidden">
+      <div class="view-h"><h2>Exports</h2></div>
+      <section class="box">
+        <div class="row"><span>Everyone, one row per person</span><button class="btn small" id="export">Download</button></div>
+        <div class="row"><span>RSVP log, every reply with the allergy confirmation</span><button class="btn small" id="export-log">Download</button></div>
+      </section>
+      <p class="help">Files open in Excel or Google Sheets.</p>
+    </div>
+
+    <!-- Settings -->
+    <div id="v-settings" class="hidden">
+      <div class="view-h"><h2>Settings</h2></div>
+      <section class="box">
+        <h3>Places</h3>
+        <label class="field"><span>Most people at the ceremony</span><input type="number" id="s-cermax" inputmode="numeric" min="1" style="max-width:140px"></label>
+        <p class="note" style="font-size:14px;color:var(--soft)" id="s-total"></p>
+        <button class="btn small" id="s-cermax-save">Save</button>
+      </section>
+      <section class="box">
+        <h3>Invite list</h3>
+        <p id="lock-state" style="font-size:14px;color:var(--soft);margin:0 0 10px"></p>
+        <button class="btn small" id="lock-btn"></button>
+      </section>
+      <section class="box">
+        <h3>Gift bank details</h3>
+        <label class="field"><span>Account name</span><input type="text" id="s-name"></label>
+        <div class="grid2">
+          <label class="field"><span>Sort code</span><input type="text" id="s-sort" inputmode="numeric"></label>
+          <label class="field"><span>Account number</span><input type="text" id="s-acc" inputmode="numeric"></label>
+        </div>
+        <button class="btn small" id="s-save">Save bank details</button>
+        <p style="font-size:14px;color:var(--soft)">Guests only see these on their own personal invitation.</p>
+      </section>
+      <section class="box">
+        <h3>Allergy wording (RSVP checkbox)</h3>
+        <label class="field"><span>Guests must tick this when anyone is coming</span><textarea id="s-allergy" rows="4"></textarea></label>
+        <button class="btn small" id="s-allergy-save">Save wording</button>
+        <p style="font-size:14px;color:var(--soft)">Each reply saves a copy of the wording the guest agreed to, so changing it later doesn't alter past replies.</p>
+      </section>
+    </div>
   </section>
 </div>
+
+<!-- Menu -->
+<div class="drawer hidden" id="drawer">
+  <nav>
+    <div class="t">Wedding admin</div>
+    <button data-view="list">Guest list <small id="m-n-list"></small></button>
+    <button data-view="run">Running order</button>
+    <button id="m-add">Add household</button>
+    <div class="sec">Tools</div>
+    <button id="show-book">Phone contacts</button>
+    <a href="sheet.html">Spreadsheet view</a>
+    <a href="slips.html">Post slips</a>
+    <button data-view="exports">Exports</button>
+    <div class="sec">Settings</div>
+    <button data-view="settings">Places, bank details, wording</button>
+    <button id="reload">Refresh</button>
+    <button id="logout">Sign out</button>
+  </nav>
+</div>
+
+<!-- Household panel -->
+<div class="shade hidden" id="shade"><div class="panel" id="panel" role="dialog" aria-modal="true"></div></div>
 
 <div class="modal hidden" id="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
   <div class="sheet">
@@ -168,7 +252,7 @@
       <label class="field"><span>Invite</span><select id="m-type"><option value="ceremony">Ceremony (3pm)</option><option value="garden">Evening (garden party, 3.30pm)</option></select></label>
     </div>
     <div class="grid2">
-      <label class="field"><span>Category</span><input type="text" id="m-category" list="cats"></label>
+      <label class="field"><span>Group</span><input type="text" id="m-category" list="cats"></label>
       <label class="field"><span>Who sends it</span><select id="m-sentby"><option value="">–</option><option>Doug</option><option>Paula</option></select></label>
     </div>
     <div class="grid2">
@@ -182,8 +266,8 @@
     <h4 style="margin:16px 0 4px">People</h4>
     <div id="m-guests"></div>
     <button class="btn ghost small" id="m-addguest" type="button">+ Add person</button>
-    <p id="m-link" class="muted" style="font-size:14px;word-break:break-all"></p>
-    <div class="bar" style="justify-content:space-between;margin-top:18px">
+    <p id="m-link" style="font-size:14px;word-break:break-all;color:var(--soft)"></p>
+    <div class="acts-row" style="justify-content:space-between;margin-top:18px">
       <button class="btn ghost small" id="m-delete" type="button" style="color:var(--bad);border-color:var(--bad)">Delete</button>
       <span style="display:flex;gap:8px">
         <button class="btn ghost small" id="m-cancel" type="button">Cancel</button>
@@ -198,10 +282,10 @@
       <h3 id="b-title" style="margin:0">Phone contacts</h3>
       <button class="btn ghost small" id="b-close" type="button">Close</button>
     </div>
-    <p class="muted" style="font-size:14px;margin:6px 0">Everyone from both phones. A green name shows which guest that number is saved against.</p>
+    <p style="font-size:14px;margin:6px 0;color:var(--soft)">Everyone from both phones. A green name shows which guest that number is saved against.</p>
     <input type="search" id="b-q" placeholder="Search name or number…" autocomplete="off">
     <select id="b-f" style="margin-top:8px"><option value="">All contacts</option><option value="used">Used for a guest</option><option value="unused">Not used yet</option><option value="Doug">Doug's phone</option><option value="Paula">Paula's phone</option></select>
-    <p class="count" id="b-count" style="margin:8px 0 0"></p>
+    <p id="b-count" style="margin:8px 0 0;font-size:14px;color:var(--soft)"></p>
     <ul id="b-list" style="list-style:none;padding:0;margin:8px 0 0"></ul>
   </div>
 </div>
@@ -212,23 +296,6 @@
       <button class="btn ghost small" id="h-close" type="button">Close</button>
     </div>
     <div id="h-list" style="margin-top:10px"></div>
-  </div>
-</div>
-<div class="modal hidden" id="stdm" role="dialog" aria-modal="true" aria-labelledby="sd-title">
-  <div class="sheet">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-      <h3 id="sd-title" style="margin:0">Save the date texts</h3>
-      <button class="btn ghost small" id="sd-close" type="button">Close</button>
-    </div>
-    <div class="std-sum" id="sd-sum"></div>
-    <p class="muted" style="font-size:14px;margin:12px 0 4px">Example message</p>
-    <div class="std-prev" id="sd-prev"></div>
-    <div class="acts" style="margin-top:14px">
-      <button class="btn small" id="sd-csv">1. Download file for text service</button>
-      <button class="btn ghost small" id="sd-nomob">List without a mobile</button>
-    </div>
-    <p class="muted" style="font-size:14px">Upload the file as it is (don't open and save it in Excel first, it can spoil the phone numbers). Send a test to yourself first.</p>
-    <div class="acts"><button class="btn ghost small" id="sd-mark">2. Mark these as sent</button></div>
   </div>
 </div>
 <div class="toast" id="toast" role="status"></div>
@@ -244,6 +311,7 @@
   // ---------- auth + api ----------
   const load = () => { try { return JSON.parse(localStorage.getItem(STORE)); } catch (e) { return null; } };
   const save = (s) => { session = s; try { s ? localStorage.setItem(STORE, JSON.stringify(s)) : localStorage.removeItem(STORE); } catch (e) {} };
+  const pref = (k, v) => { try { if (v === undefined) return localStorage.getItem('wa-' + k); localStorage.setItem('wa-' + k, v); } catch (e) { return null; } };
   async function auth(grant, body) {
     const r = await fetch(C.supabaseUrl + '/auth/v1/token?grant_type=' + grant, {
       method: 'POST', headers: { 'Content-Type': 'application/json', apikey: C.supabaseKey }, body: JSON.stringify(body) });
@@ -271,9 +339,10 @@
   $('login-form').addEventListener('submit', async (e) => {
     e.preventDefault(); $('login-error').classList.add('hidden');
     try { save(await auth('password', { email: $('email').value.trim(), password: $('password').value })); $('password').value = ''; start(); }
-    catch (err) { const m = String(err.message || ''); $('login-error').textContent = /invalid login/i.test(m) ? 'Email or password not recognised.' : /not confirmed/i.test(m) ? 'This login hasn\u2019t been confirmed yet (tick Auto Confirm in Supabase).' : 'Sign in failed: ' + m; $('login-error').classList.remove('hidden'); }
+    catch (err) { const m = String(err.message || ''); $('login-error').textContent = /invalid login/i.test(m) ? 'Email or password not recognised.' : /not confirmed/i.test(m) ? 'This login hasn’t been confirmed yet (tick Auto Confirm in Supabase).' : 'Sign in failed: ' + m; $('login-error').classList.remove('hidden'); }
   });
   $('logout').addEventListener('click', () => {
+    closeAll();
     fetch(C.supabaseUrl + '/auth/v1/logout', { method: 'POST', headers: { apikey: C.supabaseKey, Authorization: 'Bearer ' + session.access_token } }).catch(() => {});
     signedOut();
   });
@@ -283,79 +352,65 @@
   function el(tag, attrs, ...kids) {
     const e = document.createElement(tag);
     for (const k in (attrs || {})) { if (k === 'class') e.className = attrs[k]; else if (k.startsWith('on')) e.addEventListener(k.slice(2), attrs[k]); else if (attrs[k] !== undefined && attrs[k] !== null) e.setAttribute(k, attrs[k]); }
-    kids.forEach((k) => k != null && e.append(k));
+    kids.forEach((k) => k != null && k !== false && e.append(k));
     return e;
   }
   const link = (i) => C.siteUrl + '?g=' + i.code;
+  const stdLink = (i) => C.siteUrl + '?s=' + i.std_code;
   const waNum = (p) => { let d = String(p || '').replace(/[^\d+]/g, ''); if (d.startsWith('+')) d = d.slice(1); else if (d.startsWith('00')) d = d.slice(2); else if (d.startsWith('0')) d = '44' + d.slice(1); return d.length >= 10 ? d : ''; };
   const firstOf = (n) => String(n || '').replace(/\s*\?\s*$/, '').split(' ')[0];
-  const inviteMsg = (first, i) => 'Hi ' + first + '! We\u2019re getting married \ud83e\udd42 Here\u2019s your invitation, with all the details and where to RSVP:\n' + C.siteUrl + '?g=' + i.code + '\n\nPaula & Doug x';
   const contacts = (i) => i.guests.filter((g) => !g.is_plus_one && waNum(g.phone));
-  // What still needs doing before this household's invitation can go out.
+  const isTest = (i) => /^test/.test(i.code || '');
+  const HOW = { whatsapp: 'WhatsApp', post: 'Post', person: 'In person' };
+  const how = (i) => i.send_method || 'whatsapp';
+  // One message per household: the chosen main contact, else the first person with a number.
+  const mainContact = (i) => { const c = contacts(i); return c.find((g) => g.id === i.main_contact) || c[0] || null; };
   const PH_NAME = /\?|^(hubby|missus|wife|fella|partner|child|kid|bird|plus one)$/i;
+  // "Joan & Bob", or "Jen, Dan & family" when there are more than two people in the household.
+  const householdHello = (i) => {
+    const ppl = i.guests.filter((g) => !g.is_plus_one);
+    const a = ppl.filter((g) => g.age_group === 'adult').map((g) => firstOf(g.name)).filter((n) => n && !PH_NAME.test(n)).slice(0, 2);
+    if (ppl.length > 2) return a.length ? a.join(', ') + ' & family' : 'all';
+    return a.length < 2 ? (a[0] || '') : a[0] + ' & ' + a[1];
+  };
+  // Card title from the people: "Joan & Bob Winch", "Ollie Smith & Callie Craven", "Jen & Dan Francis" + 4
+  function title(i) {
+    const ppl = i.guests.filter((g) => !g.is_plus_one);
+    const ad = ppl.filter((g) => g.age_group === 'adult');
+    const a = (ad.length ? ad : ppl).slice(0, 2);
+    if (!a.length) return [i.household_name, 0];
+    const p = a.map((g) => { const w = String(g.name).trim().split(/\s+/); return { f: w[0], l: w.slice(1).join(' ') }; });
+    const t = a.length === 1 ? a[0].name : (p[0].l && p[0].l === p[1].l) ? p[0].f + ' & ' + p[1].f + ' ' + p[0].l : a[0].name + ' & ' + a[1].name;
+    return [t, ppl.length - a.length];
+  }
+  // What still needs doing before this household's invitation can go out.
   function issues(i) {
     const out = [], mc = mainContact(i);
-    const how = i.send_method || 'whatsapp';
-    if (how === 'post') { if (!(i.address || '').trim()) out.push('no postal address'); }
-    else if (how === 'whatsapp') {
-      if (!mc) out.push(i.guests.some((g) => !g.is_plus_one && (g.phone || '').trim()) ? 'no mobile (landline only)' : 'no mobile');
+    if (how(i) === 'post') { if (!(i.address || '').trim()) out.push('no postal address'); }
+    else if (how(i) === 'whatsapp') {
+      if (!mc) out.push(i.guests.some((g) => !g.is_plus_one && (g.phone || '').trim()) ? 'no mobile (landline only)' : 'no mobile number');
       else if (/^44[^7]/.test(waNum(mc.phone))) out.push('landline, not a mobile');
     }
     if (!i.sent_by) out.push('no sender');
     const ph = i.guests.filter((g) => PH_NAME.test((g.name || '').trim())).map((g) => g.name);
-    if (ph.length) out.push('names: ' + ph.join(', '));
+    if (ph.length) out.push('names to check: ' + ph.join(', '));
     const ages = i.guests.filter((g) => g.age_group !== 'adult' && g.age == null).map((g) => g.name);
     if (ages.length) out.push('ages: ' + ages.join(', '));
     return out;
   }
-  // One message per household: the chosen main contact, else the first person with a mobile.
-  const HOW = { whatsapp: 'WhatsApp', post: 'Post', person: 'In person' };
-  const mainContact = (i) => { const c = contacts(i); return c.find((g) => g.id === i.main_contact) || c[0] || null; };
-  // ---------- save the date ----------
-  const stdLink = (i) => C.siteUrl + '?s=' + i.std_code;
-  const stdMsg = (i, g) => 'Hi ' + firstOf(g.name) + ", it's Doug & Paula! We're getting married on Saturday 7th August 2027 at Friern Manor, Brentwood, and we'd love "
-    + (i.guests.filter((x) => !x.is_plus_one).length > 1 ? 'you all' : 'you') + ' to be there. Please save the date - invitations will follow. Tap to let us know: '
-    + stdLink(i) + ' Any problems, call or text Doug on ' + C.contact.phone;
-  const isMobile = (g) => /^447\d{9}$/.test(waNum(g && g.phone));
-  // Lead with a mobile: the main contact if they have a mobile, otherwise the first person who does.
-  const stdLead = (i) => { const m = i.guests.filter((g) => !g.is_plus_one && isMobile(g)); return m.find((g) => g.id === i.main_contact) || m[0] || null; };
-  const segments = (t) => (t.length <= 160 ? 1 : Math.ceil(t.length / 153));
-  function stdStatus(i) {
-    if (i.std_answer === 'saved') return ['saved', 'Got it'];
-    if (i.std_answer === 'cant') return ['cant', "Definitely can't"];
-    if (i.std_answer === 'some') return ['some', "Some definitely can't"];
-    if (i.std_opened_at) return ['opened', 'Opened, no answer'];
-    if (i.std_sent_at) return ['waiting', 'Sent, no answer'];
-    return ['notsent', 'Not sent'];
-  }
-  // "Joan & Bob", or "Jennifer, Dan & family" when there are more than two people in the household.
-  const householdHello = (i) => {
-    const ppl = i.guests.filter((g) => !g.is_plus_one);
-    const a = ppl.filter((g) => g.age_group === 'adult').map((g) => firstOf(g.name)).filter((n) => n && !/^(hubby|missus|wife|fella|bird|partner|child)$/i.test(n)).slice(0, 2);
-    if (ppl.length > 2) return a.length ? a.join(', ') + ' & family' : 'all';
-    return a.length < 2 ? (a[0] || '') : a[0] + ' & ' + a[1];
-  };
+  const canSend = (i) => how(i) !== 'whatsapp' || (mainContact(i) && !/^44[^7]/.test(waNum(mainContact(i).phone)));
+
   const live = (i) => i.priority !== 'x' && !i.declined_at;
-  const PLACEHOLDER = /\?|^(hubby|missus|wife|fella|partner|child|kid|bird|plus one)$/i;
-  const needsCheck = (i) => i.guests.some((g) => PLACEHOLDER.test(g.name.trim()) || (g.age_group !== 'adult' && g.age == null));
-  function status(i) {
-    if (i.declined_at) return ['declined', 'Declined'];
-    if (i.responded_at) return ['replied', 'Replied'];
-    if (i.first_opened_at) return ['opened', 'Opened'];
-    if (i.sent_at) return ['sent', 'Sent'];
-    return ['', 'Not sent'];
-  }
-  const firstNames = (i) => { const a = i.guests.filter((g) => !g.is_plus_one && g.age_group === 'adult').map((g) => g.name.split(' ')[0].replace('?', '')); return a.length < 2 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' & ' + a[a.length - 1]; };
   const prioNum = (p) => (/^[0-9.]+$/.test(p || '') ? parseFloat(p) : 999);
   const MAX = C.maxGuests || 180;
+  const CMAX = () => parseInt(data.settings.ceremony_max, 10) || 110;
   const byList = (a, b) => prioNum(a.priority) - prioNum(b.priority) || (a.list_order ?? 9999) - (b.list_order ?? 9999) || a.household_name.localeCompare(b.household_name);
+  const runSort = (a, b) => (a.run_order ?? 1e6) - (b.run_order ?? 1e6) || byList(a, b);
   // Places a household takes: what they've said if they've replied, otherwise everyone invited (plus one included).
   const seats = (i) => i.responded_at ? i.guests.filter((g) => g.attending).length
     : i.guests.filter((g) => !g.is_plus_one && !g.std_cant).length + (i.plus_one_allowed ? 1 : 0);
-  const CMAX = () => parseInt(data.settings.ceremony_max, 10) || 110;
   let place = {};
-  // The invite list is fixed: households only move on or off it when you press a button.
-  // (Before it's been fixed for the first time, it's worked out from priority order and the 180 places.)
+  // Before the invite list is locked it's worked out from priority order and the 180 places; after, only buttons move people.
   const listFixed = () => data.invites.some((i) => i.on_list != null);
   function allocate() {
     place = {}; let used = 0, over = false, pos = 0;
@@ -367,169 +422,283 @@
     });
     return used;
   }
-  function renderLock() {
-    const f = listFixed();
-    $('lock-state').textContent = f ? 'Locked: households only move on or off the invite list when you press Move to invite list / Move to reserves.'
-      : 'Not locked: the invite list is worked out from priority order and the ' + MAX + ' places, so it changes as you edit.';
-    $('lock-btn').textContent = f ? 'Unlock invite list' : 'Lock invite list as it is now';
+  const onList = (i) => live(i) && place[i.id] && !place[i.id].reserve;
+
+  // ---------- save the date + invitation status ----------
+  function stdState(i) {
+    if (i.std_answer === 'saved') return 'received';
+    if (i.std_answer === 'cant') return 'cant';
+    if (i.std_answer === 'some') return 'some';
+    if (i.std_opened_at) return 'opened';
+    if (i.std_sent_at) return 'sent';
+    return 'notsent';
   }
-  $('lock-btn').addEventListener('click', async () => {
-    const f = listFixed();
-    if (!confirm(f ? 'Unlock the invite list? It will go back to being worked out from priority order.' : 'Lock the invite list as it is now?')) return;
-    allocate();
-    const ids = f ? data.invites.map((i) => i.id) : data.invites.filter((i) => live(i) && !place[i.id].reserve).map((i) => i.id);
-    try { await rpc('admin_set_list', { p_list: ids, p_on: f ? null : true }); data.invites.forEach((i) => { if (f) i.on_list = null; else if (ids.includes(i.id)) i.on_list = true; }); render(); renderLock(); toast(f ? 'Unlocked' : 'Locked'); }
-    catch (e) { toast('Could not update: ' + (e.message || e)); }
-  });
-  async function setList(i, on) {
-    if (!confirm(on ? 'Move ' + i.household_name + ' onto the invite list?' : 'Move ' + i.household_name + ' to the reserves?')) return;
-    try { await rpc('admin_set_list', { p_list: [i.id], p_on: on }); i.on_list = on; render(); toast(on ? 'On the invite list' : 'Moved to reserves'); }
-    catch (e) { toast('Could not update: ' + (e.message || e)); }
+  function stdText(i) {
+    const s = stdState(i), cant = i.guests.filter((g) => g.std_cant).map((g) => firstOf(g.name));
+    return { notsent: 'Save the date not sent', sent: 'Save the date sent · not opened', opened: 'Save the date opened', received: 'Save the date received',
+             cant: "Save the date: can't make it", some: 'Save the date: ' + cant.join(' & ') + " can't make it" }[s];
+  }
+  function inviteText(i) {
+    if (i.responded_at) {
+      const yes = i.guests.filter((g) => g.attending === true).length;
+      return yes ? 'Replied · ' + yes + ' coming' : "Replied · can't come";
+    }
+    if (i.first_opened_at) return 'Invitation opened · no reply';
+    if (i.sent_at) return 'Invitation sent · not opened';
+    return '';
+  }
+  // The one thing still to do for a household: send the save the date, then the invitation.
+  function nextStep(i) {
+    if (!(onList(i) || isTest(i)) || i.declined_at) return null;
+    const m = how(i), verb = m === 'post' ? 'Post' : m === 'person' ? 'Give' : 'WhatsApp';
+    if (!i.std_sent_at) return { what: 'std', label: verb + ' save the date' };
+    if (!i.sent_at) return { what: 'invite', label: verb + ' invitation' };
+    return null;
+  }
+  function waiting(i) {
+    if (!(onList(i) || isTest(i))) return false;
+    if (i.sent_at) return !i.responded_at;
+    return !!i.std_sent_at && !i.std_answer;
+  }
+  const outstanding = (i) => !!nextStep(i) || waiting(i) || (onList(i) && issues(i).length > 0);
+
+  const inviteMsg = (i) => 'Hi ' + (householdHello(i) || '') + '! We’re getting married 🥂 Here’s your invitation, with all the details and where to RSVP:\n' + link(i) + '\n\nPaula & Doug x';
+  const stdMsg = (i) => 'Hi ' + (householdHello(i) || '') + ', it’s Doug & Paula! 💍\n\nWe’re getting married on Saturday 7th August 2027 at Friern Manor, Brentwood, and we’d love '
+    + (i.guests.filter((x) => !x.is_plus_one).length > 1 ? 'you all' : 'you') + ' to be there. Please save the date – invitations with all the details will follow.\n\nPlease tap to let us know you’ve got this:\n' + stdLink(i) + '\n\nPaula & Doug x';
+
+  async function doStep(i, what) {
+    const m = how(i);
+    if (m === 'whatsapp') {
+      const g = mainContact(i);
+      if (!g) { toast('No mobile number – tap Edit to add one'); return; }
+      window.open('https://wa.me/' + waNum(g.phone) + '?text=' + encodeURIComponent(what === 'std' ? stdMsg(i) : inviteMsg(i)), '_blank', 'noopener');
+    } else if (!confirm((what === 'std' ? 'Mark the save the date for ' : 'Mark the invitation for ') + title(i)[0] + (m === 'post' ? ' as posted?' : ' as given?'))) return;
+    try {
+      if (what === 'std') { await rpc('admin_mark_std_sent', { p_list: [i.id], p_sent: true }); i.std_sent_at = i.std_sent_at || new Date().toISOString(); }
+      else replaceInvite(await rpc('admin_mark_sent', { p_id: i.id, p_sent: true }), true);
+    } catch (e) { toast('Could not mark it as sent'); }
+    render(); if (openId === i.id) openPanel(i);
   }
 
   // ---------- data ----------
   async function start() {
     $('login').classList.add('hidden'); $('app').classList.remove('hidden');
     try { data = await rpc('admin_data'); } catch (e) { if (session) toast('Could not load the guest list'); return; }
-    const pr = [...new Set(data.invites.map((i) => i.priority || ''))].sort((a, b) => prioNum(a) - prioNum(b));
-    const fp = $('f-priority'), keep = fp.value; fp.innerHTML = '';
-    fp.append(el('option', { value: '' }, 'All rounds'));
-    pr.forEach((p) => fp.append(el('option', { value: p }, p === 'x' ? 'Round x (not inviting)' : 'Round ' + (p || '–'))));
-    fp.value = keep;
     $('cats').innerHTML = ''; [...new Set(data.invites.map((i) => i.category).filter(Boolean))].sort().forEach((c) => $('cats').append(el('option', { value: c })));
     $('s-allergy').value = data.settings.rsvp_allergy_text || '';
     $('s-cermax').value = CMAX();
-    renderLock();
+    $('s-total').textContent = 'Total places: ' + MAX + ' (set in the site settings).';
     $('s-name').value = data.settings.gift_account_name || ''; $('s-sort').value = data.settings.gift_sort_code || ''; $('s-acc').value = data.settings.gift_account_number || '';
-    render();
+    renderLock();
+    $('sum').classList.toggle('collapsed', pref('sum') === 'hidden');
+    $('f-out').checked = pref('out') === '1';
+    show(location.hash.slice(1) || 'list', true);
   }
+  function replaceInvite(saved, quiet) { const k = data.invites.findIndex((x) => x.id === saved.id); if (k >= 0) data.invites[k] = saved; else data.invites.push(saved); if (!quiet) { render(); if (openId === saved.id) openPanel(saved); } }
+
+  // ---------- views + menu (the phone's back button closes things) ----------
+  const VIEWS = { list: 'Guest list', run: 'Running order', exports: 'Exports', settings: 'Settings' };
+  let view = 'list';
+  function show(v, replace) {
+    if (!VIEWS[v]) v = 'list';
+    view = v; Object.keys(VIEWS).forEach((k) => $('v-' + k).classList.toggle('hidden', k !== v));
+    $('view-name').textContent = v === 'list' ? '' : VIEWS[v];
+    document.querySelectorAll('#drawer [data-view]').forEach((b) => b.classList.toggle('on', b.dataset.view === v));
+    if (replace) history.replaceState({ view: v }, '', v === 'list' ? location.pathname : '#' + v);
+    else history.pushState({ view: v }, '', v === 'list' ? location.pathname : '#' + v);
+    if (v === 'run') { picked = null; lastMoved = null; renderRun(); } else render();
+    window.scrollTo(0, 0);
+  }
+  function openLayer(id) { $(id).classList.remove('hidden'); history.pushState({ layer: id, view }, ''); }
+  function closeLayer(id, fromHistory) { if ($(id).classList.contains('hidden')) return; $(id).classList.add('hidden'); if (id === 'shade') openId = null; if (!fromHistory && history.state && history.state.layer === id) history.back(); }
+  function closeAll() { ['drawer', 'shade', 'modal', 'book', 'hist'].forEach((id) => $(id).classList.add('hidden')); openId = null; }
+  window.addEventListener('popstate', (e) => {
+    const open = ['hist', 'book', 'modal', 'shade', 'drawer'].find((id) => !$(id).classList.contains('hidden'));
+    if (open) { closeLayer(open, true); return; }
+    const v = (e.state && e.state.view) || location.hash.slice(1) || 'list';
+    view = v; Object.keys(VIEWS).forEach((k) => $('v-' + k).classList.toggle('hidden', k !== v));
+    $('view-name').textContent = v === 'list' ? '' : VIEWS[v];
+    if (v === 'run') renderRun(); else render();
+  });
+  $('menu-open').addEventListener('click', () => openLayer('drawer'));
+  $('drawer').addEventListener('click', (e) => { if (e.target === $('drawer')) closeLayer('drawer'); });
+  document.querySelectorAll('#drawer [data-view]').forEach((b) => b.addEventListener('click', () => { $('drawer').classList.add('hidden'); history.replaceState({ view }, ''); show(b.dataset.view); }));
+  $('m-add').addEventListener('click', () => { closeLayer('drawer'); setTimeout(() => openEdit(null), 0); });
+  $('reload').addEventListener('click', () => { closeLayer('drawer'); start(); });
+
+  // ---------- guest list ----------
+  function summary(used) {
+    const L = data.invites.filter((i) => onList(i));
+    const cer = L.filter((i) => i.invite_type === 'ceremony'), eve = L.filter((i) => i.invite_type !== 'ceremony');
+    const cerTaken = cer.reduce((n, i) => n + seats(i), 0), CM = CMAX();
+    const places = (n, max) => [el('b', {}, String(n)), ' / ' + max, n > max ? el('span', { class: 'w' }, ' · ' + (n - max) + ' over') : n < max ? ' · ' + (max - n) + ' free' : null];
+    const stdSent = L.filter((i) => i.std_sent_at);
+    const sd = !stdSent.length ? ['not sent yet'] : [el('b', {}, String(stdSent.length)), ' sent · ' + L.filter((i) => i.std_opened_at || i.std_answer).length + ' opened · '
+      + L.filter((i) => i.std_answer === 'saved').length + ' received · ' + L.filter((i) => i.std_answer === 'cant' || i.std_answer === 'some').length + " can't"];
+    const inv = (set) => {
+      const sent = set.filter((i) => i.sent_at); if (!sent.length) return ['not sent yet'];
+      const people = set.flatMap((i) => i.guests);
+      return [el('b', {}, String(sent.length)), ' sent · ' + people.filter((g) => g.attending === true).length + ' coming · ' + people.filter((g) => g.attending === false).length + " can't · "
+        + sent.filter((i) => !i.responded_at).length + ' waiting'];
+    };
+    const diet = L.flatMap((i) => i.guests).filter((g) => g.attending && g.dietary).length;
+    const missing = L.filter((i) => issues(i).length).length;
+    const rows = [['Ceremony places', places(cerTaken, CM)], ['Total places', places(used, MAX)], ['Save the dates', sd],
+      ['Ceremony invitations', inv(cer)], ['Evening invitations', inv(eve)], ['Dietary needs', [el('b', {}, String(diet))]],
+      ['Missing details', [missing ? el('span', { class: 'w' }, missing + (missing === 1 ? ' household' : ' households')) : 'none']]];
+    $('sum-rows').innerHTML = ''; if ($('sum').classList.contains('collapsed')) { $('sum-tog').textContent = 'Show'; return; }
+    $('sum-tog').textContent = 'Hide';
+    rows.forEach(([k, v]) => $('sum-rows').append(el('div', { class: 'row' }, el('span', { class: 'k' }, k), el('span', { class: 'v' }, ...v))));
+  }
+  $('sum-tog').addEventListener('click', () => { const c = !$('sum').classList.contains('collapsed'); $('sum').classList.toggle('collapsed', c); pref('sum', c ? 'hidden' : 'shown'); render(); });
 
   function render() {
     const used = allocate();
-    const inv = data.invites.filter((i) => live(i) && !place[i.id].reserve);
-    const reserves = data.invites.filter((i) => live(i) && place[i.id].reserve).sort(byList);
-    const people = inv.flatMap((i) => i.guests);
-    const slots = inv.reduce((n, i) => n + i.guests.filter((g) => !g.is_plus_one).length + (i.plus_one_allowed ? 1 : 0), 0);
-    const coming = people.filter((g) => g.attending === true);
-    const cerInv = inv.filter((i) => i.invite_type === 'ceremony');
-    const cerTaken = cerInv.reduce((n, i) => n + seats(i), 0);
-    const cerYes = cerInv.flatMap((i) => i.guests).filter((g) => g.attending === true).length;
-    const stats = [
-      [used + ' / ' + MAX, 'places taken (replies + still invited)' + (used < MAX ? ' · ' + (MAX - used) + ' free' : used > MAX ? ' · ' + (used - MAX) + ' over' : '')],
-      [reserves.length ? reserves.length + ' (' + reserves.reduce((n, i) => n + seats(i), 0) + ' people)' : '0', 'reserve households' + (reserves[0] ? ' · next: ' + reserves[0].household_name : '')],
-      [slots, 'invited (incl. plus ones)'], [cerTaken + ' / ' + CMAX(), 'ceremony places (' + cerYes + ' confirmed) · ' + Math.max(0, CMAX() - cerTaken) + ' free' + (cerTaken > CMAX() ? ' · ' + (cerTaken - CMAX()) + ' over' : '')],
-      [inv.filter((i) => i.responded_at).length + ' / ' + inv.length, 'households replied'],
-      [coming.length, 'coming'],
-      [coming.filter((g) => g.age_group === 'adult').length + ' · ' + coming.filter((g) => g.age_group === 'teen').length + ' · ' + coming.filter((g) => g.age_group === 'child').length, 'adults · teens · children'],
-      [people.filter((g) => g.attending === false).length, "can't make it"],
-      [coming.filter((g) => g.dietary).length, 'dietary needs'],
-      [data.invites.filter((i) => live(i) && issues(i).length).length, 'households incomplete'],
-      [inv.filter((i) => i.std_answer === 'saved').length + ' · ' + inv.filter((i) => i.std_answer && i.std_answer !== 'saved').length + ' · ' + inv.filter((i) => i.std_sent_at && !i.std_answer).length,
-        'save the date: got it · can\'t/some can\'t · waiting']
-    ];
-    $('stats').innerHTML = ''; stats.forEach(([b, s]) => $('stats').append(el('div', { class: 'stat' }, el('b', {}, String(b)), el('span', {}, s))));
-
-    const q = $('f-search').value.trim().toLowerCase(), fp = $('f-priority').value, ft = $('f-type').value, fs = $('f-status').value, so = $('f-sort').value;
+    summary(used);
+    const runPos = {}; data.invites.filter(live).sort(runSort).forEach((i, k) => { runPos[i.id] = k + 1; });
+    const q = $('f-search').value.trim().toLowerCase(), so = $('f-sort').value, sh = $('f-show').value, out = $('f-out').checked;
     let rows = data.invites.filter((i) => {
-      if (fp && (i.priority || '') !== fp) return false;
-      const fsd = $('f-std').value, ss = stdStatus(i)[0];
-      if (fsd && !(fsd === ss || (fsd === 'waiting' && (ss === 'waiting' || ss === 'opened')))) return false;
-      if (ft && i.invite_type !== ft) return false;
-      const st = status(i)[0];
-      if (fs === 'notsent' && st !== '') return false;
-      if (fs === 'sent' && st !== 'sent') return false;
-      if (fs === 'opened' && st !== 'opened') return false;
-      if (fs === 'replied' && st !== 'replied') return false;
-      if (fs === 'check' && !needsCheck(i)) return false;
-      if ((fs === 'Doug' || fs === 'Paula') && i.sent_by !== fs) return false;
-      if (fs === 'nonumber' && contacts(i).length) return false;
-      if ((fs === 'post' || fs === 'person') && i.send_method !== fs) return false;
-      if (fs === 'incomplete' && (!live(i) || !issues(i).length)) return false;
-      if (fs === 'suggest' && !i.guests.some((g) => g.phone_suggest)) return false;
-      if (fs === 'invite' && (!live(i) || place[i.id].reserve)) return false;
-      if (fs === 'reserve' && !(live(i) && place[i.id].reserve)) return false;
-      if (fs === 'nextup' && !(live(i) && !place[i.id].reserve && i.invite_type === 'garden')) return false;
-      if (fs === 'promoted' && !i.promoted_at) return false;
-      if (fs === 'declined' && !i.declined_at) return false;
+      if (sh === 'x') { if (i.priority !== 'x') return false; }
+      else if (sh === 'declined') { if (!i.declined_at) return false; }
+      else if (sh === 'reserve') { if (!(live(i) && place[i.id].reserve)) return false; }
+      else {
+        if (!live(i) && !(isTest(i) && !i.declined_at)) return false;
+        if ((sh === 'ceremony' || sh === 'garden') && i.invite_type !== sh) return false;
+        if (sh === 'details' && !issues(i).length) return false;
+        if ((sh === 'Doug' || sh === 'Paula') && i.sent_by !== sh) return false;
+      }
+      if (out && !outstanding(i)) return false;
       if (q && !(i.household_name + ' ' + i.guests.map((g) => g.name).join(' ') + ' ' + (i.category || '')).toLowerCase().includes(q)) return false;
       return true;
     });
-    if (so === 'name') rows.sort((a, b) => a.household_name.localeCompare(b.household_name));
-    else if (so === 'recent') rows.sort((a, b) => String(b.responded_at || '').localeCompare(String(a.responded_at || '')));
-    else rows.sort((a, b) => (!!a.declined_at - !!b.declined_at) || byList(a, b));
-    $('count').textContent = rows.length + ' households';
+    if (so === 'name') rows.sort((a, b) => title(a)[0].localeCompare(title(b)[0]));
+    else if (so === 'recent') rows.sort((a, b) => String(b.responded_at || b.std_answered_at || '').localeCompare(String(a.responded_at || a.std_answered_at || '')));
+    else rows.sort(runSort);
+    $('count').textContent = rows.length + (rows.length === 1 ? ' household' : ' households');
+    $('m-n-list').textContent = data.invites.filter(live).length;
 
     const list = $('list'); list.innerHTML = '';
-    rows.forEach((i, k) => {
-      const [cls, label] = status(i);
-      const ppl = el('ul', { class: 'ppl' });
-      i.guests.forEach((g) => {
-        const mark = g.attending === true ? ['y', '✓'] : g.attending === false ? ['n', '✗'] : ['q', '·'];
-        ppl.append(el('li', {}, el('span', { class: mark[0] }, mark[1] + ' '), g.name,
-          g.is_plus_one ? ' (plus one)' : '', g.age_group !== 'adult' ? ' (' + g.age_group + (g.age != null ? ', ' + g.age : '') + ')' : '',
-          g.dietary ? el('span', { class: 'muted' }, ' · ' + g.dietary) : null));
-      });
-      if (i.plus_one_allowed && !i.guests.some((g) => g.is_plus_one)) ppl.append(el('li', { class: 'muted' }, '+ plus one allowed'));
-      const card = el('div', { class: 'hh' + (i.declined_at ? ' declined' : '') },
-        el('h3', {}, el('span', {}, i.household_name), el('span', { style: 'display:flex;gap:4px' }, live(i) && place[i.id].reserve ? el('span', { class: 'badge reserve' }, 'Reserve ' + place[i.id].pos) : null, needsCheck(i) ? el('span', { class: 'badge check' }, 'Check') : null, i.promoted_at && !i.declined_at ? el('span', { class: 'badge promoted' }, 'Promoted') : null, el('span', { class: 'badge ' + cls }, label))),
-        el('div', { class: 'meta' }, 'Round ' + (i.priority || '–') + ' · ' + (i.invite_type === 'ceremony' ? 'Ceremony' : 'Evening (garden party)') + (i.category ? ' · ' + i.category : '') + (i.sent_by ? ' · ' + i.sent_by + ' sends' : '') + ((i.send_method || 'whatsapp') !== 'whatsapp' ? ' · ' + HOW[i.send_method] : '')),
-        i.send_method === 'post' && i.address ? el('p', { class: 'muted', style: 'margin:0 0 10px;font-size:14px;white-space:pre-line' }, '\u{1F4EE} ' + i.address) : null,
-        ppl,
-        ...i.guests.filter((g) => g.phone_suggest).map((g) => el('div', { class: 'suggest' },
-          el('div', {}, el('b', {}, 'Mobile for ' + firstOf(g.name) + '? '), g.phone_suggest),
-          el('div', { class: 'muted', style: 'font-size:13px' }, g.suggest_note || ''),
-          el('div', { class: 'acts', style: 'margin-top:6px' },
-            el('button', { class: 'btn small', onclick: () => resolvePhone(g, true) }, '✓ Yes'),
-            el('button', { class: 'btn ghost small', onclick: () => resolvePhone(g, false) }, '✗ No'),
-            el('button', { class: 'btn ghost small', onclick: () => openEdit(i) }, 'Search contacts')))),
-        live(i) && issues(i).length ? el('p', { class: 'todo' }, 'To do: ' + issues(i).join(' · ')) : null,
-        (i.std_sent_at || i.std_answer) ? (() => { const [k, t] = stdStatus(i); const cant = i.guests.filter((g) => g.std_cant).map((g) => g.name);
-          return el('p', { class: 'stdline' }, 'Save the date: ', el('b', { class: k === 'saved' ? 'ok' : (k === 'cant' || k === 'some') ? 'no' : '' }, t),
-            cant.length && k === 'some' ? ' · can\'t come: ' + cant.join(', ') : null); })() : null,
-        i.message ? el('p', { style: 'margin:0 0 10px;font-style:italic' }, '“' + i.message + '”') : null,
-        i.notes ? el('p', { class: 'muted', style: 'margin:0 0 10px;font-size:14px' }, 'Note: ' + i.notes) : null,
-        el('div', { class: 'acts' },
-          el('button', { class: 'btn small', onclick: () => openEdit(i) }, 'Edit'),
-          el('button', { class: 'btn ghost small', onclick: () => share(i, 'copy') }, 'Copy link'),
-          i.responded_at ? el('button', { class: 'btn ghost small', onclick: () => showHistory(i) }, 'History') : null,
-          !i.declined_at && (i.std_answer === 'cant' || (i.responded_at && !i.guests.some((g) => g.attending))) ? el('button', { class: 'btn small', onclick: () => setDeclined(i, true) }, 'Mark declined') : null,
-          i.declined_at ? el('button', { class: 'btn ghost small', onclick: () => setDeclined(i, false) }, 'Undo declined') : null,
-          listFixed() && live(i) && place[i.id].reserve ? el('button', { class: 'btn small', onclick: () => setList(i, true) }, 'Move to invite list') : null,
-          listFixed() && live(i) && !place[i.id].reserve ? el('button', { class: 'btn ghost small', onclick: () => setList(i, false) }, 'Move to reserves') : null,
-          (live(i) || (/^test/.test(i.code || '') && !i.declined_at)) && i.invite_type === 'garden' ? el('button', { class: 'btn ghost small', onclick: () => promote(i, true) }, 'Promote to ceremony') : null,
-          i.promoted_at && !i.declined_at ? el('button', { class: 'btn ghost small', onclick: () => promote(i, false) }, 'Undo promotion') : null,
-          (live(i) && !place[i.id].reserve) || /^test/.test(i.code || '') ? el('button', { class: 'btn ghost small', onclick: () => copyStd(i) }, 'Copy save the date') : null,
-          /^test/.test(i.code || '') ? el('button', { class: 'btn ghost small', onclick: () => resetTest(i) }, 'Reset test') : null,
-          (i.send_method || 'whatsapp') !== 'whatsapp' ? null : mainContact(i)
-            ? el('button', { class: 'btn small', onclick: () => sendTo(i, mainContact(i)) }, 'WhatsApp ' + firstOf(mainContact(i).name))
-            : el('button', { class: 'btn ghost small', onclick: () => share(i, 'whatsapp') }, 'WhatsApp'),
-          el('button', { class: 'btn ghost small', onclick: () => markSent(i, !i.sent_at) }, i.sent_at ? 'Mark not sent' : (i.send_method === 'post' ? 'Mark posted' : i.send_method === 'person' ? 'Mark given' : 'Mark sent')),
-          so === 'priority' && k > 0 ? el('button', { class: 'btn ghost small', 'aria-label': 'Move up', onclick: () => move(i, rows[k - 1], 'before') }, '↑') : null,
-          so === 'priority' && k < rows.length - 1 ? el('button', { class: 'btn ghost small', 'aria-label': 'Move down', onclick: () => move(i, rows[k + 1], 'after') }, '↓') : null));
+    rows.forEach((i) => {
+      const [t, extra] = title(i), step = nextStep(i), iss = issues(i);
+      const blocked = step && !canSend(i);
+      let status = i.declined_at ? 'Declined' : !live(i) && !isTest(i) ? 'Not inviting' : place[i.id] && place[i.id].reserve ? 'Reserve ' + place[i.id].pos
+        : inviteText(i) || stdText(i);
+      const card = el('article', { class: 'hh' + (i.declined_at || (!live(i) && !isTest(i)) ? ' dim' : ''), onclick: () => openPanel(i) },
+        el('div', { class: 'nm' }, runPos[i.id] ? el('span', { class: 'pos' }, String(runPos[i.id])) : null, t, extra ? el('span', { class: 'more' }, ' + ' + extra) : null),
+        el('div', { class: 'type' }, i.invite_type === 'ceremony' ? 'Ceremony' : 'Evening', el('small', {}, seats(i) + (seats(i) === 1 ? ' place' : ' places'))),
+        el('div', { class: 'grp' }, i.category || ''), el('div', {}),
+        el('div', { class: 'st' },
+          blocked ? el('span', { class: 'w' }, iss[0] ? iss[0][0].toUpperCase() + iss[0].slice(1) : 'Missing details') : el('span', {}, status),
+          el('span', { class: 'acts' },
+            step && !blocked ? el('button', { class: 'nb', onclick: (e) => { e.stopPropagation(); doStep(i, step.what); } }, step.label) : null,
+            el('button', { class: 'dots', 'aria-label': 'More', onclick: (e) => { e.stopPropagation(); openPanel(i); } }, '⋯'))));
       list.append(card);
     });
   }
-  ['f-search', 'f-priority', 'f-type', 'f-status', 'f-std', 'f-sort'].forEach((id) => $(id).addEventListener('input', render));
-  $('reload').addEventListener('click', start);
+  ['f-search', 'f-sort', 'f-show'].forEach((id) => $(id).addEventListener('input', render));
+  $('f-out').addEventListener('change', () => { pref('out', $('f-out').checked ? '1' : '0'); render(); });
 
-  function replaceInvite(saved) { const k = data.invites.findIndex((x) => x.id === saved.id); if (k >= 0) data.invites[k] = saved; else data.invites.push(saved); render(); }
-  // Move a household next to its neighbour in the list (taking the neighbour's round), then save the whole order.
-  async function move(i, target, where) {
-    const full = data.invites.slice().sort(byList).filter((x) => x.id !== i.id);
-    const at = full.findIndex((x) => x.id === target.id) + (where === 'after' ? 1 : 0);
-    full.splice(at, 0, i);
-    const before = { priority: i.priority, orders: data.invites.map((x) => [x, x.list_order]) };
-    i.priority = target.priority; full.forEach((x, n) => { x.list_order = n + 1; });
-    render();
-    try { await rpc('admin_reorder', { p_ids: full.map((x) => x.id), p_id: i.id, p_priority: i.priority || '' }); }
-    catch (e) { i.priority = before.priority; before.orders.forEach(([x, o]) => { x.list_order = o; }); render(); toast('Could not save the new order'); }
+  // ---------- household panel ----------
+  let openId = null;
+  const dmy = (t) => t ? new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
+  function openPanel(i) {
+    const wasOpen = !$('shade').classList.contains('hidden');
+    openId = i.id;
+    const [t, extra] = title(i), step = nextStep(i), iss = issues(i), p = $('panel'); p.innerHTML = '';
+    const act = (label, fn, cls) => el('button', { class: 'act' + (cls ? ' ' + cls : ''), onclick: fn }, label);
+    const ppl = el('ul', { class: 'ppl' });
+    i.guests.forEach((g) => ppl.append(el('li', {},
+      el('span', {}, g.attending === true ? '✓ ' : g.attending === false ? '✗ ' : '', g.name, g.is_plus_one ? ' (plus one)' : '',
+        g.age_group !== 'adult' ? ' (' + g.age_group + (g.age != null ? ', ' + g.age : '') + ')' : '',
+        g.dietary ? el('span', { style: 'color:var(--soft)' }, ' · ' + g.dietary) : null, g.std_cant ? el('span', { style: 'color:var(--soft)' }, " · can't (save the date)") : null),
+      g.phone ? el('a', { href: 'tel:' + g.phone.replace(/\s/g, '') }, g.phone) : null)));
+    if (i.plus_one_allowed && !i.guests.some((g) => g.is_plus_one)) ppl.append(el('li', { style: 'color:var(--soft)' }, '+ plus one allowed'));
+    const stdLine = stdText(i) + (i.std_sent_at ? ' · sent ' + dmy(i.std_sent_at) : '');
+    const invLine = inviteText(i) ? inviteText(i) + (i.sent_at ? ' · sent ' + dmy(i.sent_at) : '') : 'Invitation not sent';
+    p.append(...[
+      el('h3', {}, t, extra ? el('span', { style: 'font-weight:400;color:var(--soft)' }, ' + ' + extra) : null),
+      el('div', { class: 'sub' }, [i.category, i.invite_type === 'ceremony' ? 'Ceremony' : 'Evening (garden party)', seats(i) + (seats(i) === 1 ? ' place' : ' places'),
+        i.sent_by ? i.sent_by + ' sends' : null, HOW[how(i)]].filter(Boolean).join(' · ')),
+      ppl,
+      how(i) === 'post' && i.address ? el('p', { class: 'note', style: 'white-space:pre-line' }, i.address) : null,
+      el('p', { class: 'note' }, stdLine), el('p', { class: 'note' }, invLine),
+      i.declined_at ? el('p', { class: 'note' }, 'Declined ' + dmy(i.declined_at)) : null,
+      i.promoted_at ? el('p', { class: 'note' }, 'Promoted to ceremony ' + dmy(i.promoted_at)) : null,
+      i.message ? el('p', { class: 'note', style: 'font-style:italic' }, '“' + i.message + '”') : null,
+      i.notes ? el('p', { class: 'note' }, 'Note: ' + i.notes) : null,
+      ...iss.map((x) => el('p', { class: 'todo' }, 'To do: ' + x)),
+      ...i.guests.filter((g) => g.phone_suggest).map((g) => el('div', { class: 'suggest' },
+        el('div', {}, el('b', {}, 'Mobile for ' + firstOf(g.name) + '? '), g.phone_suggest),
+        el('div', { style: 'font-size:13px;color:var(--soft)' }, g.suggest_note || ''),
+        el('div', { class: 'acts-row', style: 'margin-top:6px' },
+          el('button', { class: 'btn small', onclick: () => resolvePhone(g, true) }, '✓ Yes'),
+          el('button', { class: 'btn ghost small', onclick: () => resolvePhone(g, false) }, '✗ No')))),
+      el('div', { class: 'acts' },
+        step && canSend(i) ? act(step.label + (how(i) === 'whatsapp' ? ' to ' + firstOf(mainContact(i).name) : ''), () => doStep(i, step.what), 'main') : null,
+        act('Edit household', () => { closeLayer('shade'); setTimeout(() => openEdit(i), 0); }),
+        act('Copy invitation link', () => { navigator.clipboard.writeText(inviteMsg(i)).then(() => toast('Invitation message copied')); }),
+        act('Copy save the date', () => { navigator.clipboard.writeText(stdMsg(i)).then(() => toast('Save the date message copied')); }),
+        i.std_sent_at ? act('Mark save the date as not sent', () => markStd(i, false)) : act('Mark save the date as sent', () => markStd(i, true)),
+        i.sent_at ? act('Mark invitation as not sent', () => markSent(i, false)) : act('Mark invitation as sent', () => markSent(i, true)),
+        i.responded_at ? act('Reply history', () => showHistory(i)) : null,
+        live(i) && i.invite_type === 'garden' ? act('Promote to ceremony', () => promote(i, true)) : null,
+        i.promoted_at && !i.declined_at ? act('Move back to evening (garden party)', () => promote(i, false)) : null,
+        listFixed() && live(i) && place[i.id] && place[i.id].reserve ? act('Move onto the invite list', () => setList(i, true)) : null,
+        listFixed() && onList(i) ? act('Move to reserves', () => setList(i, false)) : null,
+        i.declined_at ? act('Undo declined', () => setDeclined(i, false)) : act('Mark declined', () => setDeclined(i, true), 'warn'),
+        isTest(i) ? act('Reset test', () => resetTest(i)) : null,
+        act('Close', () => closeLayer('shade')))].filter(Boolean));
+    if (!wasOpen) { openLayer('shade'); p.scrollTop = 0; }
   }
+  $('shade').addEventListener('click', (e) => { if (e.target === $('shade')) closeLayer('shade'); });
+
+  async function markStd(i, on) {
+    try { await rpc('admin_mark_std_sent', { p_list: [i.id], p_sent: on }); i.std_sent_at = on ? (i.std_sent_at || new Date().toISOString()) : null; render(); openPanel(i); toast(on ? 'Marked as sent' : 'Marked as not sent'); }
+    catch (e) { toast('Could not update'); }
+  }
+  async function markSent(i, sent) { try { replaceInvite(await rpc('admin_mark_sent', { p_id: i.id, p_sent: sent })); toast(sent ? 'Marked as sent' : 'Marked as not sent'); } catch (e) { toast('Could not update'); } }
   async function resolvePhone(g, accept) {
-    const inv = data.invites.find((x) => x.guests.includes(g));
     try { replaceInvite(await rpc('admin_resolve_phone', { p_guest: g.id, p_accept: accept })); toast(accept ? 'Mobile saved' : 'Suggestion removed'); }
     catch (e) { toast('Could not save'); }
   }
-  // Phone contacts (both phones), loaded once for searching in the edit screen.
+  async function setDeclined(i, on) {
+    if (on && !confirm('Mark ' + title(i)[0] + ' as declined? They drop out of all counts and send lists.')) return;
+    try { replaceInvite(await rpc('admin_set_declined', { p_id: i.id, p_declined: on })); toast(on ? 'Marked declined' : 'Back on the list'); }
+    catch (e) { toast('Could not update: ' + (e.message || e)); }
+  }
+  async function promote(i, on) {
+    const q = on ? 'Promote ' + title(i)[0] + ' to the ceremony? Their invitation link will show the ceremony card and times.'
+                 : 'Move ' + title(i)[0] + ' back to the evening (garden party)?';
+    if (!confirm(q)) return;
+    try { replaceInvite(await rpc('admin_promote', { p_id: i.id, p_promote: on })); toast(on ? 'Promoted to ceremony' : 'Moved back to the evening (garden party)'); }
+    catch (e) { toast('Could not update: ' + (e.message || e)); }
+  }
+  async function resetTest(i) {
+    if (!confirm('Reset ' + i.household_name + ' to "not sent, not replied"?')) return;
+    try { replaceInvite(await rpc('admin_reset_test', { p_id: i.id })); toast('Test reset'); }
+    catch (e) { toast('Could not reset: ' + (e.message || e)); }
+  }
+  async function setList(i, on) {
+    if (!confirm(on ? 'Move ' + title(i)[0] + ' onto the invite list?' : 'Move ' + title(i)[0] + ' to the reserves?')) return;
+    try { await rpc('admin_set_list', { p_list: [i.id], p_on: on }); i.on_list = on; render(); openPanel(i); toast(on ? 'On the invite list' : 'Moved to reserves'); }
+    catch (e) { toast('Could not update: ' + (e.message || e)); }
+  }
+  function renderLock() {
+    const f = listFixed();
+    $('lock-state').textContent = f ? 'Locked: households only move on or off the invite list when you choose Move onto the invite list / Move to reserves.'
+      : 'Not locked: the invite list is worked out from the order and the ' + MAX + ' places, so it changes as you edit.';
+    $('lock-btn').textContent = f ? 'Unlock invite list' : 'Lock invite list as it is now';
+  }
+  $('lock-btn').addEventListener('click', async () => {
+    const f = listFixed();
+    if (!confirm(f ? 'Unlock the invite list?' : 'Lock the invite list as it is now?')) return;
+    allocate();
+    const ids = f ? data.invites.map((i) => i.id) : data.invites.filter((i) => onList(i)).map((i) => i.id);
+    try { await rpc('admin_set_list', { p_list: ids, p_on: f ? null : true }); data.invites.forEach((i) => { if (f) i.on_list = null; else if (ids.includes(i.id)) i.on_list = true; }); renderLock(); toast(f ? 'Unlocked' : 'Locked'); }
+    catch (e) { toast('Could not update: ' + (e.message || e)); }
+  });
+
+  // ---------- phone contacts ----------
   let phoneBook = null;
   async function loadPhoneBook() {
     if (phoneBook) return phoneBook;
@@ -543,7 +712,7 @@
   function contactSearch(phoneInput, guestName) {
     const box = el('input', { type: 'search', placeholder: 'Search your phone contacts…', autocomplete: 'off' });
     const hits = el('ul', { class: 'hits hidden' });
-    const show = async () => {
+    const showHits = async () => {
       const q = simplify(box.value); const book = await loadPhoneBook();
       hits.innerHTML = '';
       if (q.length < 2) { hits.classList.add('hidden'); return; }
@@ -551,20 +720,19 @@
       const found = book.filter((c) => { const n = simplify(c.name); return words.every((w) => n.includes(w)); }).slice(0, 8);
       if (!found.length) hits.append(el('li', {}, el('button', { type: 'button', disabled: true }, 'No contacts match')));
       found.forEach((c) => hits.append(el('li', {}, el('button', { type: 'button', onclick: () => { phoneInput.value = c.phone; hits.classList.add('hidden'); box.value = ''; toast('Mobile filled in: tap Save'); } },
-        c.name + ' · ' + c.phone + (c.owner ? ' (' + c.owner + '\u2019s phone)' : '')))));
+        c.name + ' · ' + c.phone + (c.owner ? ' (' + c.owner + '’s phone)' : '')))));
       hits.classList.remove('hidden');
     };
-    box.addEventListener('input', show);
-    box.value = ''; if (guestName) box.placeholder = 'Search contacts, e.g. ' + firstOf(guestName);
+    box.addEventListener('input', showHits);
+    if (guestName) box.placeholder = 'Search contacts, e.g. ' + firstOf(guestName);
     return el('div', { style: 'grid-column:1 / -1;margin-top:-4px' }, box, hits);
   }
-  const digits = (p) => waNum(p);
   function renderBook() {
     const used = new Map();
-    data.invites.forEach((i) => i.guests.forEach((g) => { const d = digits(g.phone); if (d) used.set(d, (used.get(d) ? used.get(d) + ', ' : '') + g.name); }));
+    data.invites.forEach((i) => i.guests.forEach((g) => { const d = waNum(g.phone); if (d) used.set(d, (used.get(d) ? used.get(d) + ', ' : '') + g.name); }));
     const q = simplify($('b-q').value), qd = $('b-q').value.replace(/\D/g, ''), f = $('b-f').value;
     const list = (phoneBook || []).filter((c) => {
-      const u = used.get(digits(c.phone));
+      const u = used.get(waNum(c.phone));
       if (f === 'used' && !u) return false; if (f === 'unused' && u) return false;
       if ((f === 'Doug' || f === 'Paula') && c.owner !== f && c.owner !== 'Both') return false;
       if (q && !simplify(c.name).includes(q) && !(qd.length >= 3 && c.phone.replace(/\D/g, '').includes(qd))) return false;
@@ -573,44 +741,16 @@
     $('b-count').textContent = list.length + ' contacts';
     const ul = $('b-list'); ul.innerHTML = '';
     list.forEach((c) => {
-      const u = used.get(digits(c.phone));
-      ul.append(el('li', { style: 'padding:8px 0;border-bottom:1px solid var(--line)' },
+      const u = used.get(waNum(c.phone));
+      ul.append(el('li', { style: 'padding:8px 0;border-bottom:1px solid var(--cream-line)' },
         el('div', { style: 'display:flex;justify-content:space-between;gap:8px' }, el('b', {}, c.name), el('a', { href: 'tel:' + c.phone }, c.phone)),
-        el('div', { style: 'font-size:13px' }, el('span', { class: 'muted' }, (c.owner === 'Both' ? 'Both phones' : c.owner + '\u2019s phone')),
+        el('div', { style: 'font-size:13px' }, el('span', { style: 'color:var(--soft)' }, (c.owner === 'Both' ? 'Both phones' : c.owner + '’s phone')),
           u ? el('span', { style: 'color:var(--good)' }, ' · ✓ ' + u) : null)));
     });
   }
-  $('show-book').addEventListener('click', async () => { $('book').classList.remove('hidden'); $('b-list').innerHTML = '<li class="muted">Loading…</li>'; await loadPhoneBook(); renderBook(); });
-  $('b-close').addEventListener('click', () => $('book').classList.add('hidden'));
+  $('show-book').addEventListener('click', async () => { $('drawer').classList.add('hidden'); history.replaceState({ view }, ''); openLayer('book'); $('b-list').innerHTML = '<li>Loading…</li>'; await loadPhoneBook(); renderBook(); });
+  $('b-close').addEventListener('click', () => closeLayer('book'));
   ['b-q', 'b-f'].forEach((id) => $(id).addEventListener('input', renderBook));
-  async function setDeclined(i, on) {
-    if (on && !confirm('Mark ' + i.household_name + ' as declined? They drop to the bottom and out of all counts and send lists.')) return;
-    try { replaceInvite(await rpc('admin_set_declined', { p_id: i.id, p_declined: on })); toast(on ? 'Marked declined' : 'Back on the list'); }
-    catch (e) { toast('Could not update: ' + (e.message || e)); }
-  }
-  async function promote(i, on) {
-    const q = on ? 'Promote ' + i.household_name + ' to the ceremony? Their invitation link will show the ceremony card and times.'
-                 : 'Move ' + i.household_name + ' back to the evening (garden party)?';
-    if (!confirm(q)) return;
-    try { replaceInvite(await rpc('admin_promote', { p_id: i.id, p_promote: on })); toast(on ? 'Promoted to ceremony' : 'Moved back to the evening (garden party)'); }
-    catch (e) { toast('Could not update: ' + (e.message || e)); }
-  }
-  async function resetTest(i) {
-    if (!confirm('Reset ' + i.household_name + ' to "not replied"?')) return;
-    try { replaceInvite(await rpc('admin_reset_test', { p_id: i.id })); toast('Test reset'); }
-    catch (e) { toast('Could not reset: ' + (e.message || e)); }
-  }
-  async function markSent(i, sent) { replaceInvite(await rpc('admin_mark_sent', { p_id: i.id, p_sent: sent })); }
-  function sendTo(i, g) {
-    window.open('https://wa.me/' + waNum(g.phone) + '?text=' + encodeURIComponent(inviteMsg(householdHello(i) || firstOf(g.name), i)), '_blank', 'noopener');
-    if (!i.sent_at) markSent(i, true).catch(() => {});
-  }
-  function share(i, how) {
-    const msg = 'Hi ' + firstNames(i) + '! We’re getting married 🥂 Here’s your invitation, with all the details and where to RSVP:\n' + link(i) + '\n\nPaula & Doug x';
-    if (how === 'copy') { navigator.clipboard.writeText(msg).then(() => toast('Message and link copied')); }
-    else { window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank', 'noopener'); }
-    if (!i.sent_at) markSent(i, true).catch(() => {});
-  }
 
   // ---------- edit ----------
   function guestRow(g) {
@@ -630,9 +770,9 @@
         el('label', { class: 'field' }, el('span', {}, 'Dietary'), diet),
         ...(g.is_plus_one ? [] : (() => { const ph = el('input', { type: 'tel', value: g.phone || '', 'data-k': 'phone', placeholder: g.phone_suggest ? 'Suggested: ' + g.phone_suggest : '' });
           return [el('label', { class: 'field', style: 'grid-column:1 / -1' }, el('span', {}, 'Mobile (for WhatsApp)'), ph), contactSearch(ph, g.name)]; })())),
-      el('div', { class: 'acts' },
-        g.is_plus_one ? null : el('button', { type: 'button', class: 'btn ghost small', 'aria-label': 'Move up', onclick: () => { const p = row.previousElementSibling; if (p) row.parentNode.insertBefore(row, p); } }, '↑ Move up'),
-        g.is_plus_one ? null : el('button', { type: 'button', class: 'btn ghost small', 'aria-label': 'Move down', onclick: () => { const n = row.nextElementSibling; if (n && !n.dataset.po) row.parentNode.insertBefore(n, row); } }, '↓ Move down'),
+      el('div', { class: 'acts-row' },
+        g.is_plus_one ? null : el('button', { type: 'button', class: 'btn ghost small', onclick: () => { const p = row.previousElementSibling; if (p) row.parentNode.insertBefore(row, p); } }, '↑ Move up'),
+        g.is_plus_one ? null : el('button', { type: 'button', class: 'btn ghost small', onclick: () => { const n = row.nextElementSibling; if (n && !n.dataset.po) row.parentNode.insertBefore(n, row); } }, '↓ Move down'),
         el('button', { type: 'button', class: 'btn ghost small', onclick: () => row.remove() }, 'Remove')));
     return row;
   }
@@ -645,21 +785,20 @@
     if (!cs.length) mm.append(el('option', { value: '' }, 'Nobody has a mobile yet'));
     cs.forEach((g) => mm.append(el('option', { value: g.id }, g.name + ' · ' + g.phone)));
     const mc = mainContact(editing); mm.value = mc ? mc.id : '';
-    $('m-how').value = editing.send_method || 'whatsapp'; $('m-addr').value = editing.address || ''; syncHow();
+    $('m-how').value = how(editing); $('m-addr').value = editing.address || ''; syncHow();
     $('m-guests').innerHTML = ''; (editing.guests.length ? editing.guests : [{}]).forEach((g) => $('m-guests').append(guestRow(g)));
-    $('m-link').textContent = i ? 'Link: ' + link(i) : '';
+    $('m-link').textContent = i ? 'Invitation: ' + link(i) + '  ·  Save the date: ' + stdLink(i) : '';
     $('m-delete').classList.toggle('hidden', !i);
-    $('modal').classList.remove('hidden'); $('m-name').focus();
+    openLayer('modal'); $('modal').scrollTop = 0;
   }
   function syncHow() {
-    const how = $('m-how').value;
-    $('m-addr-wrap').classList.toggle('hidden', how !== 'post');
-    $('m-main-wrap').classList.toggle('hidden', how !== 'whatsapp');
+    const h = $('m-how').value;
+    $('m-addr-wrap').classList.toggle('hidden', h !== 'post');
+    $('m-main-wrap').classList.toggle('hidden', h !== 'whatsapp');
   }
   $('m-how').addEventListener('change', syncHow);
-  $('add').addEventListener('click', () => openEdit(null));
   $('m-addguest').addEventListener('click', () => $('m-guests').append(guestRow({})));
-  $('m-cancel').addEventListener('click', () => $('modal').classList.add('hidden'));
+  $('m-cancel').addEventListener('click', () => closeLayer('modal'));
   $('m-save').addEventListener('click', async () => {
     const guests = [...$('m-guests').children].map((r) => {
       const v = (k) => { const e = r.querySelector('[data-k=' + k + ']'); return e ? e.value.trim() : ''; };
@@ -674,7 +813,7 @@
         invite_type: $('m-type').value, category: $('m-category').value.trim(), plus_one_allowed: $('m-plusone').checked,
         notes: $('m-notes').value.trim(), sent_by: $('m-sentby').value, main_contact: $('m-main').value,
         send_method: $('m-how').value, address: $('m-addr').value.trim(), guests } }));
-      $('modal').classList.add('hidden'); toast('Saved');
+      closeLayer('modal'); toast('Saved');
     } catch (e) { toast('Could not save'); } finally { btn.disabled = false; }
   });
   $('m-delete').addEventListener('click', async () => {
@@ -683,48 +822,45 @@
     if (btn.dataset.confirm !== '1') { btn.dataset.confirm = '1'; btn.textContent = 'Tap again to delete'; setTimeout(() => { btn.dataset.confirm = ''; btn.textContent = 'Delete'; }, 3000); return; }
     await rpc('admin_delete_invite', { p_id: editing.id });
     data.invites = data.invites.filter((x) => x.id !== editing.id); render();
-    $('modal').classList.add('hidden'); btn.dataset.confirm = ''; btn.textContent = 'Delete'; toast('Deleted');
-  });
-  $('s-save').addEventListener('click', async () => {
-    await rpc('admin_save_settings', { p: { gift_account_name: $('s-name').value.trim(), gift_sort_code: $('s-sort').value.trim(), gift_account_number: $('s-acc').value.trim() } });
-    toast('Bank details saved');
+    closeLayer('modal'); btn.dataset.confirm = ''; btn.textContent = 'Delete'; toast('Deleted');
   });
 
+  // ---------- settings ----------
+  $('s-save').addEventListener('click', async () => {
+    try { await rpc('admin_save_settings', { p: { gift_account_name: $('s-name').value.trim(), gift_sort_code: $('s-sort').value.trim(), gift_account_number: $('s-acc').value.trim() } }); toast('Bank details saved'); }
+    catch (e) { toast('Could not save'); }
+  });
   $('s-cermax-save').addEventListener('click', async () => {
     const v = String(parseInt($('s-cermax').value, 10) || '');
     if (!v) return toast('Enter a number');
-    try { await rpc('admin_save_settings', { p: { ceremony_max: v } }); data.settings.ceremony_max = v; render(); toast('Saved'); } catch (e) { toast('Could not save'); }
+    try { await rpc('admin_save_settings', { p: { ceremony_max: v } }); data.settings.ceremony_max = v; toast('Saved'); } catch (e) { toast('Could not save'); }
   });
   $('s-allergy-save').addEventListener('click', async () => {
     const t = $('s-allergy').value.trim(); if (!t) { toast('Wording can’t be empty'); return; }
-    await rpc('admin_save_settings', { p: { rsvp_allergy_text: t } }); data.settings.rsvp_allergy_text = t;
-    toast('Wording saved');
+    try { await rpc('admin_save_settings', { p: { rsvp_allergy_text: t } }); data.settings.rsvp_allergy_text = t; toast('Wording saved'); } catch (e) { toast('Could not save'); }
   });
 
   // ---------- reply history ----------
   const when = (t) => new Date(t).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   async function showHistory(i) {
-    $('h-title').textContent = i.household_name; $('h-list').innerHTML = '<p class="muted">Loading…</p>'; $('hist').classList.remove('hidden');
+    $('h-title').textContent = title(i)[0]; $('h-list').innerHTML = '<p>Loading…</p>'; openLayer('hist');
     const log = await rpc('admin_rsvp_log', { p_invite: i.id });
     $('h-list').innerHTML = '';
-    if (!log.length) { $('h-list').append(el('p', { class: 'muted' }, 'No replies logged yet. (Replies sent before the log was switched on aren’t included.)')); return; }
-    log.forEach((e, k) => $('h-list').append(el('div', { class: 'hh', style: 'margin:0 0 10px' },
-      el('div', { style: 'display:flex;justify-content:space-between;gap:8px' }, el('b', {}, when(e.submitted_at)), k === 0 ? el('span', { class: 'badge replied' }, 'Latest') : null),
+    if (!log.length) { $('h-list').append(el('p', { style: 'color:var(--soft)' }, 'No replies logged yet.')); return; }
+    log.forEach((e, k) => $('h-list').append(el('div', { class: 'hist-item' },
+      el('div', { style: 'display:flex;justify-content:space-between;gap:8px' }, el('b', {}, when(e.submitted_at)), k === 0 ? el('span', { style: 'color:var(--soft);font-size:13px' }, 'Latest') : null),
       el('ul', { style: 'margin:6px 0;padding-left:18px' }, ...e.answers.guests.map((g) => el('li', {},
         g.name + (g.plus_one ? ' (plus one)' : '') + ': ' + (g.attending ? 'coming' : "can't come") + (g.attending ? ' · ' + (g.dietary ? 'Dietary: ' + g.dietary : 'no dietary needs') : '')))),
       e.answers.message ? el('p', { style: 'margin:0 0 6px;font-style:italic' }, '“' + e.answers.message + '”') : null,
-      el('p', { class: 'muted', style: 'margin:0;font-size:13px' }, e.confirm_text ? (e.confirmed ? '☑ Ticked: ' : '☐ Not ticked: ') + e.confirm_text : 'No one coming, so no allergy confirmation needed.'))));
+      el('p', { style: 'margin:0;font-size:13px;color:var(--soft)' }, e.confirm_text ? (e.confirmed ? '☑ Ticked: ' : '☐ Not ticked: ') + e.confirm_text : 'No one coming, so no allergy confirmation needed.'))));
   }
-  $('h-close').addEventListener('click', () => $('hist').classList.add('hidden'));
+  $('h-close').addEventListener('click', () => closeLayer('hist'));
 
   // ---------- running order ----------
   // Households in the plan: everyone except round x (not inviting) and declined. Saved order first, then rounds.
-  const inRun = (i) => live(i);
-  const runSort = (a, b) => (a.run_order ?? 1e6) - (b.run_order ?? 1e6) || byList(a, b);
-  let picked = null;
-  function runList() { return data.invites.filter(inRun).sort(runSort); }
+  let picked = null, runTimer = null, lastMoved = null;
+  function runList() { return data.invites.filter(live).sort(runSort); }
   // Save shortly after the last move, so tapping ↓ ten times sends one save, in order.
-  let runTimer = null, lastMoved = null;
   function saveRun(list, keep, mark) {
     list.forEach((i, k) => { i.run_order = k + 1; });
     // keep the moved household's box where it was on screen; the others slide around it
@@ -750,8 +886,9 @@
       if (zone === 'cer') { cerN++; cerP += n; } else if (zone === 'eve') { eveN++; eveP += n; } else { resN++; resP += n; }
       const isCer = i.invite_type === 'ceremony';
       const flag = zone === 'cer' && !isCer ? 'Evening now – above the ceremony line' : zone !== 'cer' && isCer ? 'Ceremony now – below the ceremony line' : '';
-      const up = el('button', { class: 'btn ghost small', 'aria-label': 'Move up', onclick: (e) => { e.stopPropagation(); if (k) { const l = runList(); [l[k - 1], l[k]] = [l[k], l[k - 1]]; saveRun(l, i.id); } } }, '↑');
-      const dn = el('button', { class: 'btn ghost small', 'aria-label': 'Move down', onclick: (e) => { e.stopPropagation(); const l = runList(); if (k < l.length - 1) { [l[k + 1], l[k]] = [l[k], l[k + 1]]; saveRun(l, i.id); } } }, '↓');
+      const up = el('button', { 'aria-label': 'Move up', onclick: (e) => { e.stopPropagation(); if (k) { const l = runList(); [l[k - 1], l[k]] = [l[k], l[k - 1]]; saveRun(l, i.id); } } }, '↑');
+      const dn = el('button', { 'aria-label': 'Move down', onclick: (e) => { e.stopPropagation(); const l = runList(); if (k < l.length - 1) { [l[k + 1], l[k]] = [l[k], l[k + 1]]; saveRun(l, i.id); } } }, '↓');
+      const [t, extra] = title(i);
       const row = el('div', { class: 'run-row' + (picked === i.id ? ' picked' : '') + (lastMoved === i.id ? ' moved' : ''), 'data-id': i.id, onclick: () => {
           if (!picked) { picked = i.id; renderRun(); return; }
           if (picked === i.id) { picked = null; renderRun(); return; }
@@ -759,79 +896,35 @@
           l.splice(l.findIndex((x) => x.id === i.id) + (from < k ? 1 : 0), 0, mv); picked = null; saveRun(l, i.id, mv.id);
         } },
         el('span', { class: 'pos' }, String(k + 1)),
-        el('div', {}, el('div', { class: 'nm' }, i.household_name),
-          el('div', { class: 'sub' }, n + (n === 1 ? ' place' : ' places') + ' · ' + (isCer ? 'Ceremony' : 'Evening (garden party)') + (i.priority ? ' · round ' + i.priority : '') + ' · running total ' + cum),
-          flag ? el('div', { class: 'flag' }, '⚠ ' + flag) : null),
+        el('div', {}, el('div', { class: 'nm' }, t, extra ? el('span', { style: 'font-weight:400;color:var(--soft)' }, ' + ' + extra) : null),
+          el('div', { class: 'sub' }, (i.category ? i.category + ' · ' : '') + (isCer ? 'Ceremony' : 'Evening') + ' · ' + n + (n === 1 ? ' place' : ' places') + ' · total ' + cum),
+          flag ? el('div', { class: 'flag' }, flag) : null),
         el('div', { class: 'mv' }, up, dn));
       wrap.append(row);
     });
     if (!cerDrawn) wrap.append(el('div', { class: 'run-line cer' }, 'Ceremony line · ' + CM));
     if (!totDrawn) wrap.append(el('div', { class: 'run-line tot' }, 'Total line · ' + MAX));
     $('run-sum').innerHTML = '';
-    $('run-sum').append(el('div', {}, el('b', {}, 'Ceremony: '), cerP + ' people (' + cerN + ' households)', el('span', { class: 'muted' }, ' · '),
-      el('b', {}, 'Evening (garden party): '), eveP + ' (' + eveN + ')', el('span', { class: 'muted' }, ' · '), el('b', {}, 'Reserves: '), resP + ' (' + resN + ')'),
-      ...(picked ? [el('div', { style: 'color:var(--bad)' }, 'Now tap where ' + (data.invites.find((x) => x.id === picked) || {}).household_name + ' should go (tap it again to cancel)')] : []));
+    [['Ceremony', cerP + ' people · ' + cerN + ' households'], ['Evening (garden party)', eveP + ' people · ' + eveN + ' households'], ['Reserves', resP + ' people · ' + resN + ' households']]
+      .forEach(([k, v]) => $('run-sum').append(el('div', { class: 'row' }, el('span', { class: 'k' }, k), el('span', { class: 'v' }, v))));
+    if (picked) $('run-sum').append(el('div', { class: 'row' }, el('span', { class: 'w' }, 'Now tap where ' + title(data.invites.find((x) => x.id === picked) || { guests: [], household_name: '' })[0] + ' should go (tap it again to cancel)')));
   }
-  $('run-open').addEventListener('click', () => { picked = null; lastMoved = null; ['list', 'stats'].forEach((id) => $(id).classList.add('hidden')); document.querySelectorAll('.filters, .bar, details').forEach((e) => e.classList.add('hidden')); $('run').classList.remove('hidden'); renderRun(); window.scrollTo(0, 0); });
-  $('run-close').addEventListener('click', () => { $('run').classList.add('hidden'); ['list', 'stats'].forEach((id) => $(id).classList.remove('hidden')); document.querySelectorAll('.filters, .bar, details').forEach((e) => e.classList.remove('hidden')); render(); });
 
-  // ---------- save the date texts ----------
-  function copyStd(i) {
-    const g = stdLead(i) || mainContact(i) || i.guests.find((x) => !x.is_plus_one);
-    if (!g) return toast('No one in this household');
-    navigator.clipboard.writeText(stdMsg(i, g)).then(() => toast('Save the date copied for ' + firstOf(g.name)));
-  }
-  let stdBatch = [];
-  const download = (name, lines, bom = true) => { const a = el('a', { href: URL.createObjectURL(new Blob([(bom ? '\ufeff' : '') + lines.join('\r\n')], { type: 'text/csv' })), download: name }); document.body.append(a); a.click(); a.remove(); };
+  // ---------- exports ----------
   const csvEsc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  function openStd() {
-    allocate();
-    const list = data.invites.filter((i) => live(i) && !place[i.id].reserve && !i.std_sent_at).sort(byList);
-    stdBatch = list.filter((i) => stdLead(i));
-    const without = list.filter((i) => !stdLead(i));
-    const msgs = stdBatch.map((i) => stdMsg(i, stdLead(i)));
-    const segs = msgs.reduce((n, m) => n + segments(m), 0), longest = Math.max(0, ...msgs.map((m) => m.length));
-    const already = data.invites.filter((i) => live(i) && !place[i.id].reserve && i.std_sent_at).length;
-    $('sd-sum').innerHTML = '';
-    [[stdBatch.length + ' households to text', ' (one text each, to the household lead)'],
-     [without.length + ' households without a mobile', without.length ? ' – download their list and contact them another way' : ''],
-     [already + ' already sent', ' (not included again)'],
-     ['About ' + segs + ' text credits', ' (each message is ' + (msgs.some((m) => segments(m) > 2) ? 'up to ' + longest + ' characters – ' + msgs.filter((m) => segments(m) > 2).length + ' will cost 3 credits because of long names' : '2 credits') + ')']]
-      .forEach(([b, t]) => $('sd-sum').append(el('p', {}, el('b', {}, b), t)));
-    $('sd-prev').textContent = stdBatch.length ? msgs[0] : 'No households left to text.';
-    $('sd-csv').disabled = $('sd-mark').disabled = !stdBatch.length;
-    $('sd-nomob').disabled = !without.length;
-    $('sd-nomob').onclick = () => download('save-the-date-no-mobile.csv', [['Round', 'Household', 'People', 'Phone(s)', 'Sends', 'Address', 'Link'].map(csvEsc).join(',')]
-      .concat(without.map((i) => [i.priority, i.household_name, i.guests.filter((g) => !g.is_plus_one).map((g) => g.name).join(', '), i.guests.map((g) => g.phone).filter(Boolean).join(' / '), i.sent_by, i.address, stdLink(i)].map(csvEsc).join(','))));
-    $('stdm').classList.remove('hidden');
-  }
-  $('std-open').addEventListener('click', openStd);
-  $('sd-close').addEventListener('click', () => $('stdm').classList.add('hidden'));
-  $('sd-csv').addEventListener('click', () => download('save-the-date-texts.csv', [['Phone', 'Name', 'Message', 'Household'].map(csvEsc).join(',')]
-    .concat(stdBatch.map((i) => { const g = stdLead(i); return [waNum(g.phone), firstOf(g.name), stdMsg(i, g), i.household_name].map(csvEsc).join(','); })), false));
-  $('sd-mark').addEventListener('click', async () => {
-    if (!confirm('Mark ' + stdBatch.length + ' households as save the date sent? Only do this once the texts have gone.')) return;
-    try { await rpc('admin_mark_std_sent', { p_list: stdBatch.map((i) => i.id), p_sent: true }); toast(stdBatch.length + ' marked as sent'); $('stdm').classList.add('hidden'); await start(); }
-    catch (e) { toast('Could not mark them: ' + (e.message || e)); }
-  });
-
-  // ---------- export ----------
+  const download = (name, lines) => { const a = el('a', { href: URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv' })), download: name }); document.body.append(a); a.click(); a.remove(); };
   $('export-log').addEventListener('click', async () => {
     const log = await rpc('admin_rsvp_log', {});
-    const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-    const lines = [['Submitted', 'Household', 'Name', 'Plus one', 'Reply', 'Dietary', 'Message', 'Allergy box ticked', 'Wording agreed to'].map(esc).join(',')];
+    const lines = [['Submitted', 'Household', 'Name', 'Plus one', 'Reply', 'Dietary', 'Message', 'Allergy box ticked', 'Wording agreed to'].map(csvEsc).join(',')];
     log.slice().reverse().forEach((e) => e.answers.guests.forEach((g) => lines.push([when(e.submitted_at), e.household, g.name, g.plus_one ? 'yes' : '',
-      g.attending ? 'Coming' : "Can't come", g.dietary, e.answers.message, e.confirm_text ? (e.confirmed ? 'Yes' : 'No') : 'n/a (no one coming)', e.confirm_text].map(esc).join(','))));
-    const a = el('a', { href: URL.createObjectURL(new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv' })), download: 'rsvp-log.csv' });
-    document.body.append(a); a.click(); a.remove();
+      g.attending ? 'Coming' : "Can't come", g.dietary, e.answers.message, e.confirm_text ? (e.confirmed ? 'Yes' : 'No') : 'n/a (no one coming)', e.confirm_text].map(csvEsc).join(','))));
+    download('rsvp-log.csv', lines);
   });
   $('export').addEventListener('click', () => {
-    const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-    const lines = [['Round', 'Household', 'Invite', 'Category', 'Sends', 'How', 'Address', 'Name', 'Mobile', 'Plus one', 'Age group', 'Age', 'Reply', 'Dietary', 'Message', 'Replied at', 'Link'].map(esc).join(',')];
-    data.invites.forEach((i) => i.guests.forEach((g) => lines.push([i.priority, i.household_name, i.invite_type, i.category, i.sent_by, HOW[i.send_method || 'whatsapp'], i.address, g.name, g.phone, g.is_plus_one ? 'yes' : '', g.age_group, g.age,
-      g.attending == null ? 'No reply' : g.attending ? 'Coming' : "Can't make it", g.dietary, i.message, i.responded_at, link(i)].map(esc).join(','))));
-    const a = el('a', { href: URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv' })), download: 'wedding-guests.csv' });
-    document.body.append(a); a.click(); a.remove();
+    const lines = [['Order', 'Household', 'Invite', 'Group', 'Sends', 'How', 'Address', 'Name', 'Mobile', 'Plus one', 'Age group', 'Age', 'Save the date', 'Reply', 'Dietary', 'Message', 'Replied at', 'Link'].map(csvEsc).join(',')];
+    data.invites.slice().sort(runSort).forEach((i) => i.guests.forEach((g) => lines.push([i.run_order, title(i)[0], i.invite_type === 'ceremony' ? 'Ceremony' : 'Evening', i.category, i.sent_by, HOW[how(i)], i.address, g.name, g.phone, g.is_plus_one ? 'yes' : '', g.age_group, g.age,
+      stdText(i), g.attending == null ? 'No reply' : g.attending ? 'Coming' : "Can't make it", g.dietary, i.message, i.responded_at, link(i)].map(csvEsc).join(','))));
+    download('wedding-guests.csv', lines);
   });
 
   session = load();
