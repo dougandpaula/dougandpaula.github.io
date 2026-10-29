@@ -1,0 +1,14 @@
+{
+  "name": "Wedding admin",
+  "short_name": "Wedding",
+  "start_url": "admin.html",
+  "scope": "./",
+  "display": "browser",
+  "background_color": "#151413",
+  "theme_color": "#151413",
+  "icons": [
+    { "src": "icons/w-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/w-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/w-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
