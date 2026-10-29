@@ -134,6 +134,8 @@
   .td .ts { font-size: 13px; color: var(--soft); margin-top: 2px; }
   .td .tc { font-size: 13px; margin-top: 2px; }
   .td-h { font-family: var(--caps); text-transform: uppercase; letter-spacing: .14em; font-size: 11px; color: var(--soft-dark); margin: 16px 2px 4px; }
+  /* view-only logins: nothing that changes data is shown */
+  body.viewer .ed, body.viewer .nb, body.viewer .run-row .mv, body.viewer .td .tick { display: none !important; }
   .login { max-width: 380px; margin: 60px auto; text-align: center; background: var(--cream); color: var(--ink); border-radius: 16px; padding: 22px 20px; }
   .toast { top: 16px; bottom: auto; background: var(--cream); color: var(--ink); }
 </style>
@@ -184,14 +186,14 @@
     <!-- Running order -->
     <div id="v-run" class="hidden">
       <div class="view-h"><h2>Running order</h2></div>
-      <p class="help">Most wanted first. Above the ceremony line are ceremony guests, then evening (garden party) down to the total line, then reserves. This is the plan only – it doesn't change anyone's invitation. Use ↑ ↓, or tap a household then tap where it should go.</p>
+      <p class="help ed">Most wanted first. Above the ceremony line are ceremony guests, then evening (garden party) down to the total line, then reserves. This is the plan only – it doesn't change anyone's invitation. Use ↑ ↓, or tap a household then tap where it should go.</p>
       <section class="box" id="run-sum"></section>
       <div id="run-list"></div>
     </div>
 
     <!-- To do -->
     <div id="v-todo" class="hidden">
-      <div class="view-h"><h2>To do</h2><button class="btn small" id="td-add" style="background:var(--cream);color:var(--night)">+ Add</button></div>
+      <div class="view-h"><h2>To do</h2><button class="ed btn small" id="td-add" style="background:var(--cream);color:var(--night)">+ Add</button></div>
       <section class="box" id="td-sum"></section>
       <div class="ctl2">
         <label class="sw"><input type="checkbox" id="td-done"><i></i></label><label for="td-done">Show done</label>
@@ -218,12 +220,12 @@
         <h3>Places</h3>
         <label class="field"><span>Most people at the ceremony</span><input type="number" id="s-cermax" inputmode="numeric" min="1" style="max-width:140px"></label>
         <p class="note" style="font-size:14px;color:var(--soft)" id="s-total"></p>
-        <button class="btn small" id="s-cermax-save">Save</button>
+        <button class="ed btn small" id="s-cermax-save">Save</button>
       </section>
       <section class="box">
         <h3>Invite list</h3>
         <p id="lock-state" style="font-size:14px;color:var(--soft);margin:0 0 10px"></p>
-        <button class="btn small" id="lock-btn"></button>
+        <button class="ed btn small" id="lock-btn"></button>
       </section>
       <section class="box">
         <h3>Gift bank details</h3>
@@ -232,13 +234,13 @@
           <label class="field"><span>Sort code</span><input type="text" id="s-sort" inputmode="numeric"></label>
           <label class="field"><span>Account number</span><input type="text" id="s-acc" inputmode="numeric"></label>
         </div>
-        <button class="btn small" id="s-save">Save bank details</button>
+        <button class="ed btn small" id="s-save">Save bank details</button>
         <p style="font-size:14px;color:var(--soft)">Guests only see these on their own personal invitation.</p>
       </section>
       <section class="box">
         <h3>Allergy wording (RSVP checkbox)</h3>
         <label class="field"><span>Guests must tick this when anyone is coming</span><textarea id="s-allergy" rows="4"></textarea></label>
-        <button class="btn small" id="s-allergy-save">Save wording</button>
+        <button class="ed btn small" id="s-allergy-save">Save wording</button>
         <p style="font-size:14px;color:var(--soft)">Each reply saves a copy of the wording the guest agreed to, so changing it later doesn't alter past replies.</p>
       </section>
     </div>
@@ -252,7 +254,7 @@
     <button data-view="list">Guest list <small id="m-n-list"></small></button>
     <button data-view="run">Running order</button>
     <button data-view="todo">To do <small id="m-n-todo"></small></button>
-    <button id="m-add">Add household</button>
+    <button class="ed" id="m-add">Add household</button>
     <div class="sec">Tools</div>
     <button id="show-book">Phone contacts</button>
     <a href="sheet.html">Spreadsheet view</a>
@@ -293,10 +295,10 @@
     <button class="btn ghost small" id="m-addguest" type="button">+ Add person</button>
     <p id="m-link" style="font-size:14px;word-break:break-all;color:var(--soft)"></p>
     <div class="acts-row" style="justify-content:space-between;margin-top:18px">
-      <button class="btn ghost small" id="m-delete" type="button" style="color:var(--bad);border-color:var(--bad)">Delete</button>
+      <button class="ed btn ghost small" id="m-delete" type="button" style="color:var(--bad);border-color:var(--bad)">Delete</button>
       <span style="display:flex;gap:8px">
         <button class="btn ghost small" id="m-cancel" type="button">Cancel</button>
-        <button class="btn small" id="m-save" type="button">Save</button>
+        <button class="ed btn small" id="m-save" type="button">Save</button>
       </span>
     </div>
   </div>
@@ -322,10 +324,10 @@
     <label class="field"><span>Notes</span><textarea id="t-notes" rows="4"></textarea></label>
     <a class="btn ghost small" id="t-gcal" target="_blank" rel="noopener" style="margin-top:4px">Add to Google Calendar</a>
     <div class="acts-row" style="justify-content:space-between;margin-top:14px">
-      <button class="btn ghost small" id="t-delete" type="button" style="color:var(--bad);border-color:var(--bad)">Delete</button>
+      <button class="ed btn ghost small" id="t-delete" type="button" style="color:var(--bad);border-color:var(--bad)">Delete</button>
       <span style="display:flex;gap:8px">
         <button class="btn ghost small" id="t-cancel" type="button">Cancel</button>
-        <button class="btn small" id="t-save" type="button">Save</button>
+        <button class="ed btn small" id="t-save" type="button">Save</button>
       </span>
     </div>
   </div>
@@ -360,7 +362,7 @@
   const C = window.WEDDING_CONFIG;
   const $ = (id) => document.getElementById(id);
   const STORE = 'wedding-admin-session';
-  let session = null, data = { invites: [], settings: {} }, editing = null, todos = [];
+  let session = null, data = { invites: [], settings: {} }, editing = null, todos = [], viewer = false;
 
   // ---------- auth + api ----------
   const load = () => { try { return JSON.parse(localStorage.getItem(STORE)); } catch (e) { return null; } };
@@ -383,7 +385,7 @@
       catch (e) { signedOut(); throw e; }
     }
     const text = await r.text();
-    if (!r.ok) { if (/Not authorised/.test(text)) { signedOut('This account is not set up as an admin.'); } throw new Error(text); }
+    if (!r.ok) { if (/Not authorised/.test(text) && fn === 'admin_data') { signedOut('This account is not set up as an admin.'); } throw new Error(/Not authorised/.test(text) ? 'View only' : text); }
     return text ? JSON.parse(text) : null;
   }
   function signedOut(msg) {
@@ -540,6 +542,7 @@
     $('login').classList.add('hidden'); $('app').classList.remove('hidden');
     try { data = await rpc('admin_data'); } catch (e) { if (session) toast('Could not load the guest list'); return; }
     try { todos = await rpc('admin_todos'); } catch (e) { todos = null; }
+    viewer = data.role === 'viewer'; document.body.classList.toggle('viewer', viewer);
     $('cats').innerHTML = ''; [...new Set(data.invites.map((i) => i.category).filter(Boolean))].sort().forEach((c) => $('cats').append(el('option', { value: c })));
     $('s-allergy').value = data.settings.rsvp_allergy_text || '';
     $('s-cermax').value = CMAX();
@@ -558,7 +561,7 @@
   function show(v, replace) {
     if (!VIEWS[v]) v = 'list';
     view = v; Object.keys(VIEWS).forEach((k) => $('v-' + k).classList.toggle('hidden', k !== v));
-    $('view-name').textContent = v === 'list' ? '' : VIEWS[v];
+    $('view-name').textContent = (v === 'list' ? '' : VIEWS[v]) + (viewer ? (v === 'list' ? '' : ' · ') + 'View only' : '');
     document.querySelectorAll('#drawer [data-view]').forEach((b) => b.classList.toggle('on', b.dataset.view === v));
     if (replace) history.replaceState({ view: v }, '', v === 'list' ? location.pathname : '#' + v);
     else history.pushState({ view: v }, '', v === 'list' ? location.pathname : '#' + v);
@@ -691,7 +694,11 @@
         el('div', { class: 'acts-row', style: 'margin-top:6px' },
           el('button', { class: 'btn small', onclick: () => resolvePhone(g, true) }, '✓ Yes'),
           el('button', { class: 'btn ghost small', onclick: () => resolvePhone(g, false) }, '✗ No')))),
-      el('div', { class: 'acts' },
+      viewer ? el('div', { class: 'acts' },
+        act('Copy invitation link', () => { navigator.clipboard.writeText(inviteMsg(i)).then(() => toast('Invitation message copied')); }),
+        act('Copy save the date', () => { navigator.clipboard.writeText(stdMsg(i)).then(() => toast('Save the date message copied')); }),
+        i.responded_at ? act('Reply history', () => showHistory(i)) : null,
+        act('Close', () => closeLayer('shade'))) : el('div', { class: 'acts' },
         step && canSend(i) ? act(step.label + (how(i) === 'whatsapp' ? ' to ' + firstOf(mainContact(i).name) : ''), () => doStep(i, step.what), 'main') : null,
         act('Edit household', () => { closeLayer('shade'); setTimeout(() => openEdit(i), 0); }),
         act('Copy invitation link', () => { navigator.clipboard.writeText(inviteMsg(i)).then(() => toast('Invitation message copied')); }),
@@ -948,6 +955,7 @@
       const dn = el('button', { 'aria-label': 'Move down', onclick: (e) => { e.stopPropagation(); const l = runList(); if (k < l.length - 1) { [l[k + 1], l[k]] = [l[k], l[k + 1]]; saveRun(l, i.id); } } }, '↓');
       const [t, extra] = title(i);
       const row = el('div', { class: 'run-row' + (picked === i.id ? ' picked' : '') + (lastMoved === i.id ? ' moved' : ''), 'data-id': i.id, onclick: () => {
+          if (viewer) return;
           if (!picked) { picked = i.id; renderRun(); return; }
           if (picked === i.id) { picked = null; renderRun(); return; }
           const l = runList(), from = l.findIndex((x) => x.id === picked), mv = l.splice(from, 1)[0];
@@ -1019,6 +1027,7 @@
     $('t-cost').value = tEditing.cost ?? ''; $('t-paid').value = tEditing.paid ?? ''; $('t-notes').value = tEditing.notes || '';
     $('tcats').innerHTML = ''; [...new Set((todos || []).map((x) => x.category).filter(Boolean))].sort().forEach((c) => $('tcats').append(el('option', { value: c })));
     $('t-delete').classList.toggle('hidden', !t);
+    $('tmodal').querySelectorAll('input, select, textarea').forEach((x) => { x.disabled = viewer; });
     $('t-gcal').classList.toggle('hidden', !(t && t.due)); if (t && t.due) $('t-gcal').href = gcalLink(t);
     openLayer('tmodal'); $('tmodal').scrollTop = 0;
   }
