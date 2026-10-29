@@ -195,6 +195,7 @@
         <select id="td-who" aria-label="Who"><option value="">Everyone</option><option>Doug</option><option>Paula</option><option>Both</option></select>
       </div>
       <div id="td-list"></div>
+      <p class="help" style="margin-top:18px">Calendar: open a task and tap <b>Add to Google Calendar</b>, or <button class="link-btn" id="td-ics" style="color:var(--cream)">download all open tasks</button> as a calendar file to import at calendar.google.com (Settings › Import & export).</p>
     </div>
 
     <!-- Exports -->
@@ -316,6 +317,7 @@
       <label class="field"><span>Paid so far (£)</span><input type="number" id="t-paid" inputmode="decimal" step="0.01" min="0"></label>
     </div>
     <label class="field"><span>Notes</span><textarea id="t-notes" rows="4"></textarea></label>
+    <a class="btn ghost small" id="t-gcal" target="_blank" rel="noopener" style="margin-top:4px">Add to Google Calendar</a>
     <div class="acts-row" style="justify-content:space-between;margin-top:14px">
       <button class="btn ghost small" id="t-delete" type="button" style="color:var(--bad);border-color:var(--bad)">Delete</button>
       <span style="display:flex;gap:8px">
@@ -1014,6 +1016,7 @@
     $('t-cost').value = tEditing.cost ?? ''; $('t-paid').value = tEditing.paid ?? ''; $('t-notes').value = tEditing.notes || '';
     $('tcats').innerHTML = ''; [...new Set((todos || []).map((x) => x.category).filter(Boolean))].sort().forEach((c) => $('tcats').append(el('option', { value: c })));
     $('t-delete').classList.toggle('hidden', !t);
+    $('t-gcal').classList.toggle('hidden', !(t && t.due)); if (t && t.due) $('t-gcal').href = gcalLink(t);
     openLayer('tmodal'); $('tmodal').scrollTop = 0;
   }
   async function saveTodo(t) {
@@ -1025,6 +1028,27 @@
     } catch (e) { toast('Could not save'); return false; }
   }
   $('td-add').addEventListener('click', () => openTodo(null));
+  // Calendar: one all-day event per task on its due date, with a reminder at 9am the day before
+  const ymd = (d) => d.replace(/-/g, '');
+  const nextDay = (d) => { const x = new Date(d + 'T12:00:00'); x.setDate(x.getDate() + 1); return x.toISOString().slice(0, 10).replace(/-/g, ''); };
+  const calText = (t) => [t.supplier, t.notes].filter(Boolean).join('\n');
+  function gcalLink(t) {
+    return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent('Wedding: ' + t.title)
+      + '&dates=' + ymd(t.due) + '/' + nextDay(t.due) + '&details=' + encodeURIComponent(calText(t) + '\n\n' + location.origin + location.pathname + '#todo');
+  }
+  const icsEsc = (v) => String(v || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+  $('td-ics').addEventListener('click', () => {
+    const open = (todos || []).filter((t) => !t.done_at && t.due);
+    if (!open.length) return toast('No open tasks with a due date');
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Paula and Doug//Wedding to do//EN', 'X-WR-CALNAME:Wedding to do'];
+    open.forEach((t) => lines.push('BEGIN:VEVENT', 'UID:todo-' + t.id + '@dougandpaula.github.io', 'DTSTAMP:' + stamp,
+      'DTSTART;VALUE=DATE:' + ymd(t.due), 'DTEND;VALUE=DATE:' + nextDay(t.due), 'SUMMARY:' + icsEsc('Wedding: ' + t.title),
+      'DESCRIPTION:' + icsEsc(calText(t)), 'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEsc(t.title), 'TRIGGER:-PT15H', 'END:VALARM', 'END:VEVENT'));
+    lines.push('END:VCALENDAR');
+    const a = el('a', { href: URL.createObjectURL(new Blob([lines.join('\r\n')], { type: 'text/calendar' })), download: 'wedding-to-do.ics' });
+    document.body.append(a); a.click(); a.remove();
+  });
   $('t-cancel').addEventListener('click', () => closeLayer('tmodal'));
   $('t-save').addEventListener('click', async () => {
     const title = $('t-name').value.trim(); if (!title) return toast('Add what needs doing');
