@@ -122,6 +122,15 @@
   .hits li:last-child button { border-bottom: 0; }
   .hist-item { background: #fff; border: 1px solid var(--cream-line); border-radius: 12px; padding: 10px 12px; margin: 0 0 10px; }
 
+  /* to do */
+  .td { display: grid; grid-template-columns: 34px 1fr; gap: 4px 8px; background: var(--cream); color: var(--ink); border-radius: 12px; padding: 10px 12px; margin: 8px 0; cursor: pointer; }
+  .td .tick { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--soft); background: #fff; cursor: pointer; margin-top: 1px; font-size: 15px; line-height: 1; color: var(--cream); padding: 0; }
+  .td.done .tick { background: var(--night); border-color: var(--night); }
+  .td.done .tt { text-decoration: line-through; color: var(--soft); }
+  .td .tt { font-weight: 600; font-size: 15px; line-height: 1.3; }
+  .td .ts { font-size: 13px; color: var(--soft); margin-top: 2px; }
+  .td .tc { font-size: 13px; margin-top: 2px; }
+  .td-h { font-family: var(--caps); text-transform: uppercase; letter-spacing: .14em; font-size: 11px; color: var(--soft-dark); margin: 16px 2px 4px; }
   .login { max-width: 380px; margin: 60px auto; text-align: center; background: var(--cream); color: var(--ink); border-radius: 16px; padding: 22px 20px; }
   .toast { top: 16px; bottom: auto; background: var(--cream); color: var(--ink); }
 </style>
@@ -177,6 +186,17 @@
       <div id="run-list"></div>
     </div>
 
+    <!-- To do -->
+    <div id="v-todo" class="hidden">
+      <div class="view-h"><h2>To do</h2><button class="btn small" id="td-add" style="background:var(--cream);color:var(--night)">+ Add</button></div>
+      <section class="box" id="td-sum"></section>
+      <div class="ctl2">
+        <label class="sw"><input type="checkbox" id="td-done"><i></i></label><label for="td-done">Show done</label>
+        <select id="td-who" aria-label="Who"><option value="">Everyone</option><option>Doug</option><option>Paula</option><option>Both</option></select>
+      </div>
+      <div id="td-list"></div>
+    </div>
+
     <!-- Exports -->
     <div id="v-exports" class="hidden">
       <div class="view-h"><h2>Exports</h2></div>
@@ -227,6 +247,7 @@
     <div class="t">Wedding admin</div>
     <button data-view="list">Guest list <small id="m-n-list"></small></button>
     <button data-view="run">Running order</button>
+    <button data-view="todo">To do <small id="m-n-todo"></small></button>
     <button id="m-add">Add household</button>
     <div class="sec">Tools</div>
     <button id="show-book">Phone contacts</button>
@@ -276,6 +297,34 @@
     </div>
   </div>
 </div>
+ <div class="modal hidden" id="tmodal" role="dialog" aria-modal="true" aria-labelledby="t-title">
+  <div class="sheet">
+    <h3 id="t-title" style="margin-top:0">Task</h3>
+    <label class="field"><span>What</span><input type="text" id="t-name"></label>
+    <div class="grid2">
+      <label class="field"><span>Group</span><input type="text" id="t-cat" list="tcats"></label>
+      <label class="field"><span>Due</span><input type="date" id="t-due"></label>
+    </div>
+    <datalist id="tcats"></datalist>
+    <div class="grid2">
+      <label class="field"><span>Who</span><select id="t-who"><option value="">–</option><option>Both</option><option>Doug</option><option>Paula</option></select></label>
+      <label class="check-row" style="margin-top:22px"><input type="checkbox" id="t-done"> Done</label>
+    </div>
+    <label class="field"><span>Supplier / contact / booking ref</span><input type="text" id="t-sup"></label>
+    <div class="grid2">
+      <label class="field"><span>Cost (£)</span><input type="number" id="t-cost" inputmode="decimal" step="0.01" min="0"></label>
+      <label class="field"><span>Paid so far (£)</span><input type="number" id="t-paid" inputmode="decimal" step="0.01" min="0"></label>
+    </div>
+    <label class="field"><span>Notes</span><textarea id="t-notes" rows="4"></textarea></label>
+    <div class="acts-row" style="justify-content:space-between;margin-top:14px">
+      <button class="btn ghost small" id="t-delete" type="button" style="color:var(--bad);border-color:var(--bad)">Delete</button>
+      <span style="display:flex;gap:8px">
+        <button class="btn ghost small" id="t-cancel" type="button">Cancel</button>
+        <button class="btn small" id="t-save" type="button">Save</button>
+      </span>
+    </div>
+  </div>
+</div>
 <div class="modal hidden" id="book" role="dialog" aria-modal="true" aria-labelledby="b-title">
   <div class="sheet">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
@@ -306,7 +355,7 @@
   const C = window.WEDDING_CONFIG;
   const $ = (id) => document.getElementById(id);
   const STORE = 'wedding-admin-session';
-  let session = null, data = { invites: [], settings: {} }, editing = null;
+  let session = null, data = { invites: [], settings: {} }, editing = null, todos = [];
 
   // ---------- auth + api ----------
   const load = () => { try { return JSON.parse(localStorage.getItem(STORE)); } catch (e) { return null; } };
@@ -485,6 +534,7 @@
   async function start() {
     $('login').classList.add('hidden'); $('app').classList.remove('hidden');
     try { data = await rpc('admin_data'); } catch (e) { if (session) toast('Could not load the guest list'); return; }
+    try { todos = await rpc('admin_todos'); } catch (e) { todos = null; }
     $('cats').innerHTML = ''; [...new Set(data.invites.map((i) => i.category).filter(Boolean))].sort().forEach((c) => $('cats').append(el('option', { value: c })));
     $('s-allergy').value = data.settings.rsvp_allergy_text || '';
     $('s-cermax').value = CMAX();
@@ -498,7 +548,7 @@
   function replaceInvite(saved, quiet) { const k = data.invites.findIndex((x) => x.id === saved.id); if (k >= 0) data.invites[k] = saved; else data.invites.push(saved); if (!quiet) { render(); if (openId === saved.id) openPanel(saved); } }
 
   // ---------- views + menu (the phone's back button closes things) ----------
-  const VIEWS = { list: 'Guest list', run: 'Running order', exports: 'Exports', settings: 'Settings' };
+  const VIEWS = { list: 'Guest list', run: 'Running order', todo: 'To do', exports: 'Exports', settings: 'Settings' };
   let view = 'list';
   function show(v, replace) {
     if (!VIEWS[v]) v = 'list';
@@ -507,19 +557,19 @@
     document.querySelectorAll('#drawer [data-view]').forEach((b) => b.classList.toggle('on', b.dataset.view === v));
     if (replace) history.replaceState({ view: v }, '', v === 'list' ? location.pathname : '#' + v);
     else history.pushState({ view: v }, '', v === 'list' ? location.pathname : '#' + v);
-    if (v === 'run') { picked = null; lastMoved = null; renderRun(); } else render();
+    if (v === 'run') { picked = null; lastMoved = null; renderRun(); } else if (v === 'todo') renderTodo(); else render();
     window.scrollTo(0, 0);
   }
   function openLayer(id) { $(id).classList.remove('hidden'); history.pushState({ layer: id, view }, ''); }
   function closeLayer(id, fromHistory) { if ($(id).classList.contains('hidden')) return; $(id).classList.add('hidden'); if (id === 'shade') openId = null; if (!fromHistory && history.state && history.state.layer === id) history.back(); }
-  function closeAll() { ['drawer', 'shade', 'modal', 'book', 'hist'].forEach((id) => $(id).classList.add('hidden')); openId = null; }
+  function closeAll() { ['drawer', 'shade', 'modal', 'tmodal', 'book', 'hist'].forEach((id) => $(id).classList.add('hidden')); openId = null; }
   window.addEventListener('popstate', (e) => {
-    const open = ['hist', 'book', 'modal', 'shade', 'drawer'].find((id) => !$(id).classList.contains('hidden'));
+    const open = ['hist', 'book', 'tmodal', 'modal', 'shade', 'drawer'].find((id) => !$(id).classList.contains('hidden'));
     if (open) { closeLayer(open, true); return; }
     const v = (e.state && e.state.view) || location.hash.slice(1) || 'list';
     view = v; Object.keys(VIEWS).forEach((k) => $('v-' + k).classList.toggle('hidden', k !== v));
     $('view-name').textContent = v === 'list' ? '' : VIEWS[v];
-    if (v === 'run') renderRun(); else render();
+    if (v === 'run') renderRun(); else if (v === 'todo') renderTodo(); else render();
   });
   $('menu-open').addEventListener('click', () => openLayer('drawer'));
   $('drawer').addEventListener('click', (e) => { if (e.target === $('drawer')) closeLayer('drawer'); });
@@ -547,6 +597,7 @@
     const rows = [['Ceremony places', places(cerTaken, CM)], ['Total places', places(used, MAX)], ['Save the dates', sd],
       ['Ceremony invitations', inv(cer)], ['Evening invitations', inv(eve)], ['Dietary needs', [el('b', {}, String(diet))]],
       ['Missing details', [missing ? el('span', { class: 'w' }, missing + (missing === 1 ? ' household' : ' households')) : 'none']]];
+    if (todos) { const [od, soon] = todoDue(); rows.push(['To do', [od ? el('span', { class: 'w' }, od + ' overdue') : null, od && soon ? ' · ' : null, soon ? soon + ' due in the next 30 days' : null, !od && !soon ? 'nothing due soon' : null].filter(Boolean)]); }
     $('sum-rows').innerHTML = ''; if ($('sum').classList.contains('collapsed')) { $('sum-tog').textContent = 'Show'; return; }
     $('sum-tog').textContent = 'Hide';
     rows.forEach(([k, v]) => $('sum-rows').append(el('div', { class: 'row' }, el('span', { class: 'k' }, k), el('span', { class: 'v' }, ...v))));
@@ -577,6 +628,7 @@
     else rows.sort(runSort);
     $('count').textContent = rows.length + (rows.length === 1 ? ' household' : ' households');
     $('m-n-list').textContent = data.invites.filter(live).length;
+    if (todos) { const [od, soon] = todoDue(); $('m-n-todo').textContent = od ? od + ' overdue' : soon ? soon + ' due soon' : ''; }
 
     const list = $('list'); list.innerHTML = '';
     rows.forEach((i) => {
@@ -910,6 +962,83 @@
       .forEach(([k, v]) => $('run-sum').append(el('div', { class: 'row' }, el('span', { class: 'k' }, k), el('span', { class: 'v' }, v))));
     if (picked) $('run-sum').append(el('div', { class: 'row' }, el('span', { class: 'w' }, 'Now tap where ' + title(data.invites.find((x) => x.id === picked) || { guests: [], household_name: '' })[0] + ' should go (tap it again to cancel)')));
   }
+
+  // ---------- to do ----------
+  const today = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+  const daysTo = (d) => Math.round((new Date(d + 'T00:00:00') - today()) / 864e5);
+  const money = (n) => '£' + Number(n || 0).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  function todoDue() {
+    const open = (todos || []).filter((t) => !t.done_at && t.due);
+    return [open.filter((t) => daysTo(t.due) < 0).length, open.filter((t) => daysTo(t.due) >= 0 && daysTo(t.due) <= 30).length];
+  }
+  function dueText(t) {
+    if (!t.due) return '';
+    const n = daysTo(t.due), d = new Date(t.due + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    if (t.done_at) return 'due ' + d;
+    if (n < 0) return el('span', { class: 'w' }, 'overdue · ' + d);
+    if (n === 0) return el('span', { class: 'w' }, 'due today');
+    return n <= 30 ? 'due in ' + n + (n === 1 ? ' day' : ' days') + ' · ' + d : 'due ' + d;
+  }
+  function renderTodo() {
+    const wrap = $('td-list'); wrap.innerHTML = ''; $('td-sum').innerHTML = '';
+    if (!todos) { wrap.append(el('p', { class: 'help' }, 'The to-do list needs setting up first: run the to-do SQL in Supabase, then tap Refresh.')); return; }
+    const cost = todos.reduce((n, t) => n + Number(t.cost || 0), 0), paid = todos.reduce((n, t) => n + Number(t.paid || 0), 0);
+    const [od, soon] = todoDue(), left = todos.filter((t) => !t.done_at).length;
+    [['Still to do', left + ' of ' + todos.length + (od ? '' : '')], ['Overdue', od ? el('span', { class: 'w' }, String(od)) : 'none'], ['Due in the next 30 days', String(soon)],
+     ['Costs', money(cost) + ' · ' + money(paid) + ' paid · ' + money(cost - paid) + ' to pay']]
+      .forEach(([k, v]) => $('td-sum').append(el('div', { class: 'row' }, el('span', { class: 'k' }, k), el('span', { class: 'v' }, v))));
+    const who = $('td-who').value, showDone = $('td-done').checked;
+    const list = todos.filter((t) => (showDone || !t.done_at) && (!who || t.owner === who || (who !== 'Both' && t.owner === 'Both')))
+      .sort((a, b) => (!!a.done_at - !!b.done_at) || String(a.due || '9999').localeCompare(String(b.due || '9999')) || a.title.localeCompare(b.title));
+    let lastMonth = null;
+    list.forEach((t) => {
+      const m = t.done_at ? 'Done' : t.due ? (daysTo(t.due) < 0 ? 'Overdue' : new Date(t.due + 'T00:00:00').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })) : 'No date';
+      if (m !== lastMonth) { wrap.append(el('div', { class: 'td-h' }, m)); lastMonth = m; }
+      const c = Number(t.cost || 0), pd = Number(t.paid || 0);
+      wrap.append(el('div', { class: 'td' + (t.done_at ? ' done' : ''), onclick: () => openTodo(t) },
+        el('button', { class: 'tick', 'aria-label': t.done_at ? 'Mark not done' : 'Mark done', onclick: (e) => { e.stopPropagation(); saveTodo(Object.assign({}, t, { done: !t.done_at })); } }, t.done_at ? '✓' : ''),
+        el('div', {},
+          el('div', { class: 'tt' }, t.title),
+          el('div', { class: 'ts' }, ...[t.category, t.owner && t.owner !== 'Both' ? t.owner : null].filter(Boolean).map((x, k) => (k ? ' · ' : '') + x), t.due ? ((t.category || (t.owner && t.owner !== 'Both')) ? ' · ' : '') : '', dueText(t)),
+          c || pd ? el('div', { class: 'tc' }, money(c) + (pd ? ' · ' + money(pd) + ' paid' : '') + (c - pd > 0 ? ' · ' + money(c - pd) + ' to pay' : '')) : null)));
+    });
+    if (!list.length) wrap.append(el('p', { class: 'help' }, showDone ? 'Nothing here.' : 'All done!'));
+  }
+  ['td-done', 'td-who'].forEach((id) => $(id).addEventListener('input', renderTodo));
+  let tEditing = null;
+  function openTodo(t) {
+    tEditing = t || { id: '' };
+    $('t-title').textContent = t ? 'Task' : 'New task';
+    $('t-name').value = tEditing.title || ''; $('t-cat').value = tEditing.category || ''; $('t-due').value = tEditing.due || '';
+    $('t-who').value = tEditing.owner || 'Both'; $('t-done').checked = !!tEditing.done_at; $('t-sup').value = tEditing.supplier || '';
+    $('t-cost').value = tEditing.cost ?? ''; $('t-paid').value = tEditing.paid ?? ''; $('t-notes').value = tEditing.notes || '';
+    $('tcats').innerHTML = ''; [...new Set((todos || []).map((x) => x.category).filter(Boolean))].sort().forEach((c) => $('tcats').append(el('option', { value: c })));
+    $('t-delete').classList.toggle('hidden', !t);
+    openLayer('tmodal'); $('tmodal').scrollTop = 0;
+  }
+  async function saveTodo(t) {
+    try {
+      const saved = await rpc('admin_save_todo', { p: { id: t.id || '', title: t.title, category: t.category || '', due: t.due || '', owner: t.owner || '',
+        supplier: t.supplier || '', cost: t.cost ?? '', paid: t.paid ?? '', notes: t.notes || '', done: !!t.done } });
+      const k = todos.findIndex((x) => x.id === saved.id); if (k >= 0) todos[k] = saved; else todos.push(saved);
+      renderTodo(); return true;
+    } catch (e) { toast('Could not save'); return false; }
+  }
+  $('td-add').addEventListener('click', () => openTodo(null));
+  $('t-cancel').addEventListener('click', () => closeLayer('tmodal'));
+  $('t-save').addEventListener('click', async () => {
+    const title = $('t-name').value.trim(); if (!title) return toast('Add what needs doing');
+    const ok = await saveTodo({ id: tEditing.id, title, category: $('t-cat').value.trim(), due: $('t-due').value, owner: $('t-who').value, supplier: $('t-sup').value.trim(),
+      cost: $('t-cost').value, paid: $('t-paid').value, notes: $('t-notes').value.trim(), done: $('t-done').checked });
+    if (ok) { closeLayer('tmodal'); toast('Saved'); }
+  });
+  $('t-delete').addEventListener('click', async () => {
+    const btn = $('t-delete');
+    if (btn.dataset.confirm !== '1') { btn.dataset.confirm = '1'; btn.textContent = 'Tap again to delete'; setTimeout(() => { btn.dataset.confirm = ''; btn.textContent = 'Delete'; }, 3000); return; }
+    try { await rpc('admin_delete_todo', { p_id: tEditing.id }); todos = todos.filter((x) => x.id !== tEditing.id); renderTodo(); closeLayer('tmodal'); toast('Deleted'); }
+    catch (e) { toast('Could not delete'); }
+    btn.dataset.confirm = ''; btn.textContent = 'Delete';
+  });
 
   // ---------- exports ----------
   const csvEsc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
