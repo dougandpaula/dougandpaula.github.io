@@ -223,6 +223,11 @@
         <button class="ed btn small" id="s-cermax-save">Save</button>
       </section>
       <section class="box">
+        <h3>Invitations</h3>
+        <label class="check-row"><input type="checkbox" id="s-invopen" class="ed"> Show the "WhatsApp invitation" buttons</label>
+        <p style="font-size:14px;color:var(--soft);margin:4px 0 0">Leave this off while you're sending save the dates. Turn it on when you're ready to send invitations.</p>
+      </section>
+      <section class="box">
         <h3>Invite list</h3>
         <p id="lock-state" style="font-size:14px;color:var(--soft);margin:0 0 10px"></p>
         <button class="ed btn small" id="lock-btn"></button>
@@ -495,6 +500,19 @@
     return { notsent: 'Save the date not sent', sent: 'Save the date sent · not opened', opened: 'Save the date opened', received: 'Save the date received',
              cant: "Save the date: can't make it", some: 'Save the date: ' + cant.join(' & ') + " can't make it" }[s];
   }
+  // Card status: a heading line and a state line, always the same shape
+  function cardStatus(i) {
+    if (i.declined_at) return ['Declined', ''];
+    if (!live(i) && !isTest(i)) return ['Not inviting', ''];
+    if (place[i.id] && place[i.id].reserve) return ['Reserve ' + place[i.id].pos, ''];
+    if (i.sent_at) {
+      const yes = i.guests.filter((g) => g.attending === true).length;
+      return ['Invitation', i.responded_at ? (yes ? 'Replied: ' + yes + ' coming' : "Replied: can't come") : i.first_opened_at ? 'Opened, no reply yet' : 'Sent, not opened yet'];
+    }
+    const cant = i.guests.filter((g) => g.std_cant).map((g) => firstOf(g.name));
+    return ['Save the date', { notsent: 'Not sent yet', sent: 'Sent, not opened yet', opened: 'Opened, no answer yet', received: 'Received',
+      cant: "Can't make it", some: cant.join(' & ') + " can't make it" }[stdState(i)]];
+  }
   function inviteText(i) {
     if (i.responded_at) {
       const yes = i.guests.filter((g) => g.attending === true).length;
@@ -509,7 +527,7 @@
     if (!(onList(i) || isTest(i)) || i.declined_at) return null;
     const m = how(i), verb = m === 'post' ? 'Post' : m === 'person' ? 'Give' : 'WhatsApp';
     if (!i.std_sent_at) return { what: 'std', label: verb + ' save the date' };
-    if (!i.sent_at) return { what: 'invite', label: verb + ' invitation' };
+    if (!i.sent_at && data.settings.invites_open === '1') return { what: 'invite', label: verb + ' invitation' };
     return null;
   }
   function waiting(i) {
@@ -546,6 +564,7 @@
     $('cats').innerHTML = ''; [...new Set(data.invites.map((i) => i.category).filter(Boolean))].sort().forEach((c) => $('cats').append(el('option', { value: c })));
     $('s-allergy').value = data.settings.rsvp_allergy_text || '';
     $('s-cermax').value = CMAX();
+    $('s-invopen').checked = data.settings.invites_open === '1';
     $('s-total').textContent = 'Total places: ' + MAX + ' (set in the site settings).';
     $('s-name').value = data.settings.gift_account_name || ''; $('s-sort').value = data.settings.gift_sort_code || ''; $('s-acc').value = data.settings.gift_account_number || '';
     renderLock();
@@ -650,7 +669,7 @@
         el('div', { class: 'grp' }, i.category || ''), el('div', {}),
         el('div', { class: 'st' },
           blocked ? el('span', { class: 'w' }, iss[0] ? iss[0][0].toUpperCase() + iss[0].slice(1) : 'Missing details')
-            : el('span', {}, ...status.split(' · ').flatMap((x, k) => k ? [el('br'), x[0].toUpperCase() + x.slice(1)] : [x])),
+            : (() => { const [h, st] = cardStatus(i); return el('span', {}, el('span', { style: 'color:var(--ink)' }, h), st ? el('br') : null, st); })(),
           el('span', { class: 'acts' },
             step && !blocked ? el('button', { class: 'nb', onclick: (e) => { e.stopPropagation(); doStep(i, step.what); } }, step.label) : null,
             el('button', { class: 'dots', 'aria-label': 'More', onclick: (e) => { e.stopPropagation(); openPanel(i); } }, '⋯'))));
@@ -895,6 +914,11 @@
   $('s-save').addEventListener('click', async () => {
     try { await rpc('admin_save_settings', { p: { gift_account_name: $('s-name').value.trim(), gift_sort_code: $('s-sort').value.trim(), gift_account_number: $('s-acc').value.trim() } }); toast('Bank details saved'); }
     catch (e) { toast('Could not save'); }
+  });
+  $('s-invopen').addEventListener('change', async () => {
+    const v = $('s-invopen').checked ? '1' : '0';
+    try { await rpc('admin_save_settings', { p: { invites_open: v } }); data.settings.invites_open = v; toast(v === '1' ? 'Invitation buttons on' : 'Invitation buttons off'); }
+    catch (e) { $('s-invopen').checked = !$('s-invopen').checked; toast('Could not save'); }
   });
   $('s-cermax-save').addEventListener('click', async () => {
     const v = String(parseInt($('s-cermax').value, 10) || '');
