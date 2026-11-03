@@ -963,7 +963,7 @@
         } },
         el('span', { class: 'pos' }, String(k + 1)),
         el('div', {}, el('div', { class: 'nm' }, t, extra ? el('span', { style: 'font-weight:400;color:var(--soft)' }, ' + ' + extra) : null),
-          el('div', { class: 'sub' }, (i.category ? i.category + ' · ' : '') + (isCer ? 'Ceremony' : 'Evening') + ' · ' + n + (n === 1 ? ' place' : ' places') + ' · total ' + cum),
+          el('div', { class: 'sub' }, (isCer ? 'Ceremony' : 'Evening') + (i.category ? ' · ' + i.category : '') + ' · ' + n + ' / ' + cum),
           flag ? el('div', { class: 'flag' }, flag) : null),
         el('div', { class: 'mv' }, up, dn));
       wrap.append(row);
