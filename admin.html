@@ -412,7 +412,7 @@
     return e;
   }
   const link = (i) => C.siteUrl + '?g=' + i.code;
-  const stdLink = (i) => C.siteUrl + '?s=' + i.std_code;
+  const stdLink = (i) => C.siteUrl + 'save.html?s=' + i.std_code;
   const waNum = (p) => { let d = String(p || '').replace(/[^\d+]/g, ''); if (d.startsWith('+')) d = d.slice(1); else if (d.startsWith('00')) d = d.slice(2); else if (d.startsWith('0')) d = '44' + d.slice(1); return d.length >= 10 ? d : ''; };
   const firstOf = (n) => String(n || '').replace(/\s*\?\s*$/, '').split(' ')[0];
   const contacts = (i) => i.guests.filter((g) => !g.is_plus_one && waNum(g.phone));
