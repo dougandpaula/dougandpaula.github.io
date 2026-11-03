@@ -521,7 +521,7 @@
 
   const inviteMsg = (i) => 'Hi ' + (householdHello(i) || '') + '! We’re getting married 🥂 Here’s your invitation, with all the details and where to RSVP:\n' + link(i) + '\n\nPaula & Doug x';
   const stdMsg = (i) => 'Hi ' + (householdHello(i) || '') + ', it’s Doug & Paula! 💍\n\nWe’re getting married on Saturday 7th August 2027 at Friern Manor, Brentwood, and we’d love '
-    + ({ 1: 'you', 2: 'you both' }[i.guests.filter((x) => !x.is_plus_one).length] || 'you all') + ' to be there. Please save the date – invitations with all the details will follow.\n\nPlease tap to let us know you’ve got this:\n' + stdLink(i) + '\n\nPaula & Doug x';
+    + ({ 1: 'you', 2: 'you both' }[i.guests.filter((x) => !x.is_plus_one).length] || 'you all') + ' to be there. Please save the date – invitations with all the details will follow.\n\nPlease tap to let us know you’ve got this:\n' + stdLink(i) + '\n\nLove from\nPaula & Doug';
 
   async function doStep(i, what) {
     const m = how(i);
