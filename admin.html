@@ -497,7 +497,7 @@
   }
   function stdText(i) {
     const s = stdState(i), cant = i.guests.filter((g) => g.std_cant).map((g) => firstOf(g.name));
-    return { notsent: 'Save the date not sent', sent: 'Save the date sent · not opened', opened: 'Save the date opened', received: 'Save the date received',
+    return { notsent: 'Save the date not sent', sent: 'Save the date sent · not opened', opened: 'Save the date opened', received: 'Save the date: date saved',
              cant: "Save the date: can't make it", some: 'Save the date: ' + cant.join(' & ') + " can't make it" }[s];
   }
   // Card status: a heading line and a state line, always the same shape
@@ -510,7 +510,7 @@
       return ['Invitation', i.responded_at ? (yes ? 'Replied: ' + yes + ' coming' : "Replied: can't come") : i.first_opened_at ? 'Opened, no reply yet' : 'Sent, not opened yet'];
     }
     const cant = i.guests.filter((g) => g.std_cant).map((g) => firstOf(g.name));
-    return ['Save the date', { notsent: 'Not sent yet', sent: 'Sent, not opened yet', opened: 'Opened, no answer yet', received: 'Received',
+    return ['Save the date', { notsent: 'Not sent yet', sent: 'Sent, not opened yet', opened: 'Opened, no answer yet', received: 'Date saved',
       cant: "Can't make it", some: cant.join(' & ') + " can't make it" }[stdState(i)]];
   }
   function inviteText(i) {
@@ -612,7 +612,7 @@
     const places = (n, max) => [el('b', {}, String(n)), ' / ' + max, n > max ? el('span', { class: 'w' }, ' · ' + (n - max) + ' over') : n < max ? ' · ' + (max - n) + ' free' : null];
     const stdSent = L.filter((i) => i.std_sent_at);
     const sd = !stdSent.length ? ['not sent yet'] : [el('b', {}, String(stdSent.length)), ' sent · ' + L.filter((i) => i.std_opened_at || i.std_answer).length + ' opened · '
-      + L.filter((i) => i.std_answer === 'saved').length + ' received · ' + L.filter((i) => i.std_answer === 'cant' || i.std_answer === 'some').length + " can't"];
+      + L.filter((i) => i.std_answer === 'saved').length + ' date saved · ' + L.filter((i) => i.std_answer === 'cant' || i.std_answer === 'some').length + " can't"];
     const inv = (set) => {
       const sent = set.filter((i) => i.sent_at); if (!sent.length) return ['not sent yet'];
       const people = set.flatMap((i) => i.guests);
