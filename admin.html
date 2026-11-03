@@ -649,7 +649,8 @@
         el('div', { class: 'type' }, i.invite_type === 'ceremony' ? 'Ceremony' : 'Evening', el('small', {}, seats(i) + (seats(i) === 1 ? ' place' : ' places'))),
         el('div', { class: 'grp' }, i.category || ''), el('div', {}),
         el('div', { class: 'st' },
-          blocked ? el('span', { class: 'w' }, iss[0] ? iss[0][0].toUpperCase() + iss[0].slice(1) : 'Missing details') : el('span', {}, status),
+          blocked ? el('span', { class: 'w' }, iss[0] ? iss[0][0].toUpperCase() + iss[0].slice(1) : 'Missing details')
+            : el('span', {}, ...status.split(' · ').flatMap((x, k) => k ? [el('br'), x[0].toUpperCase() + x.slice(1)] : [x])),
           el('span', { class: 'acts' },
             step && !blocked ? el('button', { class: 'nb', onclick: (e) => { e.stopPropagation(); doStep(i, step.what); } }, step.label) : null,
             el('button', { class: 'dots', 'aria-label': 'More', onclick: (e) => { e.stopPropagation(); openPanel(i); } }, '⋯'))));
