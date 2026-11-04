@@ -288,8 +288,8 @@
       <label class="field"><span>Who sends it</span><select id="m-sentby"><option value="">–</option><option>Doug</option><option>Paula</option></select></label>
     </div>
     <div class="grid2">
-      <label class="field"><span>How we send it</span><select id="m-how"><option value="whatsapp">WhatsApp</option><option value="post">Post</option><option value="person">In person</option></select></label>
-      <label class="field" id="m-main-wrap"><span>WhatsApp goes to</span><select id="m-main"></select></label>
+      <label class="field"><span>How we send it</span><select id="m-how"><option value="whatsapp">WhatsApp</option><option value="text">Text message</option><option value="post">Post</option><option value="person">In person</option></select></label>
+      <label class="field" id="m-main-wrap"><span>Message goes to</span><select id="m-main"></select></label>
     </div>
     <label class="field" id="m-addr-wrap"><span>Postal address</span><textarea id="m-addr" rows="4" placeholder="Name&#10;Street&#10;Town&#10;Postcode"></textarea></label>
     <datalist id="cats"></datalist>
@@ -422,7 +422,8 @@
   const firstOf = (n) => String(n || '').replace(/\s*\?\s*$/, '').split(' ')[0];
   const contacts = (i) => i.guests.filter((g) => !g.is_plus_one && waNum(g.phone));
   const isTest = (i) => /^test/.test(i.code || '');
-  const HOW = { whatsapp: 'WhatsApp', post: 'Post', person: 'In person' };
+  const HOW = { whatsapp: 'WhatsApp', text: 'Text message', post: 'Post', person: 'In person' };
+  const byPhone = (m) => m === 'whatsapp' || m === 'text';
   const how = (i) => i.send_method || 'whatsapp';
   // One message per household: the chosen main contact, else the first person with a number.
   const mainContact = (i) => { const c = contacts(i); return c.find((g) => g.id === i.main_contact) || c[0] || null; };
@@ -449,7 +450,7 @@
   function issues(i) {
     const out = [], mc = mainContact(i);
     if (how(i) === 'post') { if (!(i.address || '').trim()) out.push('no postal address'); }
-    else if (how(i) === 'whatsapp') {
+    else if (byPhone(how(i))) {
       if (!mc) out.push(i.guests.some((g) => !g.is_plus_one && (g.phone || '').trim()) ? 'no mobile (landline only)' : 'no mobile number');
       else if (/^44[^7]/.test(waNum(mc.phone))) out.push('landline, not a mobile');
     }
@@ -460,7 +461,7 @@
     if (ages.length) out.push('ages: ' + ages.join(', '));
     return out;
   }
-  const canSend = (i) => how(i) !== 'whatsapp' || (mainContact(i) && !/^44[^7]/.test(waNum(mainContact(i).phone)));
+  const canSend = (i) => !byPhone(how(i)) || (mainContact(i) && !/^44[^7]/.test(waNum(mainContact(i).phone)));
 
   const live = (i) => i.priority !== 'x' && !i.declined_at;
   const prioNum = (p) => (/^[0-9.]+$/.test(p || '') ? parseFloat(p) : 999);
@@ -525,7 +526,7 @@
   // The one thing still to do for a household: send the save the date, then the invitation.
   function nextStep(i) {
     if (!(onList(i) || isTest(i)) || i.declined_at) return null;
-    const m = how(i), verb = m === 'post' ? 'Post' : m === 'person' ? 'Give' : 'WhatsApp';
+    const m = how(i), verb = m === 'post' ? 'Post' : m === 'person' ? 'Give' : m === 'text' ? 'Text' : 'WhatsApp';
     if (!i.std_sent_at) return { what: 'std', label: verb + ' save the date' };
     if (!i.sent_at && data.settings.invites_open === '1') return { what: 'invite', label: verb + ' invitation' };
     return null;
@@ -547,6 +548,11 @@
       const g = mainContact(i);
       if (!g) { toast('No mobile number – tap Edit to add one'); return; }
       window.open('https://wa.me/' + waNum(g.phone) + '?text=' + encodeURIComponent(what === 'std' ? stdMsg(i) : inviteMsg(i)), '_blank', 'noopener');
+    } else if (m === 'text') {
+      const g = mainContact(i);
+      if (!g) { toast('No mobile number – tap Edit to add one'); return; }
+      // opens the phone's Messages app with the text filled in, ready to send
+      window.location.href = 'sms:+' + waNum(g.phone) + '?body=' + encodeURIComponent(what === 'std' ? stdMsg(i) : inviteMsg(i));
     } else if (!confirm((what === 'std' ? 'Mark the save the date for ' : 'Mark the invitation for ') + title(i)[0] + (m === 'post' ? ' as posted?' : ' as given?'))) return;
     try {
       if (what === 'std') { await rpc('admin_mark_std_sent', { p_list: [i.id], p_sent: true }); i.std_sent_at = i.std_sent_at || new Date().toISOString(); }
@@ -719,7 +725,7 @@
         act('Copy save the date', () => { navigator.clipboard.writeText(stdMsg(i)).then(() => toast('Save the date message copied')); }),
         i.responded_at ? act('Reply history', () => showHistory(i)) : null,
         act('Close', () => closeLayer('shade'))) : el('div', { class: 'acts' },
-        step && canSend(i) ? act(step.label + (how(i) === 'whatsapp' ? ' to ' + firstOf(mainContact(i).name) : ''), () => doStep(i, step.what), 'main') : null,
+        step && canSend(i) ? act(step.label + (byPhone(how(i)) ? ' to ' + firstOf(mainContact(i).name) : ''), () => doStep(i, step.what), 'main') : null,
         act('Edit household', () => { closeLayer('shade'); setTimeout(() => openEdit(i), 0); }),
         act('Copy invitation link', () => { navigator.clipboard.writeText(inviteMsg(i)).then(() => toast('Invitation message copied')); }),
         act('Copy save the date', () => { navigator.clipboard.writeText(stdMsg(i)).then(() => toast('Save the date message copied')); }),
@@ -879,7 +885,7 @@
   function syncHow() {
     const h = $('m-how').value;
     $('m-addr-wrap').classList.toggle('hidden', h !== 'post');
-    $('m-main-wrap').classList.toggle('hidden', h !== 'whatsapp');
+    $('m-main-wrap').classList.toggle('hidden', !byPhone(h));
   }
   $('m-how').addEventListener('change', syncHow);
   $('m-addguest').addEventListener('click', () => $('m-guests').append(guestRow({})));
