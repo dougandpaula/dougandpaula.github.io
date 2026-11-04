@@ -405,13 +405,13 @@
     if (!r.ok) throw new Error(j.error_description || j.msg || 'Sign in failed');
     return { access_token: j.access_token, refresh_token: j.refresh_token };
   }
-  async function rpc(fn, body, retried) {
+  async function rpc(fn, body, retried, keep) {
     const r = await fetch(C.supabaseUrl + '/rest/v1/rpc/' + fn, {
-      method: 'POST',
+      method: 'POST', keepalive: !!keep,
       headers: { 'Content-Type': 'application/json', apikey: C.supabaseKey, Authorization: 'Bearer ' + session.access_token },
       body: JSON.stringify(body || {}) });
     if (r.status === 401 && !retried && session.refresh_token) {
-      try { save(await auth('refresh_token', { refresh_token: session.refresh_token })); return rpc(fn, body, true); }
+      try { save(await auth('refresh_token', { refresh_token: session.refresh_token })); return rpc(fn, body, true, keep); }
       catch (e) { signedOut(); throw e; }
     }
     const text = await r.text();
@@ -569,21 +569,43 @@
 
   async function doStep(i, what) {
     const m = how(i);
-    if (m === 'whatsapp') {
-      const g = mainContact(i);
+    let g = null;
+    if (m === 'whatsapp' || m === 'text') {
+      g = mainContact(i);
       if (!g) { toast('No mobile number – tap Edit to add one'); return; }
+    } else if (!confirm((what === 'std' ? 'Mark the save the date for ' : 'Mark the invitation for ') + title(i)[0] + (m === 'post' ? ' as posted?' : ' as given?'))) return;
+    // Save "sent" BEFORE leaving for WhatsApp / Messages - once the phone switches app,
+    // this page can be paused and an unfinished save is lost.
+    const job = what === 'std'
+      ? rpc('admin_mark_std_sent', { p_list: [i.id], p_sent: true }, false, true)
+      : rpc('admin_mark_sent', { p_id: i.id, p_sent: true }, false, true);
+    if (what === 'std') i.std_sent_at = i.std_sent_at || new Date().toISOString();
+    else i.sent_at = i.sent_at || new Date().toISOString();
+    render(); if (openId === i.id) openPanel(i);
+    if (m === 'whatsapp') {
       window.open('https://wa.me/' + waNum(g.phone) + '?text=' + encodeURIComponent(what === 'std' ? stdMsg(i) : inviteMsg(i)), '_blank', 'noopener');
     } else if (m === 'text') {
-      const g = mainContact(i);
-      if (!g) { toast('No mobile number – tap Edit to add one'); return; }
       // opens the phone's Messages app with the text filled in, ready to send
       window.location.href = 'sms:+' + waNum(g.phone) + '?body=' + encodeURIComponent(what === 'std' ? stdMsg(i) : inviteMsg(i));
-    } else if (!confirm((what === 'std' ? 'Mark the save the date for ' : 'Mark the invitation for ') + title(i)[0] + (m === 'post' ? ' as posted?' : ' as given?'))) return;
-    try {
-      if (what === 'std') { await rpc('admin_mark_std_sent', { p_list: [i.id], p_sent: true }); i.std_sent_at = i.std_sent_at || new Date().toISOString(); }
-      else replaceInvite(await rpc('admin_mark_sent', { p_id: i.id, p_sent: true }), true);
-    } catch (e) { toast('Could not mark it as sent'); }
+    }
+    try { const saved = await job; if (what !== 'std' && saved) replaceInvite(saved, true); }
+    catch (e) { toast('Could not mark ' + title(i)[0] + ' as sent – it will show again'); refresh(); return; }
     render(); if (openId === i.id) openPanel(i);
+  }
+
+  // When you come back from WhatsApp / Messages (or another tab), reload so every status is current
+  let hiddenAt = 0;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) hiddenAt = Date.now();
+    else if (hiddenAt && Date.now() - hiddenAt > 2000) { hiddenAt = 0; refresh(); }
+  });
+  async function refresh() {
+    if (!session || !data) return;
+    try { const d = await rpc('admin_data'); data.invites = d.invites; data.settings = d.settings; } catch (e) { return; }
+    if (view === 'run') return; // don't disturb the running order while moving people
+    if (view === 'todo') return;
+    render();
+    if (openId) { const o = data.invites.find((x) => x.id === openId); if (o) openPanel(o); }
   }
 
   // ---------- data ----------
